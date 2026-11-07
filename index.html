@@ -32,6 +32,8 @@ title: Samuka · Senior Ruby on Rails Engineer
       <a href="#education" data-nav="education"><i class="fi fi--rb"></i>schema.rb</a>
       <p class="tree__dir">▾ config/locales</p>
       <a href="#languages" data-nav="languages"><i class="fi fi--yml"></i>languages.yml</a>
+      <p class="tree__dir">▾ bin</p>
+      <a href="#arcade" data-nav="arcade"><i class="fi fi--log"></i>arcade</a>
       <p class="tree__dir">▾ config</p>
       <a href="#contact" data-nav="contact"><i class="fi fi--rb"></i>routes.rb</a>
     </nav>
@@ -215,6 +217,48 @@ title: Samuka · Senior Ruby on Rails Engineer
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <!-- ================= ARCADE ================= -->
+      <section class="section" id="arcade" data-file="bin/arcade" data-icon="log">
+        <header class="section__head reveal">
+          <p class="section__path">bin/<b>arcade</b></p>
+          <h2 class="section__title">Arcade</h2>
+          <p class="section__cmd"><span class="prompt">$</span> bin/arcade --list <span class="muted"># two small games about the stack I work with every day</span></p>
+        </header>
+        <div class="arcade-cards">
+          <article class="arcade-card reveal">
+            <div class="arcade-card__preview" aria-hidden="true">
+              <div class="pv-sr"><div class="pv-sr__lane" data-q=":critical"><i></i><i></i></div><div class="pv-sr__lane" data-q=":default"><i></i><i></i><i></i></div><div class="pv-sr__lane" data-q=":mailers"><i></i><i></i></div></div>
+            </div>
+            <div class="arcade-card__body">
+              <p class="arcade-card__file">games/sidekiq_rush.rb</p>
+              <h3 class="arcade-card__title">Sidekiq Rush</h3>
+              <p class="arcade-card__text">Hospital jobs pour into Redis. Route claims, imports and reminders to the right queue, hire workers, survive the Monday-morning spike.</p>
+              <div class="arcade-card__row">
+                <button class="btn btn--primary" type="button" data-play="sidekiq"><span class="btn__prompt">▶</span> play</button>
+                <span class="arcade-card__best" data-best="sidekiq"></span>
+              </div>
+            </div>
+          </article>
+          <article class="arcade-card reveal">
+            <div class="arcade-card__preview" aria-hidden="true">
+              <div class="pv-gm">
+                {%- assign pv = "rb,pg,sk,rd,rs,dk,rb,sk,rs,dk,pg,rb,rd,sk,pg,rd,rb,rs,dk,sk,pg" | split: "," -%}
+                {%- for t in pv %}<span class="gm__cell gm--{{ t }}" style="--d: {{ forloop.index0 }}"><span class="gm__gem"><i></i><em>{{ t }}</em></span></span>{% endfor -%}
+              </div>
+            </div>
+            <div class="arcade-card__body">
+              <p class="arcade-card__file">games/gem_match.rb</p>
+              <h3 class="arcade-card__title">Gem Match</h3>
+              <p class="arcade-card__text">Match three gems from the Gemfile: Ruby, PostgreSQL, Sidekiq, Redis, RSpec, Docker. Cascades multiply, five in a row runs <code>bundle install</code>.</p>
+              <div class="arcade-card__row">
+                <button class="btn btn--primary" type="button" data-play="gems"><span class="btn__prompt">▶</span> play</button>
+                <span class="arcade-card__best" data-best="gems"></span>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 

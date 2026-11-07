@@ -147,6 +147,7 @@
       ["resume", "download the PDF"],
       ["github", "open GitHub profile"],
       ["goto &lt;section&gt;", "scroll the page (experience, skills, ...)"],
+      ["play [sidekiq|gems]", "minigames: Sidekiq Rush, Gem Match"],
       ["theme [light|dark]", "switch colors"],
       ["ls, cat &lt;file&gt;, pwd, date, echo, history, clear, exit", ""]
     ];
@@ -208,6 +209,15 @@
       if (!id) return "usage: goto " + Object.keys(map).join(" | ");
       close(); S.go && S.go(id); return "→ " + id;
     },
+    play: function (a) {
+      var A = window.SamukaArcade;
+      if (!A) return "arcade not loaded";
+      var alias = { sidekiq: "sidekiq", "sidekiq-rush": "sidekiq", rush: "sidekiq", gems: "gems", gem: "gems", "gem-match": "gems", match: "gems" };
+      var id = alias[(a[0] || "").toLowerCase()];
+      if (!id) return A.list().map(function (g) { return '  <span class="b">play ' + g.id + "</span>  " + '<span class="dim">' + esc(g.blurb) + "</span>"; }).join("\n");
+      close(); setTimeout(function () { A.open(id); }, 60);
+      return "launching " + id + "…";
+    },
     cd: function (a) { return COMMANDS.goto(a.length ? [a[0].replace(/[\/.~]/g, "")] : ["top"]); },
     theme: function (a) {
       var t = a[0] === "light" || a[0] === "dark" ? a[0] : (S.theme && S.theme() === "light" ? "dark" : "light");
@@ -234,6 +244,8 @@
     gamarjoba: function () { return COMMANDS.hello(); }
   };
   COMMANDS.hi = COMMANDS.hello;
+  COMMANDS.arcade = COMMANDS.play;
+  COMMANDS.sidekiq = function () { return COMMANDS.play(["sidekiq"]); };
 
   function sudoHire() {
     var el = print('[sudo] password for recruiter: <span class="dim">', "");
@@ -311,7 +323,7 @@
     if (mode !== "sh" || !v) return;
     var parts = v.split(/\s+/);
     var pool = parts.length > 1
-      ? (parts[0] === "cat" ? Object.keys(FILES) : parts[0] === "goto" ? ["experience", "skills", "education", "languages", "contact", "top"] : parts[0] === "show" ? jobs.map(function (j) { return j.id; }) : parts[0] === "skills" ? groups.map(function (g) { return g.group; }) : [])
+      ? (parts[0] === "cat" ? Object.keys(FILES) : parts[0] === "goto" ? ["experience", "skills", "education", "languages", "contact", "top"] : parts[0] === "show" ? jobs.map(function (j) { return j.id; }) : parts[0] === "skills" ? groups.map(function (g) { return g.group; }) : parts[0] === "play" ? ["sidekiq", "gems"] : [])
       : Object.keys(COMMANDS);
     var last = parts[parts.length - 1];
     var hits = pool.filter(function (c) { return c.indexOf(last) === 0; });
