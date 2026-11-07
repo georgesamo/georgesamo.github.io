@@ -163,6 +163,7 @@
 .gm__gem { position: relative; display: grid; place-items: center; width: 74%; height: 74%; pointer-events: none; }
 .gm__gem i {
   position: absolute; inset: 0; background:
+    var(--stripes, linear-gradient(transparent, transparent)),
     linear-gradient(155deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.08) 38%, rgba(0,0,0,0.0) 55%, rgba(0,0,0,0.28) 100%), var(--g);
   filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--g) 45%, transparent));
 }
@@ -194,6 +195,61 @@
 .gm__float.mega { color: var(--accent); font-size: 17px; }
 .gm__float.combo { color: var(--accent-2); font-size: 15px; }
 @keyframes floatUp { from { opacity: 0; transform: translate(-50%, 6px) scale(0.9); } 20% { opacity: 1; } to { opacity: 0; transform: translate(-50%, -34px) scale(1.05); } }
+/* ---- power-ups ---- */
+.gm__board { position: relative; }
+/* Pipeline: stripes across the gem, pointing the way it will clear */
+.gm__cell.sp-h { --stripes: repeating-linear-gradient(0deg, rgba(255,255,255,0.62) 0 2px, transparent 2px 6px); }
+.gm__cell.sp-v { --stripes: repeating-linear-gradient(90deg, rgba(255,255,255,0.62) 0 2px, transparent 2px 6px); }
+.gm__cell.sp-h .gm__gem i, .gm__cell.sp-v .gm__gem i { animation: pipePulse 1.6s ease-in-out infinite; }
+.gm__cell.sp-h::after, .gm__cell.sp-v::after {
+  content: ""; position: absolute; border-radius: 99px; background: color-mix(in srgb, var(--g) 70%, #fff); opacity: 0.55; pointer-events: none;
+}
+.gm__cell.sp-h::after { left: 4%; right: 4%; top: 50%; height: 2px; margin-top: -1px; }
+.gm__cell.sp-v::after { top: 4%; bottom: 4%; left: 50%; width: 2px; margin-left: -1px; }
+@keyframes pipePulse { 50% { filter: brightness(1.25) drop-shadow(0 0 6px var(--g)); } }
+/* Force push: pulsing ring + lit fuse */
+.gm__cell.sp-bomb .gm__gem::before {
+  content: ""; position: absolute; inset: -12%; border-radius: 50%; border: 2px dashed color-mix(in srgb, var(--g) 70%, #fff);
+  animation: bombRing 2.4s linear infinite; pointer-events: none;
+}
+.gm__cell.sp-bomb .gm__gem::after {
+  content: "✷"; position: absolute; right: -10%; top: -16%; font-size: 11px; line-height: 1; color: #ffd36b;
+  text-shadow: 0 0 6px #ffb020, 0 0 12px #ff6a00; animation: fuse 0.35s steps(2) infinite;
+}
+.gm__cell.sp-bomb { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--g) 45%, transparent), 0 0 16px -6px var(--g); }
+@keyframes bombRing { to { transform: rotate(360deg); } }
+@keyframes fuse { 50% { opacity: 0.45; transform: scale(0.8) rotate(20deg); } }
+/* Bundle: rainbow orb */
+.gm--cb { --g: #e9e4ff; }
+.gm--cb .gm__gem i {
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.9), rgba(255,255,255,0) 38%),
+    conic-gradient(#ff4d6d, #ff8a3d, #e3b44f, #2fc483, #4f9bff, #8f7dff, #ff4d6d);
+  animation: orbSpin 3s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.35));
+}
+.gm--cb .gm__gem em { font-size: 14px; color: #fff; }
+@keyframes orbSpin { to { transform: rotate(360deg); } }
+/* blasts */
+.gm__beam { position: absolute; z-index: 3; pointer-events: none; border-radius: 99px; background: linear-gradient(90deg, transparent, #fff, var(--accent-2), #fff, transparent); box-shadow: 0 0 18px 4px var(--accent); animation: beamH 0.5s var(--ease) both; }
+.gm__beam--h { left: 0; right: 0; height: 10px; margin-top: -5px; }
+.gm__beam--v { top: 0; bottom: 0; width: 10px; margin-left: -5px; background: linear-gradient(180deg, transparent, #fff, var(--accent-2), #fff, transparent); animation-name: beamV; }
+@keyframes beamH { from { transform: scaleX(0); opacity: 1; } 55% { transform: scaleX(1); opacity: 1; } to { transform: scaleX(1) scaleY(0.2); opacity: 0; } }
+@keyframes beamV { from { transform: scaleY(0); opacity: 1; } 55% { transform: scaleY(1); opacity: 1; } to { transform: scaleY(1) scaleX(0.2); opacity: 0; } }
+.gm__shock { position: absolute; z-index: 3; width: var(--size); height: var(--size); margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2); border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(255,240,200,0.9) 0%, rgba(255,170,60,0.55) 30%, rgba(255,90,40,0) 62%); border: 2px solid rgba(255,210,120,0.8);
+  animation: shock 0.55s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+@keyframes shock { from { transform: scale(0.15); opacity: 1; } to { transform: scale(1); opacity: 0; } }
+.gm__board.is-shake { animation: boardShake 0.4s ease-out; }
+@keyframes boardShake { 20% { transform: translate(var(--shake), calc(var(--shake) * -0.6)); } 40% { transform: translate(calc(var(--shake) * -0.8), var(--shake)); } 60% { transform: translate(calc(var(--shake) * 0.5), calc(var(--shake) * -0.4)); } 80% { transform: translate(calc(var(--shake) * -0.3), calc(var(--shake) * 0.2)); } }
+.gm__cell.is-zap { background: color-mix(in srgb, #fff 18%, var(--bg-soft)); }
+.gm__cell.is-zap .gm__gem { animation: zap 0.18s steps(2) infinite; }
+@keyframes zap { 50% { filter: brightness(2) saturate(0.4); } }
+.gm__cell.is-born .gm__gem { animation: born 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+@keyframes born { from { transform: scale(0.2) rotate(-40deg); filter: brightness(2.2); } }
+.gm__legend--power { grid-template-columns: 34px minmax(0, 1fr); font-size: 12px; }
+.gm__legend--power b { color: var(--text); font-weight: 600; }
+
 .gm__legend { display: grid; grid-template-columns: repeat(3, 34px minmax(0, 1fr)); align-items: center; gap: 8px 10px; margin: 4px 0 14px; font: 12.5px var(--mono); color: var(--text-2); }
 .gm__cell--static { width: 34px; height: 34px; cursor: default; }
 

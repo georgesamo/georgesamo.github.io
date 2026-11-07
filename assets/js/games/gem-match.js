@@ -1,9 +1,17 @@
-/* Gem Match · match-3 with gems from the Gemfile (click, swipe or keyboard) */
+/* Gem Match · match-3 with gems from the Gemfile + power-ups
+ *
+ * Power-ups (classic match-3 mechanics, Rails-flavoured):
+ *   match 4 in a line  -> Pipeline   (striped)  clears its row or column
+ *   L / T shape        -> Force push (bomb)     clears a 3x3 area
+ *   match 5 in a line  -> Bundle     (rainbow)  swap with a gem: clears every gem of that kind
+ *   swap two power-ups -> combo (cross, 3-wide cross, 5x5, convert-all, clear board)
+ *   refills occasionally drop a random Pipeline / Force push
+ */
 (function () {
   "use strict";
   if (!window.SamukaArcade) return;
 
-  var N = 8, MOVES = 30;
+  var N = 8, MOVES = 30, RANDOM_SPECIAL = 0.03, MAX_RANDOM_SPECIALS = 3;
   var TYPES = [
     { id: "rb", name: "Ruby", done: "irb(main)> ✓" },
     { id: "pg", name: "PostgreSQL", done: "VACUUM complete" },
@@ -12,15 +20,17 @@
     { id: "rs", name: "RSpec", done: "0 failures" },
     { id: "dk", name: "Docker", done: "container shipped" }
   ];
+  var COLOR = -1; // type of the Bundle orb
   var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var isLine = function (g) { return g && (g.sp === "h" || g.sp === "v"); };
 
   window.SamukaArcade.register("gems", {
     title: "gem-match.rb",
-    blurb: "Match three gems from the Gemfile. Cascades multiply your score.",
+    blurb: "Match three gems from the Gemfile. Power-ups: Pipeline, Force push, Bundle.",
     mount: function (stage, api) {
       var T = api.reduced ? 0.01 : 1;  // animation time scale
       var board = [], cells = [], sel = -1, focusI = 0, busy = false, alive = false;
-      var score = 0, moves = MOVES, best = api.peekBest(), hintTimer = 0, uid = 0;
+      var score = 0, moves = MOVES, best = api.peekBest(), hintTimer = 0, uid = 0, combo = 0;
 
       stage.innerHTML = '<div class="gm"><div class="gm__board" data-board role="grid" aria-label="Gem board"></div></div>';
       var boardEl = stage.querySelector("[data-board]");
@@ -31,44 +41,52 @@
         b.innerHTML = '<span class="gm__gem"><i></i><em></em></span>';
         boardEl.appendChild(b); cells.push(b);
       }
-      api.foot("<span>Swap neighbours to line up 3+. Click two gems, swipe, or use <kbd>←↑↓→</kbd> + <kbd>Enter</kbd>. Match 4 for a bonus, 5 for a <b>bundle</b> mega-bonus.</span>");
+      api.foot("<span>Swap neighbours to line up 3+. <b>4</b> = Pipeline (row/column) · <b>L/T</b> = Force push (3×3) · <b>5</b> = Bundle (clears a kind). Swap two power-ups for a combo. Click, swipe, or <kbd>←↑↓→</kbd> + <kbd>Enter</kbd>.</span>");
 
-      /* ---------- board logic ---------- */
+      /* ---------- board helpers ---------- */
       var rnd = function () { return (Math.random() * TYPES.length) | 0; };
-      var rc = function (i) { return [Math.floor(i / N), i % N]; };
-      function gem(t) { return { t: t, id: ++uid }; }
+      var R = function (i) { return Math.floor(i / N); }, C = function (i) { return i % N; };
+      function gem(t, sp) { return { t: t, id: ++uid, sp: sp || null }; }
+      function sameType(i, j) { return board[i] && board[j] && board[i].t !== COLOR && board[i].t === board[j].t; }
       function fill() {
         board = [];
         for (var i = 0; i < N * N; i++) {
-          var t, r = Math.floor(i / N), c = i % N;
+          var t, r = R(i), c = C(i);
           do { t = rnd(); } while ((c >= 2 && board[i - 1].t === t && board[i - 2].t === t) || (r >= 2 && board[i - N].t === t && board[i - 2 * N].t === t));
           board.push(gem(t));
         }
-        if (!findMove()) fill();
+        if (!findMove()) return fill();
+        board[(Math.random() * N * N) | 0].sp = "bomb"; // one Force push to discover the mechanic
       }
+      function specialsOnBoard() { return board.filter(function (g) { return g && g.sp; }).length; }
+
+      /* runs of 3+ with direction; colour orbs never match */
       function runs() {
-        var out = [];
-        for (var r = 0; r < N; r++) for (var c = 0; c < N;) {
-          var t = board[r * N + c] && board[r * N + c].t, len = 1;
-          while (c + len < N && board[r * N + c + len] && board[r * N + c + len].t === t) len++;
-          if (t != null && len >= 3) { var cs = []; for (var k = 0; k < len; k++) cs.push(r * N + c + k); out.push({ cells: cs, t: t }); }
+        var out = [], r, c, len, k, cs;
+        for (r = 0; r < N; r++) for (c = 0; c < N;) {
+          len = 1; while (c + len < N && sameType(r * N + c, r * N + c + len)) len++;
+          if (len >= 3 && board[r * N + c].t !== COLOR) { cs = []; for (k = 0; k < len; k++) cs.push(r * N + c + k); out.push({ cells: cs, t: board[r * N + c].t, dir: "h" }); }
           c += len;
         }
         for (c = 0; c < N; c++) for (r = 0; r < N;) {
-          var t2 = board[r * N + c] && board[r * N + c].t, len2 = 1;
-          while (r + len2 < N && board[(r + len2) * N + c] && board[(r + len2) * N + c].t === t2) len2++;
-          if (t2 != null && len2 >= 3) { var cs2 = []; for (var k2 = 0; k2 < len2; k2++) cs2.push((r + k2) * N + c); out.push({ cells: cs2, t: t2 }); }
-          r += len2;
+          len = 1; while (r + len < N && sameType(r * N + c, (r + len) * N + c)) len++;
+          if (len >= 3 && board[r * N + c].t !== COLOR) { cs = []; for (k = 0; k < len; k++) cs.push((r + k) * N + c); out.push({ cells: cs, t: board[r * N + c].t, dir: "v" }); }
+          r += len;
         }
         return out;
       }
       function swap(a, b) { var x = board[a]; board[a] = board[b]; board[b] = x; }
-      function adjacent(a, b) { var A = rc(a), B = rc(b); return Math.abs(A[0] - B[0]) + Math.abs(A[1] - B[1]) === 1; }
+      function adjacent(a, b) { return Math.abs(R(a) - R(b)) + Math.abs(C(a) - C(b)) === 1; }
+      function swapActivates(a, b) {
+        var x = board[a], y = board[b];
+        return !!(x && y && (x.t === COLOR || y.t === COLOR || (x.sp && y.sp)));
+      }
       function findMove() {
         for (var i = 0; i < N * N; i++) {
-          var nb = [i % N < N - 1 ? i + 1 : -1, i + N < N * N ? i + N : -1];
+          var nb = [C(i) < N - 1 ? i + 1 : -1, i + N < N * N ? i + N : -1];
           for (var k = 0; k < 2; k++) {
             var j = nb[k]; if (j < 0) continue;
+            if (swapActivates(i, j)) return [i, j];
             swap(i, j); var ok = runs().length > 0; swap(i, j);
             if (ok) return [i, j];
           }
@@ -77,33 +95,230 @@
       }
 
       /* ---------- rendering ---------- */
-      function paint(fall) {
+      function paint(fall, born) {
         cells.forEach(function (el, i) {
           var g = board[i];
-          el.className = "gm__cell" + (g ? " gm--" + TYPES[g.t].id : " is-empty") + (i === sel ? " is-sel" : "");
-          el.setAttribute("aria-label", g ? TYPES[g.t].name + ", row " + (Math.floor(i / N) + 1) + " column " + (i % N + 1) : "empty");
-          el.querySelector("em").textContent = g ? TYPES[g.t].id : "";
+          var cls = "gm__cell";
+          if (!g) cls += " is-empty";
+          else {
+            cls += g.t === COLOR ? " gm--cb" : " gm--" + TYPES[g.t].id;
+            if (g.sp) cls += " sp-" + g.sp;
+          }
+          if (i === sel) cls += " is-sel";
+          el.className = cls;
+          var label = !g ? "empty" : g.t === COLOR ? "Bundle power-up" : TYPES[g.t].name + (g.sp === "bomb" ? " Force push" : isLine(g) ? " Pipeline" : "");
+          el.setAttribute("aria-label", label + ", row " + (R(i) + 1) + " column " + (C(i) + 1));
+          el.querySelector("em").textContent = !g ? "" : g.t === COLOR ? "✦" : TYPES[g.t].id;
           if (fall && fall[i]) {
             el.style.setProperty("--fall", fall[i]);
             el.classList.remove("is-drop"); void el.offsetWidth; el.classList.add("is-drop");
           }
+          if (born && born[i]) { el.classList.remove("is-born"); void el.offsetWidth; el.classList.add("is-born"); }
         });
       }
       function hud() {
         api.hud('<span>score <b>' + score + '</b></span><span>moves <b' + (moves <= 5 ? ' class="low"' : "") + ">" + moves + '</b></span><span class="hide-sm">best <b>' + Math.max(best, score) + "</b></span>");
       }
+      function cellBox(i) {
+        var r = cells[i].getBoundingClientRect(), s = boardEl.getBoundingClientRect();
+        return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height };
+      }
       function float(text, i, cls) {
         var el = document.createElement("span");
         el.className = "gm__float " + (cls || "");
         el.textContent = text;
-        var cell = cells[i], r = cell.getBoundingClientRect(), s = stage.getBoundingClientRect();
+        var r = cells[i].getBoundingClientRect(), s = stage.getBoundingClientRect();
         el.style.left = (r.left - s.left + r.width / 2) + "px";
         el.style.top = (r.top - s.top) + "px";
         stage.appendChild(el);
-        setTimeout(function () { el.remove(); }, 900);
+        setTimeout(function () { el.remove(); }, 950);
+      }
+      /* blast visuals */
+      function beam(i, dir) {
+        var bx = cellBox(i), el = document.createElement("div");
+        el.className = "gm__beam gm__beam--" + dir;
+        if (dir === "h") { el.style.top = (bx.y + bx.h / 2) + "px"; }
+        else { el.style.left = (bx.x + bx.w / 2) + "px"; }
+        boardEl.appendChild(el);
+        setTimeout(function () { el.remove(); }, 520);
+      }
+      function shock(i, radius) {
+        var bx = cellBox(i), el = document.createElement("div");
+        el.className = "gm__shock";
+        el.style.left = (bx.x + bx.w / 2) + "px"; el.style.top = (bx.y + bx.h / 2) + "px";
+        el.style.setProperty("--size", (bx.w * (radius * 2 + 1) * 1.15) + "px");
+        boardEl.appendChild(el);
+        setTimeout(function () { el.remove(); }, 560);
+      }
+      function shake(strength) {
+        boardEl.style.setProperty("--shake", strength + "px");
+        boardEl.classList.remove("is-shake"); void boardEl.offsetWidth; boardEl.classList.add("is-shake");
       }
 
-      /* ---------- turn resolution ---------- */
+      /* ---------- what a power-up clears ---------- */
+      function area(i, rad) {
+        var out = [];
+        for (var dr = -rad; dr <= rad; dr++) for (var dc = -rad; dc <= rad; dc++) {
+          var r = R(i) + dr, c = C(i) + dc;
+          if (r >= 0 && r < N && c >= 0 && c < N) out.push(r * N + c);
+        }
+        return out;
+      }
+      function row(r) { var o = []; for (var c = 0; c < N; c++) o.push(r * N + c); return o; }
+      function col(c) { var o = []; for (var r = 0; r < N; r++) o.push(r * N + c); return o; }
+      function mostCommonType() {
+        var n = {}; board.forEach(function (g) { if (g && g.t !== COLOR) n[g.t] = (n[g.t] || 0) + 1; });
+        var bestT = 0, bestN = -1; Object.keys(n).forEach(function (t) { if (n[t] > bestN) { bestN = n[t]; bestT = +t; } });
+        return bestT;
+      }
+      function ofType(t) { var o = []; board.forEach(function (g, i) { if (g && g.t === t) o.push(i); }); return o; }
+      function effect(i, g) {   // returns cells hit, and plays the visual
+        if (g.sp === "h") { beam(i, "h"); return row(R(i)); }
+        if (g.sp === "v") { beam(i, "v"); return col(C(i)); }
+        if (g.sp === "bomb") { shock(i, 1); shake(4); return area(i, 1); }
+        if (g.t === COLOR) { var t = mostCommonType(); zap(ofType(t)); return ofType(t); }
+        return [];
+      }
+      function zap(list) { list.forEach(function (j) { cells[j].classList.add("is-zap"); }); }
+
+      /* chain reaction: any power-up caught in a blast fires too */
+      function expand(set, fired) {
+        var queue = Object.keys(set).map(Number);
+        while (queue.length) {
+          var i = queue.shift(), g = board[i];
+          if (!g || fired[i] || !(g.sp || g.t === COLOR)) continue;
+          fired[i] = true;
+          effect(i, g).forEach(function (j) { if (!set[j]) { set[j] = true; queue.push(j); } });
+        }
+        return set;
+      }
+
+      /* clear a set of cells, place newly created power-ups, drop + refill */
+      async function clearCells(set, creations, fired) {
+        expand(set, fired || {});
+        var keys = Object.keys(set).map(Number);
+        if (!keys.length) return;
+        keys.forEach(function (k) { cells[k].classList.add("is-pop"); });
+        await wait(260 * T);
+        keys.forEach(function (k) { board[k] = null; cells[k].classList.remove("is-pop", "is-zap"); });
+        score += keys.length * 10 * Math.max(1, combo);
+        var born = {};
+        (creations || []).forEach(function (cr) { board[cr.i] = gem(cr.t, cr.sp); born[cr.i] = true; });
+        // gravity + refill, tracking fall distance for the drop animation
+        var fall = {}, randomLeft = MAX_RANDOM_SPECIALS - specialsOnBoard();
+        for (var c = 0; c < N; c++) {
+          var write = N - 1;
+          for (var r = N - 1; r >= 0; r--) {
+            var i = r * N + c;
+            if (board[i]) { var to = write * N + c; if (to !== i) { board[to] = board[i]; board[i] = null; fall[to] = write - r; if (born[i]) { born[to] = true; delete born[i]; } } write--; }
+          }
+          for (var rr = write; rr >= 0; rr--) {
+            var sp = null;
+            if (randomLeft > 0 && Math.random() < RANDOM_SPECIAL) { sp = ["h", "v", "bomb", "bomb"][(Math.random() * 4) | 0]; randomLeft--; }
+            board[rr * N + c] = gem(rnd(), sp);
+            fall[rr * N + c] = write + 1;
+          }
+        }
+        paint(fall, born); hud();
+        await wait(300 * T);
+      }
+
+      /* turn matched runs into a clear-set + power-up creations */
+      function analyze(rs, swapped) {
+        var set = {}, creations = [], used = {};
+        rs.forEach(function (run) { run.cells.forEach(function (c) { set[c] = true; }); });
+        function pivot(run) {
+          for (var k = 0; k < swapped.length; k++) if (run.cells.indexOf(swapped[k]) > -1) return swapped[k];
+          return run.cells[Math.floor(run.cells.length / 2)];
+        }
+        // 5 in a line -> Bundle
+        rs.forEach(function (run, ri) {
+          if (run.cells.length >= 5) { used[ri] = true; creations.push({ i: pivot(run), t: COLOR, sp: null, kind: "bundle" }); }
+        });
+        // L / T (an h-run and a v-run of the same type sharing a cell) -> Force push
+        rs.forEach(function (a, ai) {
+          if (used[ai] || a.dir !== "h") return;
+          rs.forEach(function (b, bi) {
+            if (used[ai] || used[bi] || b.dir !== "v" || b.t !== a.t) return;
+            var shared = a.cells.filter(function (x) { return b.cells.indexOf(x) > -1; })[0];
+            if (shared != null) { used[ai] = used[bi] = true; creations.push({ i: shared, t: a.t, sp: "bomb", kind: "bomb" }); }
+          });
+        });
+        // 4 in a line -> Pipeline (clears across the match direction)
+        rs.forEach(function (run, ri) {
+          if (used[ri] || run.cells.length !== 4) return;
+          used[ri] = true;
+          creations.push({ i: pivot(run), t: run.t, sp: run.dir === "h" ? "v" : "h", kind: "line" });
+        });
+        // don't let two creations claim the same cell
+        var seen = {};
+        creations = creations.filter(function (c) { if (seen[c.i]) return false; seen[c.i] = true; return true; });
+        return { set: set, creations: creations };
+      }
+
+      async function resolve(swapped) {
+        combo = 0;
+        for (;;) {
+          var rs = runs();
+          if (!rs.length) break;
+          combo++;
+          var plan = analyze(rs, swapped || []);
+          rs.forEach(function (run) {
+            var mid = run.cells[Math.floor(run.cells.length / 2)];
+            if (combo === 1 && run.cells.length === 3) float(TYPES[run.t].done, mid);
+          });
+          plan.creations.forEach(function (cr) {
+            if (cr.kind === "bundle") { score += 150; float("Bundle ✦ created", cr.i, "mega"); }
+            else if (cr.kind === "bomb") { score += 80; float("Force push 💥 armed", cr.i, "big"); }
+            else { score += 50; float("Pipeline ⇶ ready", cr.i, "big"); }
+          });
+          if (combo >= 2) float("×" + combo + " cascade", rs[0].cells[0], "combo");
+          await clearCells(plan.set, plan.creations, {});
+          swapped = [];
+        }
+      }
+
+      /* swapping power-ups together */
+      async function activate(a, b) {
+        var x = board[a], y = board[b], set = {}, fired = {};
+        set[a] = set[b] = true; fired[a] = fired[b] = true;
+        combo = 1;
+        if (x.t === COLOR && y.t === COLOR) {
+          for (var i = 0; i < N * N; i++) set[i] = true;
+          zap(Object.keys(set)); shake(9); shock(b, 4);
+          api.toast("bundle exec rails db:reset · board cleared!", "ok"); score += 500;
+        } else if (x.t === COLOR || y.t === COLOR) {
+          var other = x.t === COLOR ? y : x;
+          var targets = ofType(other.t);
+          if (other.sp) {
+            // every gem of that kind becomes the same power-up, then they all fire
+            targets.forEach(function (j) { if (!board[j].sp) board[j].sp = other.sp === "bomb" ? "bomb" : (Math.random() < 0.5 ? "h" : "v"); });
+            paint(); zap(targets);
+            api.toast("bundle update " + TYPES[other.t].name + " --all", "ok");
+            await wait(420 * T);
+            targets.forEach(function (j) { set[j] = true; });
+            fired[x.t === COLOR ? b : a] = false; // let the swapped power-up fire as well
+            score += 300;
+          } else {
+            zap(targets);
+            targets.forEach(function (j) { set[j] = true; });
+            api.toast("bundle remove " + TYPES[other.t].name.toLowerCase() + " (" + targets.length + " gems)", "ok");
+            score += 100;
+          }
+        } else {
+          var lines = (isLine(x) ? 1 : 0) + (isLine(y) ? 1 : 0), r = R(b), c = C(b), list = [];
+          if (lines === 2) { list = row(r).concat(col(c)); beam(b, "h"); beam(b, "v"); api.toast("CI matrix: row + column", "ok"); score += 120; }
+          else if (lines === 0) { list = area(b, 2); shock(b, 2); shake(8); api.toast("git push --force --force 💥💥", "ok"); score += 200; }
+          else {
+            for (var d = -1; d <= 1; d++) { if (r + d >= 0 && r + d < N) list = list.concat(row(r + d)); if (c + d >= 0 && c + d < N) list = list.concat(col(c + d)); }
+            beam(b, "h"); beam(b, "v"); shock(b, 1); shake(6); api.toast("force-pushed pipeline: 3 rows + 3 cols", "ok"); score += 160;
+          }
+          list.forEach(function (j) { set[j] = true; });
+        }
+        await clearCells(set, [], fired);
+      }
+
+      /* ---------- turn flow ---------- */
       async function animateSwap(a, b) {
         var A = cells[a].getBoundingClientRect(), B = cells[b].getBoundingClientRect();
         var dx = B.left - A.left, dy = B.top - A.top;
@@ -119,56 +334,23 @@
         busy = true; sel = -1; clearHint();
         await animateSwap(a, b);
         swap(a, b); paint();
-        if (!runs().length) {
+        if (swapActivates(a, b)) {
+          moves--; hud();
+          await activate(a, b);
+          await resolve([]);
+        } else if (runs().length) {
+          moves--; hud();
+          await resolve([a, b]);
+        } else {
           cells[a].classList.add("gm--nope"); cells[b].classList.add("gm--nope");
           await animateSwap(a, b);
           swap(a, b); paint();
           busy = false; armHint(); return;
         }
-        moves--; hud();
-        await resolve();
         busy = false;
         if (moves <= 0) return over();
         if (!findMove()) { api.toast("no moves left · bundle update (shuffle)", "warn"); fill(); paint(); }
         armHint();
-      }
-      async function resolve() {
-        var combo = 0;
-        for (;;) {
-          var rs = runs();
-          if (!rs.length) break;
-          combo++;
-          var kill = {}, gained = 0;
-          rs.forEach(function (run) {
-            run.cells.forEach(function (c) { kill[c] = true; });
-            var base = run.cells.length * 10;
-            if (run.cells.length === 4) base += 40;
-            if (run.cells.length >= 5) base += 120;
-            gained += base;
-            var mid = run.cells[Math.floor(run.cells.length / 2)];
-            if (run.cells.length >= 5) { float("bundle install ✦", mid, "mega"); api.toast("Bundle complete! +" + base * combo, "ok"); }
-            else if (run.cells.length === 4) float("+" + base * combo + " " + TYPES[run.t].done, mid, "big");
-            else if (combo === 1) float(TYPES[run.t].done, mid);
-          });
-          gained *= combo;
-          score += gained;
-          if (combo >= 2) float("×" + combo + " cascade", rs[0].cells[0], "combo");
-          Object.keys(kill).forEach(function (k) { cells[k].classList.add("is-pop"); });
-          await wait(230 * T);
-          Object.keys(kill).forEach(function (k) { board[k] = null; cells[k].classList.remove("is-pop"); });
-          // gravity + refill, tracking how far each gem falls
-          var fall = {};
-          for (var c = 0; c < N; c++) {
-            var write = N - 1;
-            for (var r = N - 1; r >= 0; r--) {
-              var i = r * N + c;
-              if (board[i]) { var to = write * N + c; if (to !== i) { board[to] = board[i]; board[i] = null; fall[to] = write - r; } write--; }
-            }
-            for (var rr = write; rr >= 0; rr--) { board[rr * N + c] = gem(rnd()); fall[rr * N + c] = write + 1; }
-          }
-          paint(fall); hud();
-          await wait(300 * T);
-        }
       }
 
       /* ---------- hints ---------- */
@@ -182,6 +364,9 @@
       }
 
       /* ---------- screens ---------- */
+      function legendGem(cls, label, em) {
+        return '<span class="gm__cell gm__cell--static ' + cls + '"><span class="gm__gem"><i></i><em>' + em + "</em></span></span><span>" + label + "</span>";
+      }
       function start() {
         score = 0; moves = MOVES; sel = -1; alive = true; busy = false;
         fill(); paint(); hud(); api.clearOverlay(); armHint();
@@ -192,7 +377,7 @@
         var b = api.best(score); best = b.best;
         api.overlay(
           '<p class="arcade__kicker">$ bundle exec rspec</p>' +
-          "<h3>" + (score >= 2500 ? "Gemfile.lock: perfection" : score >= 1200 ? "All green" : "Done") + "</h3>" +
+          "<h3>" + (score >= 4000 ? "Gemfile.lock: perfection" : score >= 2000 ? "All green" : "Done") + "</h3>" +
           '<dl class="arcade__stats"><dt>score</dt><dd>' + score + (b.isNew ? ' <span class="arcade__new">new best!</span>' : "") + "</dd><dt>best</dt><dd>" + b.best + "</dd><dt>moves</dt><dd>" + MOVES + "</dd></dl>" +
           '<button class="btn btn--primary" type="button" data-gm-start>↻ play again</button>'
         );
@@ -202,8 +387,14 @@
         api.overlay(
           '<p class="arcade__kicker">$ gem install match-three</p>' +
           "<h3>Gem Match</h3>" +
-          '<div class="gm__legend">' + TYPES.map(function (t) { return '<span class="gm__cell gm--' + t.id + ' gm__cell--static"><span class="gm__gem"><i></i><em>' + t.id + "</em></span></span><span>" + t.name + "</span>"; }).join("") + "</div>" +
+          '<div class="gm__legend">' + TYPES.map(function (t) { return legendGem("gm--" + t.id, t.name, t.id); }).join("") + "</div>" +
           "<p>Line up three or more of the same gem. Chains cascade and multiply. You have " + MOVES + " moves.</p>" +
+          '<div class="gm__legend gm__legend--power">' +
+            legendGem("gm--pg sp-h", "<b>Pipeline</b> · match 4 · clears a row/column", "pg") +
+            legendGem("gm--rd sp-bomb", "<b>Force push</b> · L/T shape · blasts 3×3", "rd") +
+            legendGem("gm--cb", "<b>Bundle</b> · match 5 · swap to clear a whole kind", "✦") +
+          "</div>" +
+          '<p class="muted">Swap two power-ups together for a combo. New ones occasionally drop in on their own.</p>' +
           '<button class="btn btn--primary" type="button" data-gm-start>▶ bundle exec play</button>'
         );
       }
@@ -219,7 +410,7 @@
         var dx = e.clientX - down.x, dy = e.clientY - down.y;
         if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
         down.swiped = true;
-        var r = Math.floor(down.i / N), c = down.i % N, j = -1;
+        var r = R(down.i), c = C(down.i), j = -1;
         if (Math.abs(dx) > Math.abs(dy)) j = dx > 0 && c < N - 1 ? down.i + 1 : dx < 0 && c > 0 ? down.i - 1 : -1;
         else j = dy > 0 && r < N - 1 ? down.i + N : dy < 0 && r > 0 ? down.i - N : -1;
         if (j >= 0) trySwap(down.i, j);
@@ -239,9 +430,7 @@
         focusI = +cell.dataset.i;
         choose(focusI);
       }
-      function moveFocus(i) {
-        cells[focusI].tabIndex = -1; focusI = i; cells[i].tabIndex = 0; cells[i].focus();
-      }
+      function moveFocus(i) { cells[focusI].tabIndex = -1; focusI = i; cells[i].tabIndex = 0; cells[i].focus(); }
       boardEl.addEventListener("pointerdown", onPointerDown);
       window.addEventListener("pointermove", onPointerMove);
       window.addEventListener("pointerup", onPointerUp);
@@ -251,7 +440,7 @@
       return {
         key: function (e) {
           if (!alive || !boardEl.contains(document.activeElement)) return;
-          var r = Math.floor(focusI / N), c = focusI % N, to = -1;
+          var r = R(focusI), c = C(focusI), to = -1;
           if (e.key === "ArrowLeft" && c > 0) to = focusI - 1;
           else if (e.key === "ArrowRight" && c < N - 1) to = focusI + 1;
           else if (e.key === "ArrowUp" && r > 0) to = focusI - N;
@@ -259,10 +448,12 @@
           else if (e.key === "Enter" || e.key === " ") { e.preventDefault(); choose(focusI); return; }
           if (to >= 0) {
             e.preventDefault();
-            if (sel === focusI) { trySwap(focusI, to); }   // selected + arrow = swap in that direction
+            if (sel === focusI) trySwap(focusI, to);   // selected + arrow = swap in that direction
             moveFocus(to);
           }
         },
+        // test hook (used only by automated playtests)
+        _debug: { board: function () { return board; }, place: function (i, t, sp) { board[i] = gem(t, sp); paint(); }, COLOR: COLOR },
         destroy: function () {
           alive = false; clearHint();
           window.removeEventListener("pointermove", onPointerMove);

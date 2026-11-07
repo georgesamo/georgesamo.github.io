@@ -108,6 +108,7 @@
     register: function (id, def) { games[id] = def; },
     open: open, close: close,
     list: function () { return Object.keys(games).map(function (k) { return { id: k, title: games[k].title, blurb: games[k].blurb }; }); },
-    isOpen: function () { return !!(modal && !modal.hidden); }
+    isOpen: function () { return !!(modal && !modal.hidden); },
+    _debug: function () { return current && current._debug; } // used by automated playtests only
   };
 })();
