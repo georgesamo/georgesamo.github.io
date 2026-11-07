@@ -1,0 +1,146 @@
+# Single source of truth for the whole site.
+# Edit this file, push, and the site redeploys.
+
+person:
+  handle: Samuka
+  full_name: Giorgi Samukashvili
+  role: Senior Ruby on Rails Engineer
+  location: Tbilisi, Georgia
+  email: giorgisamo@gmail.com
+  github: https://github.com/georgesamo
+  github_user: georgesamo
+  career_start: 2018-09-01
+  tagline: >-
+    I design and run the Rails backends that hospitals and clinics depend on:
+    bookings, billing, insurance, medication catalogs and HL7 FHIR integrations.
+
+experience:
+  - id: vian
+    company: VIAN
+    role: Senior Ruby on Rails Engineer
+    start: "2025-03"
+    end: present
+    period: "03/2025 — present"
+    location: Tbilisi, Georgia
+    hash: a3f9c21
+    bullets:
+      - Designed, developed, and maintained Ruby on Rails backend services for healthcare systems involving bookings, patient information, medication catalogs, pricing calculations, insurance coverage, billing workflows, and external integrations.
+      - Developed REST APIs and HL7 FHIR-based integrations for healthcare partners and external vendors.
+      - Worked with PostgreSQL and Microsoft SQL Server, including complex queries, legacy data structures, query optimization, and reporting logic.
+      - Optimized background processing workflows using Sidekiq, reducing data synchronization latency and ensuring real-time updates for healthcare partners.
+      - Collaborated with product, QA, support, and business teams to deliver reliable software for hospitals and clinics.
+
+  - id: vabaco-senior
+    company: VABACO
+    role: Senior Ruby on Rails Engineer
+    start: "2022-09"
+    end: "2025-02"
+    period: "09/2022 — 02/2025"
+    location: Tbilisi, Georgia
+    hash: 7c1e0b4
+    bullets:
+      - Developed and maintained backend systems using Ruby on Rails for large-scale healthcare and business applications.
+      - Designed service-oriented backend architecture for workflows involving hospitals, clinics, doctors, patients, billing, pharmacy, insurance, and administrative processes.
+      - Built and optimized APIs used by internal systems, external vendors, and partner integrations.
+      - Identified and resolved database bottlenecks via query optimization and indexing, improving API response times across legacy healthcare platforms using PostgreSQL, Microsoft SQL Server, and ActiveRecord.
+      - Participated in technical planning, code reviews, debugging, production issue investigation, and performance improvements.
+      - Mentored junior developers and supported continuous improvement of backend development practices.
+
+  - id: vabaco-se
+    company: VABACO
+    role: Software Engineer
+    start: "2020-09"
+    end: "2022-08"
+    period: "09/2020 — 08/2022"
+    location: Tbilisi, Georgia
+    hash: 51d8a2e
+    bullets:
+      - Developed backend features using Ruby on Rails for healthcare-related software systems.
+      - Implemented API endpoints, database models, service objects, validations, and business workflows.
+      - Worked with PostgreSQL, Microsoft SQL Server, ActiveRecord, Redis, Sidekiq, and Elasticsearch.
+      - Investigated and fixed bugs, improved existing features, and supported production systems.
+      - Wrote RSpec tests for controllers, models, services, and business logic.
+
+  - id: vabaco-junior
+    company: VABACO
+    role: Junior Software Engineer
+    start: "2018-09"
+    end: "2020-08"
+    period: "09/2018 — 08/2020"
+    location: Tbilisi, Georgia
+    hash: 0b44f19
+    bullets:
+      - Assisted in developing and maintaining Ruby on Rails backend applications.
+      - Implemented smaller backend features, bug fixes, database changes, and internal improvements.
+      - Worked with Ruby, Ruby on Rails, PostgreSQL, ActiveRecord, JavaScript, HTML, CSS, and Git.
+      - Learned and applied software engineering practices including code reviews, testing, debugging, and version control.
+      - Supported existing systems by investigating issues and working closely with more experienced engineers.
+
+# The career graph (newest first). lane 0 = main (education), lane 1 = vabaco branch.
+git_log:
+  - { ref: vian, lane: 0, merge: true, tags: "HEAD -> main" }
+  - { ref: vabaco-senior, lane: 1, tags: "vabaco" }
+  - { edu: ruby-silver, lane: 0, hash: e41b7aa, msg: "Certified Ruby Programmer (Silver) — Ruby Association, Japan", when: "2022" }
+  - { ref: vabaco-se, lane: 1 }
+  - { edu: msc, lane: 0, hash: 3d90c52, msg: "MSc Computer Science — Tbilisi State University", when: "2018 — 2020" }
+  - { ref: vabaco-junior, lane: 1, branch: true }
+  - { edu: bsc, lane: 0, hash: 9e1c3d7, msg: "init: BSc Computer Science — Tbilisi State University", when: "2014 — 2018", root: true }
+
+education:
+  - id: bsc
+    version: "20140901"
+    klass: CreateBachelorsDegree
+    title: Bachelor's Degree in Computer Science
+    school: Ivane Javakhishvili Tbilisi State University
+    period: "2014 → 2018"
+    duration: "4.0y"
+    level: EQF Level 6
+    summary: Algorithms, data structures, databases, practical software development.
+  - id: msc
+    version: "20180901"
+    klass: CreateMastersDegree
+    title: Master's Degree in Computer Science
+    school: Ivane Javakhishvili Tbilisi State University
+    period: "2018 → 2020"
+    duration: "2.0y"
+    level: EQF Level 7
+    summary: Advanced CS, system design, databases, software engineering.
+  - id: ruby-silver
+    version: "20220101"
+    klass: AddRubySilverCertification
+    title: Certified Ruby Programmer (Silver)
+    school: Ruby Association, Japan
+    period: "2022"
+    duration: "cert"
+    level: Ruby Silver
+    summary: OOP, syntax, standard libraries, modules, and core architecture concepts.
+  - id: english
+    version: "20040901"
+    klass: CreateEnglishLanguageStudies
+    title: Advanced English Language Studies
+    school: George Byron School of Tbilisi
+    period: "2004 → 2012"
+    duration: "8.0y"
+    level: Advanced
+    summary: Advanced written and spoken communication proficiency.
+
+skills:
+  - group: backend
+    title: Backend Languages & Frameworks
+    gems: [Ruby, Ruby on Rails, Backend development, Object-oriented programming, JavaScript, Node.js, Express.js]
+  - group: data
+    title: Databases, Infrastructure & Caching
+    gems: [PostgreSQL, Microsoft SQL Server, SQL, Database design, Database query optimization, ActiveRecord, Redis, Sidekiq, Elasticsearch, Docker]
+  - group: architecture
+    title: Architecture, APIs & Integration
+    gems: [Software architecture, Service-oriented architecture, REST API, API development, HL7 FHIR, System integration, Healthcare information systems]
+  - group: practices
+    title: Engineering Practices & Leadership
+    gems: [RSpec, Test-driven development, Git, Refactoring, Debugging, Performance optimization, Code review, Problem solving, Team collaboration, Mentoring and leadership, AI-assisted coding (Claude)]
+
+languages:
+  mother_tongue: Georgian
+  levels: [listening, reading, spoken_production, spoken_interaction, writing]
+  other:
+    - { name: English, listening: C2, reading: C2, spoken_production: C2, spoken_interaction: C2, writing: C2 }
+    - { name: Russian, listening: C2, reading: C2, spoken_production: C2, spoken_interaction: C2, writing: C2 }

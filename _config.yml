@@ -1,0 +1,35 @@
+title: Samuka
+tagline: Senior Ruby on Rails Engineer
+description: >-
+  Samuka (Giorgi Samukashvili), Senior Ruby on Rails engineer in Tbilisi, Georgia,
+  building reliable backend systems for healthcare: APIs, HL7 FHIR integrations,
+  PostgreSQL and Sidekiq.
+url: "https://georgesamo.github.io"
+baseurl: ""
+lang: en_US
+author:
+  name: Giorgi Samukashvili
+  url: "https://georgesamo.github.io"
+social:
+  name: Giorgi Samukashvili
+  links:
+    - https://github.com/georgesamo
+image: /assets/og-image.png
+
+# Contact form: FormSubmit forwards messages by email. No account needed;
+# the very first submission sends a one-time activation email to this address.
+contact_endpoint: "https://formsubmit.co/ajax/giorgisamo@gmail.com"
+
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor
+  - README.md
+  - .github
+  - scripts
+
+markdown: kramdown

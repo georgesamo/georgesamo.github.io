@@ -1,0 +1,403 @@
+/* Samuka · core interactions (no dependencies) */
+(function () {
+  "use strict";
+
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var data = {};
+  try { data = JSON.parse($("#resume-data").textContent); } catch (e) {}
+
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    sget: function (k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+    sset: function (k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
+  };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+  var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+
+  /* ---------- small facts ---------- */
+  var start = new Date((data.person && data.person.career_start) || "2018-09-01");
+  var years = Math.floor((Date.now() - start.getTime()) / (365.25 * 864e5));
+  $$("[data-years]").forEach(function (el) { el.textContent = years; });
+  $$("[data-year]").forEach(function (el) { el.textContent = new Date().getFullYear(); });
+
+  /* ---------- theme ---------- */
+  function currentTheme() { return document.documentElement.dataset.theme === "light" ? "light" : "dark"; }
+  function setTheme(t) {
+    document.documentElement.dataset.theme = t;
+    store.set("samuka-theme", t);
+    var meta = $('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", t === "light" ? "#f6f5f1" : "#0a0b0f");
+    $$("[data-theme-label]").forEach(function (el) { el.textContent = t === "light" ? "dark mode" : "light mode"; });
+    window.dispatchEvent(new CustomEvent("samuka:theme", { detail: t }));
+  }
+  setTheme(currentTheme());
+  document.addEventListener("click", function (e) {
+    if (e.target.closest("[data-toggle-theme]")) setTheme(currentTheme() === "light" ? "dark" : "light");
+  });
+
+  /* ---------- cursor spotlight ---------- */
+  var spot = $(".spotlight"), spotQueued = false, mx = 0, my = 0;
+  if (spot && !reduced) {
+    window.addEventListener("pointermove", function (e) {
+      mx = e.clientX; my = e.clientY;
+      if (spotQueued) return;
+      spotQueued = true;
+      requestAnimationFrame(function () {
+        spot.style.setProperty("--mx", mx + "px");
+        spot.style.setProperty("--my", my + "px");
+        spotQueued = false;
+      });
+    }, { passive: true });
+  }
+
+  /* ---------- boot sequence ---------- */
+  function boot() {
+    var el = $("#boot"), log = $("#boot-log");
+    if (!el || reduced || store.sget("samuka-booted")) return Promise.resolve();
+    store.sset("samuka-booted", "1");
+    el.classList.add("is-on");
+    document.documentElement.style.overflow = "hidden";
+    var now = new Date();
+    var stamp = now.toISOString().replace("T", " ").slice(0, 19);
+    var lines = [
+      ['<span class="b-ruby">$</span> <span class="b-hi">bin/rails server -e production</span>', 260],
+      ['=> Booting Puma', 90],
+      ['=> Rails application <span class="b-hi">Samuka</span> starting in <span class="b-ok">production</span>', 90],
+      ['=> Run <span class="b-dim">`bin/rails server --help`</span> for more startup options', 70],
+      ['Puma starting in single mode...', 120],
+      ['* Ruby version: ruby 3.3 (+YJIT)', 50],
+      ['*  Min threads: 3, max threads: 3', 50],
+      ['*  Environment: production', 50],
+      ['*  Experience: <span class="b-ok">' + years + ' years</span> in healthcare backends', 90],
+      ['* Listening on <span class="b-hi">https://georgesamo.github.io</span>', 160],
+      ['<span class="b-dim">Use Ctrl-C to stop</span>', 120],
+      ['Started GET "/" for <span class="b-hi">you</span> at ' + stamp, 90],
+      ['Processing by <span class="b-ok">PortfolioController#show</span> as HTML', 90],
+      ['  Rendered app/models/samuka.rb, log/career.log, Gemfile, db/migrate', 110],
+      ['<span class="b-ok">Completed 200 OK</span> in 42ms (Views: 12.4ms | ActiveRecord: 0.0ms | Allocations: 2048)', 380]
+    ];
+    var skipped = false;
+    return new Promise(function (resolve) {
+      function finish() {
+        if (finish.done) return; finish.done = true;
+        window.removeEventListener("keydown", skip);
+        el.removeEventListener("pointerdown", skip);
+        el.classList.add("is-leaving");
+        document.documentElement.style.overflow = "";
+        setTimeout(function () { el.classList.remove("is-on", "is-leaving"); el.remove(); }, 950);
+        resolve();
+      }
+      function skip() { skipped = true; finish(); }
+      window.addEventListener("keydown", skip);
+      el.addEventListener("pointerdown", skip);
+      (async function () {
+        for (var i = 0; i < lines.length && !skipped; i++) {
+          log.innerHTML = log.innerHTML.replace('<span class="caret"></span>', "") + lines[i][0] + "\n" + '<span class="caret"></span>';
+          await wait(lines[i][1]);
+        }
+        if (!skipped) finish();
+      })();
+    });
+  }
+
+  /* ---------- scramble name ---------- */
+  function scramble(el) {
+    var target = el.getAttribute("data-scramble");
+    if (reduced) { el.textContent = target; return; }
+    var glyphs = "<>/{}[]=+*#$%&_01";
+    var frame = 0, total = 34;
+    function tick() {
+      var out = "";
+      for (var i = 0; i < target.length; i++) {
+        var settle = 8 + i * 4;
+        if (frame >= settle) out += esc(target[i]);
+        else out += '<span class="scr">' + esc(glyphs[(Math.random() * glyphs.length) | 0]) + "</span>";
+      }
+      el.innerHTML = out;
+      if (++frame <= total) setTimeout(function () { requestAnimationFrame(tick); }, 34);
+      else el.textContent = target;
+    }
+    tick();
+  }
+
+  /* ---------- typewriter (line-by-line clip) ---------- */
+  function prepareTyping(pre) {
+    var d = 0;
+    $$(".ln", pre).forEach(function (ln) {
+      var n = Math.max(1, ln.textContent.length);
+      ln.style.setProperty("--n", n);
+      ln.style.setProperty("--d", d + "ms");
+      d += n * 22 + 70;
+    });
+  }
+  $$(".code[data-type]").forEach(prepareTyping);
+
+  /* ---------- reveal on scroll ---------- */
+  function setupReveal() {
+    $$(".migrations, .gitlog__list").forEach(function (group) {
+      $$(".reveal", group).forEach(function (el, i) { el.style.setProperty("--rd", Math.min(i * 70, 420) + "ms"); });
+    });
+    if (!("IntersectionObserver" in window)) { $$(".reveal").forEach(function (el) { el.classList.add("is-in"); }); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        en.target.classList.add("is-in");
+        var typer = en.target.querySelector(".code[data-type]");
+        if (typer) typer.classList.add("is-typing");
+        io.unobserve(en.target);
+      });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    $$(".reveal").forEach(function (el) { io.observe(el); });
+  }
+
+  /* ---------- scroll spy: tab name, tree, status bar ---------- */
+  var sections = $$("[data-file]");
+  var tabName = $("[data-tab-name]"), tabCrumbs = $("[data-tab-crumbs]"), tabIcon = $("[data-tab-icon]"), statusFile = $("[data-status-file]"), statusPos = $("[data-status-pos]");
+  function setActive(sec) {
+    var file = sec.getAttribute("data-file");
+    var parts = file.split("/");
+    if (tabName) tabName.textContent = parts[parts.length - 1];
+    if (tabCrumbs) tabCrumbs.textContent = parts.join(" › ");
+    if (tabIcon) tabIcon.className = "fi fi--" + sec.getAttribute("data-icon");
+    if (statusFile) statusFile.textContent = file;
+    $$("[data-nav]").forEach(function (a) { a.classList.toggle("is-active", a.getAttribute("data-nav") === sec.id); });
+  }
+  if ("IntersectionObserver" in window) {
+    var spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) setActive(en.target); });
+    }, { rootMargin: "-40% 0px -55% 0px" });
+    sections.forEach(function (s) { spy.observe(s); });
+  }
+  var posQueued = false;
+  window.addEventListener("scroll", function () {
+    if (posQueued) return; posQueued = true;
+    requestAnimationFrame(function () {
+      posQueued = false;
+      var ln = Math.floor(window.scrollY / 23) + 1;
+      if (statusPos) statusPos.textContent = "Ln " + ln + ", Col " + ((ln * 7) % 41 + 1);
+      drawGraphProgress();
+    });
+  }, { passive: true });
+
+  /* ---------- git graph ---------- */
+  var gitlog = $("#gitlog");
+  var paths = gitlog ? $$("path", gitlog) : [];
+  var lens = [0, 0];
+  function laneX(lane) {
+    var cs = getComputedStyle(document.documentElement);
+    return parseFloat(cs.getPropertyValue(lane ? "--lane1" : "--lane0")) || (lane ? 44 : 18);
+  }
+  function dotY(li) {
+    var dot = $(".commit__dot", li);
+    var gr = gitlog.getBoundingClientRect(), dr = dot.getBoundingClientRect();
+    return dr.top + dr.height / 2 - gr.top;
+  }
+  function buildGraph() {
+    if (!gitlog) return;
+    var commits = $$(".commit", gitlog);
+    if (!commits.length) return;
+    var x0 = laneX(0), x1 = laneX(1);
+    var main = commits.filter(function (c) { return c.getAttribute("data-lane") === "0"; });
+    var branch = commits.filter(function (c) { return c.getAttribute("data-lane") === "1"; });
+    var top = dotY(main[0]), root = dotY(main[main.length - 1]);
+    var dMain = "M" + x0 + " " + top + " L" + x0 + " " + root;
+    var dBranch = "";
+    if (branch.length) {
+      var bTop = dotY(branch[0]), bBot = dotY(branch[branch.length - 1]);
+      // leave the merge commit, settle into lane 1 right below it, run down, fork back into the root
+      var out = Math.min(46, (bTop - top) * 0.8), back = Math.max(12, root - bBot);
+      dBranch = "M" + x0 + " " + top +
+        " C" + x0 + " " + (top + out * 0.55) + " " + x1 + " " + (top + out * 0.45) + " " + x1 + " " + (top + out) +
+        " L" + x1 + " " + bBot +
+        " C" + x1 + " " + (bBot + back * 0.55) + " " + x0 + " " + (root - back * 0.45) + " " + x0 + " " + root;
+    }
+    paths[0].setAttribute("d", dMain); paths[2].setAttribute("d", dMain);
+    paths[1].setAttribute("d", dBranch); paths[3].setAttribute("d", dBranch);
+    lens = [paths[0].getTotalLength(), dBranch ? paths[1].getTotalLength() : 0];
+    [0, 1].forEach(function (i) { paths[i].style.strokeDasharray = lens[i] + " " + lens[i]; });
+    drawGraphProgress();
+  }
+  function drawGraphProgress() {
+    if (!gitlog || !lens[0]) return;
+    var r = gitlog.getBoundingClientRect();
+    var p = reduced ? 1 : Math.min(1, Math.max(0, (window.innerHeight * 0.72 - r.top) / r.height));
+    paths[0].style.strokeDashoffset = lens[0] * (1 - p);
+    if (lens[1]) paths[1].style.strokeDashoffset = lens[1] * (1 - p);
+  }
+  if (gitlog) {
+    if ("ResizeObserver" in window) new ResizeObserver(function () { buildGraph(); }).observe(gitlog);
+    window.addEventListener("resize", buildGraph);
+    gitlog.addEventListener("click", function (e) {
+      var head = e.target.closest("button.commit__head");
+      if (!head) return;
+      var li = head.parentElement;
+      var open = !li.classList.contains("is-open");
+      li.classList.toggle("is-open", open);
+      head.setAttribute("aria-expanded", String(open));
+    });
+    gitlog.addEventListener("transitionend", function (e) { if (e.propertyName === "grid-template-rows") buildGraph(); });
+  }
+
+  /* ---------- gem trace ---------- */
+  var ALIASES = {
+    "ruby": ["ruby"], "ruby on rails": ["ruby on rails", "rails"], "backend development": ["backend"],
+    "object-oriented programming": ["oop", "object-oriented", "service objects", "models"],
+    "javascript": ["javascript"], "node.js": ["node"], "express.js": ["express"],
+    "postgresql": ["postgresql"], "microsoft sql server": ["microsoft sql server"], "sql": ["sql", "quer"],
+    "database design": ["database models", "database changes", "data structures"], "database query optimization": ["query optimization", "indexing", "bottleneck"],
+    "activerecord": ["activerecord"], "redis": ["redis"], "sidekiq": ["sidekiq", "background processing"], "elasticsearch": ["elasticsearch"], "docker": ["docker"],
+    "software architecture": ["architecture", "technical planning"], "service-oriented architecture": ["service-oriented", "service objects", "services"],
+    "rest api": ["rest api", "api endpoints", "apis"], "api development": ["api"], "hl7 fhir": ["fhir"],
+    "system integration": ["integration"], "healthcare information systems": ["healthcare", "hospitals", "patient"],
+    "rspec": ["rspec"], "test-driven development": ["rspec", "testing", "tests"], "git": ["git", "version control"],
+    "refactoring": ["improved existing", "improvements", "continuous improvement"], "debugging": ["debugging", "fixed bugs", "investigat"],
+    "performance optimization": ["optimiz", "performance", "latency", "response times"], "code review": ["code review"],
+    "problem solving": ["resolved", "investigat", "fixed"], "team collaboration": ["collaborated", "worked closely", "teams"],
+    "mentoring and leadership": ["mentor", "supported continuous"], "ai-assisted coding (claude)": []
+  };
+  var jobs = (data.experience || []);
+  var traceBody = $("[data-trace-body]");
+  var hitLines = [];
+  function regexFor(skill) {
+    var terms = ALIASES[skill] || [skill];
+    if (!terms.length) return null;
+    return new RegExp("\\b(" + terms.map(function (t) { return t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }).join("|") + ")[\\w.-]*", "gi");
+  }
+  function clearTrace() {
+    hitLines.forEach(function (p) { p.classList.remove("is-hit"); p.textContent = p.dataset.orig; });
+    hitLines = [];
+    $$(".commit.is-hit").forEach(function (c) { c.classList.remove("is-hit"); });
+    $$(".gem.is-active").forEach(function (g) { g.classList.remove("is-active"); });
+  }
+  function trace(gemEl) {
+    clearTrace();
+    gemEl.classList.add("is-active");
+    var skill = gemEl.getAttribute("data-skill");
+    var label = gemEl.textContent.replace(/"/g, "");
+    var re = regexFor(skill);
+    var html = '<p class="gem-trace__name">gem "' + esc(label) + '"</p>';
+    var total = 0;
+    if (re) {
+      $$(".commit--job").forEach(function (li) {
+        var count = 0;
+        $$(".diff__add", li).forEach(function (p) {
+          if (!p.dataset.orig) p.dataset.orig = p.textContent;
+          re.lastIndex = 0;
+          if (re.test(p.dataset.orig)) {
+            re.lastIndex = 0;
+            p.innerHTML = esc(p.dataset.orig).replace(re, "<mark>$&</mark>");
+            p.classList.add("is-hit"); hitLines.push(p); count++;
+          }
+        });
+        if (count) {
+          li.classList.add("is-hit"); total += count;
+          var job = jobs.filter(function (j) { return j.id === li.getAttribute("data-id"); })[0] || {};
+          html += '<span class="gem-trace__hit"><span class="commit__hash">' + esc(job.hash || "") + "</span>" + esc(job.company || "") + ' · <span class="gem-trace__count">' + count + " line" + (count > 1 ? "s" : "") + "</span><br><span class=\"muted\">" + esc(job.role || "") + "</span></span>";
+        }
+      });
+    }
+    if (!total) {
+      html += skill.indexOf("claude") > -1
+        ? '<p>Freshly added to the toolbox: pairing with Claude to explore code, write specs and ship refactors faster, with human review on every line.</p>'
+        : '<p class="muted">Not in the commit log, but used in day-to-day work.</p>';
+    } else {
+      html += '<p class="muted" style="margin-top:8px">' + total + " matching line" + (total > 1 ? "s" : "") + " highlighted in the career log ↑</p>";
+    }
+    if (traceBody) traceBody.outerHTML = '<div data-trace-body>' + html + "</div>";
+    traceBody = $("[data-trace-body]");
+  }
+  $$(".gem").forEach(function (g) {
+    g.addEventListener("mouseenter", function () { trace(g); });
+    g.addEventListener("focus", function () { trace(g); });
+    g.addEventListener("click", function () {
+      trace(g);
+      var first = $(".commit.is-hit");
+      if (first && window.matchMedia("(max-width: 860px)").matches) {
+        if (!first.classList.contains("is-open")) $("button.commit__head", first).click();
+        first.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+      }
+    });
+  });
+
+  /* ---------- bundle install ---------- */
+  var bundleBtn = $("[data-bundle]"), bundleOut = $("[data-bundle-out]");
+  function ver(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return (h % 7 + 1) + "." + (h % 13) + "." + (h % 5); }
+  if (bundleBtn) bundleBtn.addEventListener("click", async function () {
+    if (bundleBtn.disabled) return;
+    bundleBtn.disabled = true;
+    var gems = $$(".gem");
+    bundleOut.hidden = false;
+    bundleOut.innerHTML = "Fetching gem metadata from https://georgesamo.github.io/" ;
+    for (var d = 0; d < 6; d++) { await wait(reduced ? 0 : 70); bundleOut.innerHTML += "."; }
+    bundleOut.innerHTML += "\nResolving dependencies...\n";
+    for (var i = 0; i < gems.length; i++) {
+      var g = gems[i], name = g.textContent.replace(/"/g, "");
+      g.classList.add("is-installing");
+      bundleOut.innerHTML += "Installing " + esc(name.toLowerCase().replace(/[^a-z0-9.]+/g, "-")) + " " + ver(name) + "\n";
+      bundleOut.scrollTop = bundleOut.scrollHeight;
+      await wait(reduced ? 0 : 55);
+      g.classList.remove("is-installing"); g.classList.add("is-installed");
+    }
+    bundleOut.innerHTML += '<span class="ok">Bundle complete! ' + gems.length + " Gemfile dependencies, " + gems.length + " gems now installed.</span>\nUse `bundle info [gemname]` to see where a bundled gem is installed.";
+    bundleOut.scrollTop = bundleOut.scrollHeight;
+    setTimeout(function () { gems.forEach(function (g) { g.classList.remove("is-installed"); }); bundleBtn.disabled = false; }, 800);
+  });
+
+  /* ---------- contact form ---------- */
+  var form = $("#contact-form"), resp = form && $("[data-response]", form);
+  function showResponse(html) { resp.hidden = false; resp.innerHTML = html; }
+  if (form) form.addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var f = form.elements;
+    var name = f.name.value.trim(), email = f.email.value.trim(), msg = f.message.value.trim();
+    [f.name, f.email, f.message].forEach(function (i) { i.classList.remove("is-invalid"); });
+    var bad = [];
+    if (!name) bad.push(f.name);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) bad.push(f.email);
+    if (msg.length < 2) bad.push(f.message);
+    if (bad.length) {
+      bad.forEach(function (i) { i.classList.add("is-invalid"); });
+      bad[0].focus();
+      showResponse('<span class="err">HTTP/1.1 422 Unprocessable Content</span>\n{ "errors": [' + bad.map(function (i) { return '"' + i.name + ' is invalid"'; }).join(", ") + "] }");
+      return;
+    }
+    if (f._honey.value) return;
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    showResponse('<span class="pending">→ sending request…</span>');
+    try {
+      var res = await fetch(window.SITE.contactEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ name: name, email: email, message: msg, _subject: "New message from georgesamo.github.io", _template: "box", _captcha: "false" })
+      });
+      var body = {};
+      try { body = await res.json(); } catch (x) {}
+      if (!res.ok || String(body.success) === "false") throw new Error(body.message || ("HTTP " + res.status));
+      showResponse('<span class="ok">HTTP/1.1 201 Created</span>\nContent-Type: application/json\n\n{\n  "status": "delivered",\n  "from": "' + esc(name) + '",\n  "reply_eta": "usually within a day"\n}');
+      form.reset();
+    } catch (err) {
+      showResponse('<span class="err">HTTP/1.1 503 Service Unavailable</span>\n{ "error": "' + esc(err.message) + '" }\n\nThe mail relay didn\'t answer. Please email <a href="mailto:' + esc(data.person.email) + '">' + esc(data.person.email) + "</a> directly.");
+    } finally { btn.disabled = false; }
+  });
+
+  /* ---------- public API (used by terminal.js / gem.js) ---------- */
+  window.Samuka = {
+    data: data, years: years, reduced: reduced,
+    setTheme: setTheme, theme: currentTheme,
+    go: function (id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: reduced ? "auto" : "smooth" }); },
+    focusContact: function () { this.go("contact"); setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, reduced ? 0 : 650); }
+  };
+
+  /* ---------- go ---------- */
+  boot().then(function () {
+    setupReveal();
+    $$("[data-scramble]").forEach(scramble);
+    buildGraph();
+    window.dispatchEvent(new Event("samuka:ready"));
+    window.__samukaReady = true;
+  });
+})();

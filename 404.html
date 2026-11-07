@@ -1,0 +1,18 @@
+---
+layout: default
+title: 404
+permalink: /404.html
+sitemap: false
+---
+<main id="main" class="notfound">
+  <section class="section">
+    <p class="section__path">log/<b>production.log</b></p>
+    <h1 class="section__title">404 · route not found</h1>
+<pre class="code-card code"><span class="ln">Started GET "<span data-path>/</span>" for visitor</span>
+<span class="ln"><span class="k">ActionController::RoutingError</span> (No route matches [GET] "<span data-path>/</span>"):</span>
+<span class="ln"></span>
+<span class="ln"><span class="c-comment"># Nothing lives here. Try the homepage instead.</span></span></pre>
+    <p style="margin-top:24px"><a class="btn btn--primary" href="{{ '/' | relative_url }}"><span class="btn__prompt">$</span> cd ~</a></p>
+  </section>
+</main>
+<script>document.querySelectorAll("[data-path]").forEach(function (e) { e.textContent = location.pathname; });</script>
