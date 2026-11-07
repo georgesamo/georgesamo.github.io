@@ -11,7 +11,7 @@
     document.documentElement.classList.add("js");
   </script>
   {% seo title=false %}
-  <title>{% if page.title %}{{ page.title }} · {% endif %}Samuka · Giorgi Samukashvili, Senior Ruby on Rails Engineer</title>
+  <title>{% if page.url != "/" and page.title %}{{ page.title }} · {% endif %}Samuka · Giorgi Samukashvili, Senior Ruby on Rails Engineer</title>
   <link rel="icon" href="{{ '/assets/favicon.svg' | relative_url }}" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

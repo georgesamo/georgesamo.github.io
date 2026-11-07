@@ -14,7 +14,15 @@ social:
   name: Giorgi Samukashvili
   links:
     - https://github.com/georgesamo
-image: /assets/og-image.png
+twitter:
+  card: summary_large_image
+
+# link-preview image for every page (jekyll-seo-tag reads it per page)
+defaults:
+  - scope:
+      path: ""
+    values:
+      image: /assets/og-image.png
 
 # Contact form: FormSubmit forwards messages by email. No account needed;
 # the very first submission sends a one-time activation email to this address.
