@@ -64,6 +64,7 @@
     colors.muted = cs.getPropertyValue("--muted").trim() || "#6b7386";
     colors.blue = cs.getPropertyValue("--gold").trim() || "#e3bf62";
     colors.light = document.documentElement.dataset.theme === "light";
+    colors.hl = cs.getPropertyValue("--hl").trim() || "#d9b45a"; // gold in dark mode
   }
   function rgba(hex, a) {
     var h = hex.replace("#", "");
@@ -144,7 +145,7 @@
       ctx.textAlign = "center";
       var tw = ctx.measureText(l.o.name).width;
       var x = Math.max(tw / 2 + 14, Math.min(W - tw / 2 - 4, l.q[0])); // keep labels inside the canvas
-      ctx.fillStyle = rgba(l.o.name.indexOf("Claude") > -1 ? colors.blue : colors.ruby2, alpha * 0.9);
+      ctx.fillStyle = rgba(l.o.name.indexOf("Claude") > -1 ? colors.ruby : colors.hl, alpha * 0.9);
       ctx.beginPath(); ctx.arc(x - tw / 2 - 7, l.q[1] - size * 0.32, 1.6 + depth * 1.4, 0, TAU); ctx.fill();
       ctx.fillStyle = rgba(colors.text, alpha);
       ctx.fillText(l.o.name, x, l.q[1]);
@@ -198,7 +199,7 @@
       Pp.forEach(function (q, i) {
         if (q[2] < 0.15) return;
         var tw = 0.5 + 0.5 * Math.sin(orbitAngle * 6 + i * 1.7);
-        ctx.fillStyle = rgba(colors.ruby2, 0.25 + tw * 0.55);
+        ctx.fillStyle = rgba(i % 3 ? colors.hl : colors.ruby2, 0.25 + tw * 0.55);
         ctx.beginPath(); ctx.arc(q[0], q[1], 1.1 + tw * 1.1, 0, TAU); ctx.fill();
       });
     }
@@ -206,7 +207,7 @@
     sparks = sparks.filter(function (s) {
       s.life -= dt * 0.9; s.x += s.vx * dt; s.y += s.vy * dt; s.vy += 160 * dt; s.vx *= 0.985;
       if (s.life <= 0) return false;
-      ctx.fillStyle = rgba(colors.ruby2, s.life);
+      ctx.fillStyle = rgba(sparks.indexOf(s) % 2 ? colors.hl : colors.ruby2, s.life);
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, TAU); ctx.fill();
       return true;
     });
