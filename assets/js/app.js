@@ -29,7 +29,7 @@
     document.documentElement.dataset.theme = t;
     store.set("samuka-theme", t);
     var meta = $('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", t === "light" ? "#f6f5f1" : "#0a0b0f");
+    if (meta) meta.setAttribute("content", t === "light" ? "#f3f6f1" : "#07110c");
     $$("[data-theme-label]").forEach(function (el) { el.textContent = t === "light" ? "dark mode" : "light mode"; });
     window.dispatchEvent(new CustomEvent("samuka:theme", { detail: t }));
   }

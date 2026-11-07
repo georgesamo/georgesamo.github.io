@@ -6,7 +6,7 @@ import math, pathlib, pymupdf
 W, H = 1200, 630
 out = pathlib.Path(__file__).resolve().parent.parent / "assets" / "og-image.png"
 hexc = lambda h: tuple(int(h[i:i + 2], 16) / 255 for i in (1, 3, 5))
-BG, RUBY, TEXT, MUTED, GREEN, DOT = map(hexc, ["#0a0b0f", "#ff4d6d", "#e7e9ef", "#6b7386", "#5fd38d", "#1a1d27"])
+BG, RUBY, TEXT, MUTED, GREEN, DOT = map(hexc, ["#07110c", "#3ad08f", "#e4efe8", "#6c857a", "#e3bf62", "#123524"])
 
 doc = pymupdf.open()
 page = doc.new_page(width=W, height=H)

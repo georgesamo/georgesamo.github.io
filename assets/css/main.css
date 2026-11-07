@@ -5,53 +5,67 @@
 /* ---------- tokens ---------- */
 :root,
 :root[data-theme="dark"] {
-  --bg: #0a0b0f;
-  --bg-elev: #0f1117;
-  --bg-soft: #141722;
-  --bg-hover: #1a1e2b;
-  --line: #1d2130;
-  --line-strong: #2a3043;
-  --text: #e7e9ef;
-  --text-2: #aab1bf;
-  --muted: #6b7386;
-  --ruby: #ff4d6d;
-  --ruby-2: #ff8fa3;
-  --ruby-soft: rgba(255, 77, 109, 0.12);
-  --blue: #6cb6ff;
-  --blue-soft: rgba(108, 182, 255, 0.12);
-  --green: #5fd38d;
-  --green-soft: rgba(95, 211, 141, 0.09);
+  /* phthalo night: #123524 is the brand surface, mint is its readable tint */
+  --phthalo: #123524;
+  --on-phthalo: #e4f6ec;
+  --bg: #07110c;
+  --bg-elev: #0b1912;
+  --bg-soft: #0f2119;
+  --bg-hover: #13281e;
+  --line: #17301f;
+  --line-strong: #24452f;
+  --text: #e4efe8;
+  --text-2: #a5b9ad;
+  --muted: #6c857a;
+  --accent: #3ad08f;          /* 9.6:1 on --bg */
+  --accent-2: #8ff0c2;
+  --accent-soft: rgba(58, 208, 143, 0.12);
+  --gold: #e3bf62;
+  --gold-soft: rgba(227, 191, 98, 0.14);
+  --blue: #7cc4e8;
+  --blue-soft: rgba(124, 196, 232, 0.12);
+  --green: #b9e38a;           /* strings / diff adds: lime, distinct from the accent */
+  --green-soft: rgba(185, 227, 138, 0.07);
   --amber: #f2c46d;
-  --violet: #b9a2ff;
-  --cyan: #6ee0f0;
-  --dot: rgba(255, 255, 255, 0.055);
-  --shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.75);
-  --glass: rgba(10, 11, 15, 0.72);
+  --violet: #c3a6ff;
+  --cyan: #6ee0d6;
+  --link: #8ff0c2;
+  --ruby-red: #ff4d6d;        /* only for the `rake rubies` easter egg */
+  --dot: rgba(143, 240, 194, 0.07);
+  --shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
+  --glass: rgba(7, 17, 12, 0.74);
   color-scheme: dark;
 }
 :root[data-theme="light"] {
-  --bg: #f6f5f1;
+  /* phthalo paper: #123524 used directly as ink */
+  --phthalo: #123524;
+  --on-phthalo: #f1f7f2;
+  --bg: #f3f6f1;
   --bg-elev: #ffffff;
-  --bg-soft: #efede7;
-  --bg-hover: #e8e5dd;
-  --line: #e3e0d8;
-  --line-strong: #cfcabf;
-  --text: #15171c;
-  --text-2: #464c59;
-  --muted: #7d8291;
-  --ruby: #d61f4b;
-  --ruby-2: #b3123a;
-  --ruby-soft: rgba(214, 31, 75, 0.09);
-  --blue: #1f6fd1;
-  --blue-soft: rgba(31, 111, 209, 0.09);
-  --green: #18804a;
-  --green-soft: rgba(24, 128, 74, 0.08);
-  --amber: #9a6400;
+  --bg-soft: #e8eee6;
+  --bg-hover: #e0e9dd;
+  --line: #d9e3d6;
+  --line-strong: #bfcdbb;
+  --text: #0f1f17;
+  --text-2: #3b4f44;
+  --muted: #6b7f74;
+  --accent: #123524;          /* 13:1 on --bg */
+  --accent-2: #1d6a46;
+  --accent-soft: rgba(18, 53, 36, 0.08);
+  --gold: #8f6300;
+  --gold-soft: rgba(176, 128, 0, 0.13);
+  --blue: #1f5fa8;
+  --blue-soft: rgba(31, 95, 168, 0.09);
+  --green: #3f7a14;
+  --green-soft: rgba(63, 122, 20, 0.07);
+  --amber: #995500;
   --violet: #6a45e0;
-  --cyan: #0b7f90;
-  --dot: rgba(0, 0, 0, 0.07);
-  --shadow: 0 30px 70px -35px rgba(30, 25, 10, 0.35);
-  --glass: rgba(246, 245, 241, 0.78);
+  --cyan: #0b6f78;
+  --link: #1d6a46;
+  --ruby-red: #d61f4b;
+  --dot: rgba(18, 53, 36, 0.09);
+  --shadow: 0 30px 70px -35px rgba(18, 53, 36, 0.3);
+  --glass: rgba(243, 246, 241, 0.8);
   color-scheme: light;
 }
 
@@ -82,7 +96,7 @@ body {
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
-a { color: var(--blue); text-decoration: none; }
+a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 code, kbd, pre, .mono { font-family: var(--mono); }
 kbd {
@@ -90,11 +104,11 @@ kbd {
   border: 1px solid var(--line-strong); border-bottom-width: 2px;
   color: var(--text-2); background: var(--bg-soft);
 }
-::selection { background: var(--ruby); color: #fff; }
-:focus-visible { outline: 2px solid var(--ruby); outline-offset: 3px; border-radius: 4px; }
+::selection { background: var(--phthalo); color: var(--on-phthalo); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
 .muted { color: var(--muted); }
 .ka { font-family: var(--ka); }
-.skip { position: absolute; left: -9999px; top: 8px; z-index: 999; background: var(--ruby); color: #fff; padding: 8px 12px; border-radius: 6px; }
+.skip { position: absolute; left: -9999px; top: 8px; z-index: 999; background: var(--phthalo); color: var(--on-phthalo); padding: 8px 12px; border-radius: 6px; }
 .skip:focus { left: 8px; }
 button { font: inherit; color: inherit; }
 
@@ -111,7 +125,7 @@ button { font: inherit; color: inherit; }
 /* cursor spotlight */
 .spotlight {
   position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background: radial-gradient(520px circle at var(--mx, 70%) var(--my, 20%), var(--ruby-soft), transparent 60%);
+  background: radial-gradient(520px circle at var(--mx, 70%) var(--my, 20%), var(--accent-soft), transparent 60%);
   transition: opacity 0.6s;
 }
 
@@ -127,7 +141,7 @@ button { font: inherit; color: inherit; }
   font: 13px/1.5 var(--mono);
 }
 .tree__head { display: flex; align-items: center; gap: 8px; height: var(--tabs-h); padding: 0 16px; border-bottom: 1px solid var(--line); font-weight: 700; letter-spacing: 0.02em; }
-.tree__logo { color: var(--ruby); display: inline-flex; }
+.tree__logo { color: var(--accent); display: inline-flex; }
 .tree__branch { margin-left: auto; color: var(--muted); font-weight: 400; font-size: 11.5px; }
 .tree__nav { padding: 12px 8px; flex: 1; overflow: auto; }
 .tree__dir { margin: 10px 8px 2px; color: var(--muted); font-size: 12px; }
@@ -137,8 +151,8 @@ button { font: inherit; color: inherit; }
   transition: background 0.2s, color 0.2s;
 }
 .tree__nav a:hover { background: var(--bg-hover); color: var(--text); text-decoration: none; }
-.tree__nav a.is-active { background: var(--ruby-soft); color: var(--text); }
-.tree__nav a.is-active::before { content: ""; position: absolute; left: 8px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%; background: var(--ruby); box-shadow: 0 0 10px var(--ruby); }
+.tree__nav a.is-active { background: var(--accent-soft); color: var(--text); }
+.tree__nav a.is-active::before { content: ""; position: absolute; left: 8px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
 .tree__foot { padding: 12px; border-top: 1px solid var(--line); display: grid; gap: 6px; }
 .tree__btn {
   display: flex; align-items: center; gap: 8px; width: 100%;
@@ -150,7 +164,7 @@ button { font: inherit; color: inherit; }
 
 /* file icons */
 .fi { width: 10px; height: 10px; border-radius: 2px; flex: none; display: inline-block; }
-.fi--rb { background: var(--ruby); transform: rotate(45deg) scale(0.8); }
+.fi--rb { background: var(--accent); transform: rotate(45deg) scale(0.8); }
 .fi--log { background: var(--muted); }
 .fi--gem { background: var(--amber); clip-path: polygon(50% 0, 100% 40%, 50% 100%, 0 40%); }
 .fi--yml { background: var(--violet); border-radius: 50%; }
@@ -166,7 +180,7 @@ button { font: inherit; color: inherit; }
 .tabs__tab {
   display: flex; align-items: center; gap: 8px; padding: 0 16px;
   border-right: 1px solid var(--line); background: var(--bg);
-  box-shadow: inset 0 2px 0 var(--ruby); color: var(--text);
+  box-shadow: inset 0 2px 0 var(--accent); color: var(--text);
 }
 .tabs__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); margin-left: 4px; opacity: 0.6; }
 .tabs__crumbs { display: flex; align-items: center; padding: 0 16px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -189,10 +203,10 @@ main { max-width: 980px; margin: 0 auto; padding: 0 40px 64px; }
   font: 11.5px var(--mono); color: var(--muted);
 }
 .status__item { padding: 0 8px; white-space: nowrap; }
-.status__item--accent { color: #fff; background: var(--ruby); height: 100%; display: flex; align-items: center; margin-left: -6px; padding: 0 12px; }
+.status__item--accent { color: var(--on-phthalo); background: var(--phthalo); box-shadow: inset 0 0 0 1px var(--accent-soft); height: 100%; display: flex; align-items: center; margin-left: -6px; padding: 0 12px; }
 .status__spacer { flex: 1; }
 .status__btn { border: 0; background: transparent; cursor: pointer; color: var(--text-2); font: inherit; }
-.status__btn:hover { color: var(--ruby); }
+.status__btn:hover { color: var(--accent); }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -203,9 +217,9 @@ main { max-width: 980px; margin: 0 auto; padding: 0 40px 64px; }
   transition: transform 0.25s var(--ease), border-color 0.25s, background 0.25s, box-shadow 0.25s;
 }
 .btn:hover { text-decoration: none; transform: translateY(-2px); border-color: var(--text-2); }
-.btn--primary { background: var(--ruby); border-color: var(--ruby); color: #fff; box-shadow: 0 10px 30px -12px var(--ruby); }
-.btn--primary:hover { border-color: var(--ruby); box-shadow: 0 14px 36px -10px var(--ruby); }
-.btn--primary kbd { background: rgba(255,255,255,0.16); border-color: rgba(255,255,255,0.3); color: #fff; }
+.btn--primary { background: var(--phthalo); border-color: var(--accent); color: var(--on-phthalo); box-shadow: 0 10px 30px -14px var(--accent), inset 0 1px 0 rgba(255,255,255,0.08); }
+.btn--primary:hover { border-color: var(--accent-2); box-shadow: 0 14px 36px -10px var(--accent); }
+.btn--primary kbd { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.25); color: var(--on-phthalo); }
 .btn--ghost { background: transparent; }
 .btn__prompt { opacity: 0.75; }
 
@@ -224,17 +238,17 @@ main { max-width: 980px; margin: 0 auto; padding: 0 40px 64px; }
 }
 .hero__copy { grid-area: copy; }
 .hero__hello { margin: 0 0 6px; font: 14px var(--mono); }
-.hero__hello .ka { font-style: normal; color: var(--ruby-2); }
+.hero__hello .ka { font-style: normal; color: var(--accent-2); }
 .hero__name {
   margin: 0; display: flex; align-items: baseline;
   font: 800 clamp(64px, 11vw, 136px)/0.92 var(--sans); letter-spacing: -0.055em;
 }
 .hero__name [data-scramble] { white-space: nowrap; }
-.hero__name .scr { color: var(--ruby); font-family: var(--mono); font-weight: 500; letter-spacing: -0.02em; }
-.hero__cursor { width: 0.09em; height: 0.78em; margin-left: 0.08em; background: var(--ruby); align-self: center; animation: blink 1.1s steps(1) infinite; box-shadow: 0 0 22px var(--ruby); }
+.hero__name .scr { color: var(--accent); font-family: var(--mono); font-weight: 500; letter-spacing: -0.02em; }
+.hero__cursor { width: 0.09em; height: 0.78em; margin-left: 0.08em; background: var(--accent); align-self: center; animation: blink 1.1s steps(1) infinite; box-shadow: 0 0 22px var(--accent); }
 @keyframes blink { 50% { opacity: 0; } }
 .hero__role { margin: 18px 0 0; font: 500 clamp(17px, 2vw, 21px)/1.4 var(--sans); color: var(--text); }
-.hero__sep { color: var(--ruby); margin: 0 4px; }
+.hero__sep { color: var(--accent); margin: 0 4px; }
 .hero__loc { color: var(--text-2); }
 .hero__tagline { max-width: 52ch; margin: 14px 0 0; color: var(--text-2); font-size: 16.5px; }
 .hero__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
@@ -285,35 +299,35 @@ main { max-width: 980px; margin: 0 auto; padding: 0 40px 64px; }
 .section { position: relative; padding: 96px 0 24px; }
 .section__head { margin-bottom: 36px; }
 .section__path { margin: 0; font: 12.5px var(--mono); color: var(--muted); }
-.section__path b { color: var(--ruby); font-weight: 500; }
+.section__path b { color: var(--accent); font-weight: 500; }
 .section__title {
   margin: 4px 0 8px; font: 700 clamp(30px, 4.4vw, 44px)/1.1 var(--sans); letter-spacing: -0.035em;
 }
 .section__cmd { margin: 0; font: 13px var(--mono); color: var(--text-2); }
-.prompt { color: var(--ruby); margin-right: 6px; }
+.prompt { color: var(--accent); margin-right: 6px; }
 
 /* ---------- git log ---------- */
 .gitlog { position: relative; padding-left: 64px; }
 .gitlog__graph { position: absolute; left: 0; top: 0; width: 64px; height: 100%; overflow: visible; pointer-events: none; }
 .gl-path { fill: none; stroke-width: 2; stroke-linecap: round; }
-.gl-path--main { stroke: var(--ruby); }
-.gl-path--branch { stroke: var(--blue); }
+.gl-path--main { stroke: var(--accent); }
+.gl-path--branch { stroke: var(--gold); }
 .gl-path--ghost { opacity: 0.16; }
 .gl-path:not(.gl-path--ghost) { filter: drop-shadow(0 0 6px currentColor); }
-.gl-path--main:not(.gl-path--ghost) { color: var(--ruby); }
-.gl-path--branch:not(.gl-path--ghost) { color: var(--blue); }
+.gl-path--main:not(.gl-path--ghost) { color: var(--accent); }
+.gl-path--branch:not(.gl-path--ghost) { color: var(--gold); }
 
 .gitlog__list { list-style: none; margin: 0; padding: 0; }
 .commit { position: relative; padding: 4px 0; }
 .commit__dot {
   position: absolute; top: 19px; width: 13px; height: 13px; margin-left: -6.5px; border-radius: 50%;
-  background: var(--bg); border: 2px solid var(--ruby); z-index: 2;
+  background: var(--bg); border: 2px solid var(--accent); z-index: 2;
   transition: transform 0.35s var(--ease), box-shadow 0.35s;
 }
 .commit[data-lane="0"] .commit__dot { left: calc(var(--lane0) - 64px); }
-.commit[data-lane="1"] .commit__dot { left: calc(var(--lane1) - 64px); border-color: var(--blue); }
-.commit[data-merge] .commit__dot { width: 17px; height: 17px; margin-left: -8.5px; top: 17px; background: var(--ruby); box-shadow: 0 0 0 4px var(--ruby-soft), 0 0 22px var(--ruby); }
-.commit.is-hit .commit__dot { transform: scale(1.35); box-shadow: 0 0 0 5px var(--ruby-soft), 0 0 18px var(--ruby); }
+.commit[data-lane="1"] .commit__dot { left: calc(var(--lane1) - 64px); border-color: var(--gold); }
+.commit[data-merge] .commit__dot { width: 17px; height: 17px; margin-left: -8.5px; top: 17px; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft), 0 0 22px var(--accent); }
+.commit.is-hit .commit__dot { transform: scale(1.35); box-shadow: 0 0 0 5px var(--gold-soft), 0 0 18px var(--gold); }
 
 .commit__head {
   display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; row-gap: 2px;
@@ -326,7 +340,7 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 .commit.is-open > .commit__head { background: var(--bg-elev); border-color: var(--line); }
 .commit__head--static { cursor: default; font-size: 13px; opacity: 0.85; }
 .commit__hash { color: var(--amber); }
-.commit__refs { color: var(--ruby-2); font-size: 12.5px; }
+.commit__refs { color: var(--accent-2); font-size: 12.5px; }
 .commit__msg { flex: 1 1 300px; min-width: 0; }
 .commit__msg b { color: var(--text); font-weight: 600; font-family: var(--sans); font-size: 15.5px; letter-spacing: -0.01em; }
 .commit__type { color: var(--green); }
@@ -345,9 +359,9 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 .diff__hunk { color: var(--cyan); padding-left: 14px !important; }
 .diff__add { color: var(--text-2); background: var(--green-soft); transition: background 0.3s, color 0.3s; }
 .diff__add::before { content: "+"; position: absolute; left: 14px; color: var(--green); }
-.diff__add.is-hit { background: var(--ruby-soft); color: var(--text); }
-.diff__add.is-hit::before { color: var(--ruby); }
-.diff__add mark { background: none; color: var(--ruby); font-weight: 700; }
+.diff__add.is-hit { background: var(--gold-soft); color: var(--text); }
+.diff__add.is-hit::before { color: var(--gold); }
+.diff__add mark { background: none; color: var(--gold); font-weight: 700; }
 .commit.is-open .diff__add { animation: diffIn 0.5s var(--ease) both; }
 .commit.is-open .diff__add:nth-child(3) { animation-delay: 0.05s; }
 .commit.is-open .diff__add:nth-child(4) { animation-delay: 0.1s; }
@@ -365,7 +379,7 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 }
 .code-card__run:hover { background: var(--green-soft); }
 .gem { cursor: pointer; border-radius: 4px; padding: 1px 2px; margin: -1px -2px; transition: background 0.2s, color 0.2s, box-shadow 0.2s; outline: none; }
-.gem:hover, .gem:focus-visible, .gem.is-active { background: var(--ruby-soft); color: var(--ruby-2); box-shadow: 0 0 0 1px var(--ruby); }
+.gem:hover, .gem:focus-visible, .gem.is-active { background: var(--accent-soft); color: var(--accent-2); box-shadow: 0 0 0 1px var(--accent); }
 .gem.is-installing { color: var(--amber); }
 .gem.is-installed { animation: gemPop 0.6s var(--ease); }
 @keyframes gemPop { 40% { color: var(--text); text-shadow: 0 0 12px var(--green); } }
@@ -379,10 +393,10 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 }
 .gem-trace__title { margin: 0 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; font-size: 10.5px; }
 .gem-trace p { margin: 0; }
-.gem-trace__name { color: var(--ruby-2); font-size: 14px; margin-bottom: 8px !important; }
+.gem-trace__name { color: var(--accent-2); font-size: 14px; margin-bottom: 8px !important; }
 .gem-trace__hit { display: block; padding: 6px 0; border-top: 1px dashed var(--line); }
 .gem-trace__hit .commit__hash { margin-right: 6px; }
-.gem-trace__count { color: var(--green); }
+.gem-trace__count { color: var(--gold); }
 
 /* ---------- migrations ---------- */
 .migrations { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -391,7 +405,7 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
   border: 1px solid var(--line); background: var(--bg-elev); overflow: hidden;
   font: 12.5px/1.6 var(--mono);
 }
-.migration::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(var(--ruby), var(--blue)); transform: scaleY(0); transform-origin: top; transition: transform 1s var(--ease) 0.2s; }
+.migration::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(var(--accent), var(--gold)); transform: scaleY(0); transform-origin: top; transition: transform 1s var(--ease) 0.2s; }
 .migration.is-in::before { transform: scaleY(1); }
 .migration p { margin: 0; }
 .migration__start { color: var(--muted); }
@@ -410,7 +424,7 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 .langs__native { padding: 18px 20px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-elev); font-family: var(--mono); }
 .langs__key { margin: 0; color: var(--blue); font-size: 13px; }
 .langs__val { margin: 10px 0 0; font-size: 22px; font-weight: 500; }
-.langs__val .ka { color: var(--ruby-2); }
+.langs__val .ka { color: var(--accent-2); }
 .langs__val .muted { font-size: 13px; }
 .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-elev); }
 .langs__table { width: 100%; border-collapse: collapse; font: 12.5px var(--mono); }
@@ -429,7 +443,7 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
   font: 13.5px/1.8 var(--mono); box-shadow: var(--shadow);
 }
 .request__line { margin: 0; color: var(--text-2); }
-.verb { color: var(--ruby); font-weight: 700; }
+.verb { color: var(--accent); font-weight: 700; }
 .hdr, .key { color: var(--blue); }
 .request__field { display: flex; align-items: baseline; gap: 8px; padding-left: 2ch; color: var(--text-2); }
 .request__field--area { align-items: flex-start; }
@@ -438,25 +452,25 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
   background: transparent; color: var(--green); font: inherit; outline: none; resize: vertical;
   transition: border-color 0.2s, background 0.2s;
 }
-.request input:focus, .request textarea:focus { border-bottom-color: var(--ruby); background: var(--ruby-soft); }
+.request input:focus, .request textarea:focus { border-bottom-color: var(--accent); background: var(--accent-soft); }
 .request input::placeholder, .request textarea::placeholder { color: var(--muted); opacity: 0.7; }
-.request .is-invalid { border-bottom-color: var(--ruby); border-bottom-style: solid; }
+.request .is-invalid { border-bottom-color: var(--ruby-red); border-bottom-style: solid; }
 .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .request__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 16px; }
 .request__alt { font-size: 12.5px; }
 .response { margin: 16px 0 0; padding: 14px 16px; border-radius: 10px; background: var(--bg-soft); font: 12.5px/1.7 var(--mono); white-space: pre-wrap; color: var(--text-2); }
 .response .ok { color: var(--green); }
-.response .err { color: var(--ruby); }
+.response .err { color: var(--ruby-red); }
 .response .pending { color: var(--amber); }
 .contact__side { padding: 18px 20px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-elev); font: 13px/1.6 var(--mono); }
 .contact__kv { margin: 0 0 12px; display: grid; }
 .contact__kv .key { font-size: 11.5px; }
 .contact__kv a { color: var(--text); overflow-wrap: anywhere; }
 .contact__easter { margin: 18px 0 0; font-size: 12px; }
-.contact__easter code { color: var(--ruby-2); }
+.contact__easter code { color: var(--accent-2); }
 
 .foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--line); font: 12.5px var(--mono); text-align: center; }
-.ruby-word { color: var(--ruby); }
+.ruby-word { color: var(--accent); }
 
 /* ---------- boot overlay ---------- */
 .boot { display: none; }
@@ -468,10 +482,10 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 .js .boot.is-leaving { clip-path: inset(0 0 100% 0); }
 .boot__log { margin: 0; font: 13px/1.7 var(--mono); font-variant-ligatures: none; color: var(--text-2); white-space: pre-wrap; max-width: 900px; }
 .boot__log .b-ok { color: var(--green); }
-.boot__log .b-ruby { color: var(--ruby); }
+.boot__log .b-ruby { color: var(--accent); }
 .boot__log .b-dim { color: var(--muted); }
 .boot__log .b-hi { color: var(--text); }
-.boot__log .caret { display: inline-block; width: 8px; height: 15px; vertical-align: -2px; background: var(--ruby); animation: blink 1s steps(1) infinite; }
+.boot__log .caret { display: inline-block; width: 8px; height: 15px; vertical-align: -2px; background: var(--accent); animation: blink 1s steps(1) infinite; }
 .boot__skip { position: absolute; top: 20px; right: 24px; margin: 0; font: 11.5px var(--mono); color: var(--muted); }
 
 /* ---------- terminal ---------- */
@@ -481,7 +495,7 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 .term__win {
   position: relative; display: flex; flex-direction: column; width: min(820px, 100%); height: min(72vh, 600px);
   border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden;
-  background: color-mix(in srgb, var(--bg) 94%, transparent); box-shadow: 0 40px 120px -20px rgba(0,0,0,0.8), 0 0 0 1px var(--ruby-soft);
+  background: color-mix(in srgb, var(--bg) 94%, transparent); box-shadow: 0 40px 120px -20px rgba(0,0,0,0.8), 0 0 0 1px var(--accent-soft);
   animation: termIn 0.35s var(--ease) both;
 }
 @keyframes termIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } }
@@ -497,18 +511,18 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 .term__out .cmd { color: var(--text); margin-top: 6px; }
 .term__out .cmd .u { color: var(--green); }
 .term__out .cmd .d { color: var(--blue); }
-.term__out .hl { color: var(--ruby-2); }
+.term__out .hl { color: var(--accent-2); }
 .term__out .ok { color: var(--green); }
 .term__out .warn { color: var(--amber); }
 .term__out .dim { color: var(--muted); }
 .term__out .b { color: var(--blue); }
-.term__out a { color: var(--blue); }
-.term__out .ascii { color: var(--ruby); line-height: 1.2; font-size: 12px; }
+.term__out a { color: var(--link); }
+.term__out .ascii { color: var(--accent); line-height: 1.2; font-size: 12px; }
 .term__in { display: flex; align-items: center; gap: 10px; padding: 8px 18px 14px; font: 13.5px var(--mono); }
 .term__ps1 { white-space: nowrap; color: var(--text); }
 .term__ps1 .u { color: var(--green); }
 .term__ps1 .d { color: var(--blue); }
-#term-input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; caret-color: var(--ruby); }
+#term-input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; caret-color: var(--accent); }
 
 .rain { position: fixed; inset: 0; z-index: 150; pointer-events: none; width: 100vw; height: 100vh; }
 

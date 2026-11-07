@@ -58,11 +58,11 @@
 
   function readColors() {
     var cs = getComputedStyle(document.documentElement);
-    colors.ruby = cs.getPropertyValue("--ruby").trim() || "#ff4d6d";
-    colors.ruby2 = cs.getPropertyValue("--ruby-2").trim() || "#ff8fa3";
+    colors.ruby = cs.getPropertyValue("--accent").trim() || "#3ad08f";
+    colors.ruby2 = cs.getPropertyValue("--accent-2").trim() || "#8ff0c2";
     colors.text = cs.getPropertyValue("--text-2").trim() || "#aab1bf";
     colors.muted = cs.getPropertyValue("--muted").trim() || "#6b7386";
-    colors.blue = cs.getPropertyValue("--blue").trim() || "#6cb6ff";
+    colors.blue = cs.getPropertyValue("--gold").trim() || "#e3bf62";
     colors.light = document.documentElement.dataset.theme === "light";
   }
   function rgba(hex, a) {

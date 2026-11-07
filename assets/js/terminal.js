@@ -337,7 +337,7 @@
     var W = window.innerWidth, H = window.innerHeight;
     rainCanvas.width = W * dpr; rainCanvas.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     var cs = getComputedStyle(document.documentElement);
-    var ruby = cs.getPropertyValue("--ruby").trim(), ruby2 = cs.getPropertyValue("--ruby-2").trim();
+    var ruby = cs.getPropertyValue("--ruby-red").trim() || "#ff4d6d", ruby2 = "#ff8fa3"; // real rubies stay red
     var n = count || 90, drops = [];
     for (var i = 0; i < n; i++) drops.push({ x: Math.random() * W, y: -20 - Math.random() * H * 0.9, vy: 160 + Math.random() * 260, s: 6 + Math.random() * 12, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 4, sway: Math.random() * 6.28 });
     var t0 = 0;
