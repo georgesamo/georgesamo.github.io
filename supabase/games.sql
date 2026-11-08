@@ -1,5 +1,5 @@
 -- =====================================================================
--- Samuka site · new games: Schema Stack and Regex Golf on the leaderboards
+-- Samuka site · new games: Schema Stack and Merge Conflict on the leaderboards
 -- Run in Supabase → SQL Editor → Run. Safe to re-run.
 -- =====================================================================
 
@@ -14,6 +14,6 @@ begin
     execute format('alter table public.scores drop constraint %I', c.conname);
   end loop;
 end $$;
-alter table public.scores add constraint scores_game_check check (game in ('sidekiq', 'gems', 'schema', 'regex'));
+alter table public.scores add constraint scores_game_check check (game in ('sidekiq', 'gems', 'schema', 'regex', 'merge'));
 
 notify pgrst, 'reload schema';

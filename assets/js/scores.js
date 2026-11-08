@@ -6,8 +6,8 @@
  */
 (function () {
   "use strict";
-  var GAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match", schema: "Schema Stack", regex: "Regex Golf" };
-  var DAILY = { gems: true, regex: true };
+  var GAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match", schema: "Schema Stack", merge: "Merge Conflict" };
+  var DAILY = { gems: true };
   var PERIODS = { all: "all-time", week: "this week", daily: "daily" };
   var EPOCH = Date.UTC(2026, 10, 8); // daily #1
   var panels = [], cache = {};

@@ -47,33 +47,40 @@
 .pv-ms__c--3 { background: repeating-linear-gradient(135deg, var(--ms-invoices) 0 3px, transparent 3px 6px); }
 .arcade-card:hover .pv-ms__c--1 { animation: pvGem 1.6s var(--ease) infinite; }
 
-/* ---------- Regex Golf ---------- */
-.rg { max-width: 720px; margin: 0 auto; padding: 14px 16px 18px; }
-.rg__title { margin: 4px 0 12px; font: 800 26px/1.15 var(--sans); letter-spacing: -0.02em; }
-.rg__title .muted { font: 500 14px var(--mono); }
-.rg__input { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--code-bg); font: 20px var(--mono); }
-.rg__input:focus-within { border-color: var(--hl); box-shadow: 0 0 0 3px var(--hl-soft); }
-.rg__input input { flex: 1; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; color: var(--green); font: 20px var(--mono); letter-spacing: 0.02em; }
-.rg__slash { color: var(--muted); }
-.rg__input b { min-width: 2.5ch; text-align: right; color: var(--hl); font: 600 14px var(--mono); }
-.rg__err { min-height: 1.3em; margin: 6px 2px; font: 12px var(--mono); color: var(--ruby-red); }
-.rg__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.rg__col { margin: 0 0 6px; font: 11px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
-.rg__col--hit { color: var(--sr-default, #f2c14e); color: var(--accent); }
-.rg__col--miss { color: var(--ruby-red); }
-.rg ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.rg li { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); font: 14px var(--mono); overflow-wrap: anywhere; transition: background 0.2s, border-color 0.2s; }
-.rg li span { width: 1.2em; flex: none; text-align: center; }
-.rg li.is-ok { border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
-.rg li.is-bad { border-color: color-mix(in srgb, var(--ruby-red) 45%, transparent); }
-.rg__cols > div:last-child li.is-bad { background: color-mix(in srgb, var(--ruby-red) 12%, transparent); }
-.rg mark { background: var(--hl-soft); color: var(--text); border-radius: 3px; box-shadow: inset 0 -2px 0 var(--hl); }
-.rg__actions { display: flex; gap: 8px; margin-top: 14px; }
-.rg.is-solved .rg__input { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), 0 0 24px -6px var(--accent); }
-@media (max-width: 560px) { .rg__cols { grid-template-columns: 1fr; } }
-.pv-rg { position: absolute; inset: 0; display: grid; place-content: center; gap: 5px; font: 12px var(--mono); }
-.pv-rg code { font-size: 20px; color: var(--muted); }
-.pv-rg code b { color: var(--green); font-weight: 500; }
-.pv-rg__ok { color: var(--accent); }
-.pv-rg__no { color: var(--ruby-red); }
+/* ---------- Merge Conflict ---------- */
+.mc { max-width: 860px; margin: 0 auto; padding: 14px 16px 18px; }
+.mc__file { margin: 0 0 12px; font: 12px var(--mono); color: var(--ruby-red); }
+.mc__arena { --p: 0; position: relative; display: grid; grid-template-columns: 1fr 34px 1fr; gap: 0; align-items: stretch; }
+.mc__side { min-width: 0; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--code-bg); font-family: var(--mono); transition: border-color 0.2s, box-shadow 0.2s; }
+.mc__side--head { transform: translateX(calc(var(--p) * 18px)); border-color: color-mix(in srgb, var(--sr-default) 55%, var(--line)); }
+.mc__side--in { transform: translateX(calc(var(--p) * -18px)); border-color: color-mix(in srgb, var(--sr-critical) 45%, var(--line)); }
+.mc__mark { margin: 0; font-size: 11.5px; color: var(--muted); }
+.mc__side--head .mc__mark { color: var(--sr-default); }
+.mc__side--in .mc__mark { color: var(--sr-critical); }
+.mc__msg { margin: 4px 0 8px; font-size: 12.5px; color: var(--text-2); }
+.mc__msg::before { content: "# "; color: var(--muted); }
+.mc__code { margin: 0; padding: 10px; border-radius: 8px; background: var(--bg-soft); color: var(--green); font: 14px/1.45 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.mc__fuse { position: relative; margin: 0 6px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.mc__fuse i { position: absolute; left: 0; right: 0; bottom: 0; height: calc((1 - var(--p)) * 100%); background: linear-gradient(0deg, var(--sr-critical), var(--sr-default)); box-shadow: 0 0 12px var(--sr-default); }
+.mc__arena.is-ok .mc__side { border-color: var(--accent); box-shadow: 0 0 22px -8px var(--accent); }
+.mc__arena.is-bad .mc__side { border-color: var(--sr-critical); box-shadow: 0 0 22px -6px var(--sr-critical); animation: mcShake 0.3s; }
+@keyframes mcShake { 25% { translate: -4px 0; } 75% { translate: 4px 0; } }
+.mc__why { min-height: 2.8em; margin: 12px 2px 4px; font: 13px/1.45 var(--mono); color: var(--text-2); }
+.mc__pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.mc__pad .btn { justify-content: center; }
+@media (max-width: 640px) {
+  .mc__arena { grid-template-columns: 1fr; grid-template-rows: auto 10px auto; gap: 6px; }
+  .mc__side--head { transform: translateY(calc(var(--p) * 10px)); }
+  .mc__side--in { transform: translateY(calc(var(--p) * -10px)); }
+  .mc__fuse { margin: 0; }
+  .mc__fuse i { top: 0; height: auto; width: calc((1 - var(--p)) * 100%); }
+}
+@media (prefers-reduced-motion: reduce) { .mc__side { transform: none !important; } .mc__arena.is-bad .mc__side { animation: none; } }
+.pv-mc { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 10px; font: 11px/1.5 var(--mono); }
+.pv-mc span { padding: 8px 10px; border-radius: 8px; background: var(--code-bg); border: 1px solid var(--line-strong); }
+.pv-mc b { font-weight: 500; color: var(--green); }
+.pv-mc__l { color: var(--sr-default); animation: pvMcL 2.6s ease-in-out infinite; }
+.pv-mc__r { color: var(--sr-critical); animation: pvMcR 2.6s ease-in-out infinite; }
+@keyframes pvMcL { 50% { transform: translateX(8px); } }
+@keyframes pvMcR { 50% { transform: translateX(-8px); } }
 .pcard__stats--games { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }

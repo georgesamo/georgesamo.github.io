@@ -49,7 +49,7 @@
       '<article class="pcard pcard--' + esc(card.role) + '" aria-label="Player card for ' + esc(card.name) + '">' +
         '<div class="pcard__top"><span class="pcard__avatar" aria-hidden="true">' + esc(card.name.charAt(0).toUpperCase()) + "</span>" +
         '<div><h1 class="pcard__name">' + esc(card.name) + '</h1><p class="pcard__meta">' + role + " · joined " + esc(month(card.joined)) + " · " + fmt(card.games) + " games</p></div></div>" +
-        '<div class="pcard__stats pcard__stats--games">' + [["gems", "Gem Match"], ["sidekiq", "Sidekiq Rush"], ["schema", "Schema Stack"], ["regex", "Regex Golf"]].map(function (g) { return "<div><b>" + fmt(best[g[0]]) + "</b><span>" + g[1] + "</span></div>"; }).join("") + "<div><b>" + n + "/" + list.length + "</b><span>badges</span></div></div>" +
+        '<div class="pcard__stats pcard__stats--games">' + [["gems", "Gem Match"], ["sidekiq", "Sidekiq Rush"], ["schema", "Schema Stack"], ["merge", "Merge Conflict"]].map(function (g) { return "<div><b>" + fmt(best[g[0]]) + "</b><span>" + g[1] + "</span></div>"; }).join("") + "<div><b>" + n + "/" + list.length + "</b><span>badges</span></div></div>" +
         '<div class="pcard__badges">' + list.map(function (x) {
           var on = !!got[x.key], hide = x.secret && !on;
           return '<span class="pcard__badge' + (on ? "" : " is-off") + '" title="' + esc(hide ? "secret" : x.title) + '">' + (hide ? "?" : esc(x.icon)) + "</span>";
@@ -76,7 +76,7 @@
     g.fillStyle = text; g.font = "800 56px Inter, sans-serif"; g.fillText(card.name, 200, 112);
     g.fillStyle = muted; g.font = "22px 'JetBrains Mono', monospace"; g.fillText((card.role === "samuka" ? "creator" : card.role === "nino" ? "PM" : "player") + " · joined " + month(card.joined), 200, 154);
     var best = card.best || {}, got = (card.achievements || []).length, list = (window.SamukaAch && window.SamukaAch.list) || [];
-    [["Gem Match", fmt(best.gems)], ["Sidekiq", fmt(best.sidekiq)], ["Schema", fmt(best.schema)], ["Regex", fmt(best.regex)], ["badges", got + "/" + list.length]].forEach(function (s, i) {
+    [["Gem Match", fmt(best.gems)], ["Sidekiq", fmt(best.sidekiq)], ["Schema", fmt(best.schema)], ["Merge", fmt(best.merge)], ["badges", got + "/" + list.length]].forEach(function (s, i) {
       var x = 52 + i * 190;
       g.fillStyle = soft; g.fillRect(x, 220, 176, 130);
       g.fillStyle = accent; g.font = "700 34px 'JetBrains Mono', monospace"; g.fillText(s[1], x + 16, 290);

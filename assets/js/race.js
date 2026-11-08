@@ -35,6 +35,7 @@
       '<fieldset class="race__pick"><legend>game</legend>' +
         '<label><input type="radio" name="rgame" value="sidekiq" checked> Sidekiq Rush <small>versus · last one standing scores most</small></label>' +
         '<label><input type="radio" name="rgame" value="gems"> Gem Match · versus <small>same board, 20 moves, higher score wins</small></label>' +
+        '<label><input type="radio" name="rgame" value="merge"> Merge Conflict · versus <small>same 15 conflicts, highest score wins</small></label>' +
         '<label><input type="radio" name="rgame" value="gems-coop"> Gem Match · co-op <small>same board, add up to ' + fmt(COOP_TARGET) + " together</small></label></fieldset>" +
       '<div class="race__choices"><button class="btn btn--primary" type="button" data-race-create>⚔ create a room</button>' +
       '<form class="race__join"><input name="code" maxlength="4" placeholder="CODE" autocomplete="off" spellcheck="false" aria-label="Room code" value="' + esc(prefill || "") + '"><button class="btn" type="submit">join</button></form></div>');
@@ -61,7 +62,7 @@
     if (e.target.closest("[data-race-close]")) return close();
     if (e.target.closest("[data-race-create]")) {
       var pickEl = dlg.querySelector('input[name="rgame"]:checked'), v = pickEl ? pickEl.value : "sidekiq";
-      choice = { game: v === "sidekiq" ? "sidekiq" : "gems", coop: v === "gems-coop" };
+      choice = { game: v === "gems-coop" ? "gems" : v, coop: v === "gems-coop" };
       return enter(code(), true);
     }
     if (e.target.closest("[data-race-copy]")) {
@@ -100,7 +101,7 @@
     });
     ch.on("broadcast", { event: "start" }, function (m) {
       if (isHost || st.phase !== "waiting") return;
-      choice = { game: m.payload.game === "gems" ? "gems" : "sidekiq", coop: !!m.payload.coop };
+      choice = { game: ["gems", "merge", "sidekiq"].indexOf(m.payload.game) > -1 ? m.payload.game : "sidekiq", coop: !!m.payload.coop };
       countdown(m.payload.seed);
     });
     ch.on("broadcast", { event: "tick" }, function (m) { var p = m.payload; st.them.score = p.score; st.them.done = p.done; st.them.mem = p.mem; paintBar(); });
@@ -119,7 +120,7 @@
   function countdown(seed) {
     st.phase = "countdown";
     var n = 3;
-    body('<p class="arcade__kicker">' + (choice.coop ? "co-op with" : "vs") + ' <b>' + esc(opp ? opp.name : "opponent") + "</b> · " + (choice.game === "gems" ? "Gem Match" : "Sidekiq Rush") + '</p><p class="race__count" aria-live="assertive">' + n + "</p>");
+    body('<p class="arcade__kicker">' + (choice.coop ? "co-op with" : "vs") + ' <b>' + esc(opp ? opp.name : "opponent") + "</b> · " + ({ gems: "Gem Match", merge: "Merge Conflict", sidekiq: "Sidekiq Rush" }[choice.game]) + '</p><p class="race__count" aria-live="assertive">' + n + "</p>");
     cdTimer = setInterval(function () {
       n--;
       var el = dlg.querySelector(".race__count");
@@ -178,7 +179,7 @@
         '<p class="muted">team score ' + fmt(team) + " / " + fmt(COOP_TARGET) + "</p>" + '<button class="btn btn--primary" type="button" data-race-again>↻ again</button>';
       return;
     }
-    if (win && !tie && window.SamukaAch) window.SamukaAch.unlock(choice.game === "gems" ? "gems_duel" : "race_win");
+    if (win && !tie && window.SamukaAch) window.SamukaAch.unlock(choice.game === "gems" ? "gems_duel" : choice.game === "merge" ? "merge_win" : "race_win");
     var html = '<p class="race-result__verdict ' + (tie ? "" : win ? "is-win" : "is-loss") + '">' + (tie ? "Tie. Race condition detected." : win ? "You win 🏁" : esc(opp ? opp.name : "Opponent") + " wins") + "</p>" +
       "<p class=\"muted\">" + fmt(st.my.score) + " vs " + fmt(st.them.score) + (st.them.forfeit ? " · opponent left" : "") + "</p>" +
       (st.my.forfeit ? "" : '<button class="btn btn--primary" type="button" data-race-again>↻ rematch</button>');
