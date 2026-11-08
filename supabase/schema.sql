@@ -92,6 +92,15 @@ end $$;
 create trigger on_role_grant after insert or update on public.role_grants
   for each row execute function public.apply_role_grant();
 
+-- accounts created before this script ran get a profile too
+insert into public.profiles (id, role, display_name)
+select u.id, 'user', left(split_part(coalesce(u.email, 'friend'), '@', 1), 40)
+  from auth.users u
+on conflict (id) do nothing;
+
+-- make the API see the new tables right away
+notify pgrst, 'reload schema';
+
 -- =====================================================================
 -- After running the above, grant the special roles (edit the emails):
 --
