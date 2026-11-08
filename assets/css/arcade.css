@@ -2,6 +2,11 @@
    Arcade: shared game window + Sidekiq Rush + Gem Match
    ========================================================= */
 
+/* Sidekiq Rush queue colours: fixed on every skin so the three lanes never blur together
+   (critical red, default gold, mailers grey), tuned per mode for contrast */
+:root { --sr-critical: #ff4d5e; --sr-default: #f2c14e; --sr-mailers: #a7b0ba; }
+:root[data-theme="light"] { --sr-critical: #c8102e; --sr-default: #a06d00; --sr-mailers: #5c6773; }
+
 /* ---------- arcade section on the page ---------- */
 .arcade-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .arcade-card {
@@ -24,9 +29,9 @@
 .pv-sr__lane { position: relative; border-radius: 8px; border: 1px dashed var(--line-strong); overflow: hidden; }
 .pv-sr__lane::before { content: attr(data-q); position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font: 11px var(--mono); color: var(--muted); }
 .pv-sr__lane i { position: absolute; top: 5px; bottom: 5px; width: 54px; border-radius: 5px; left: -60px; animation: pvJob 3.2s linear infinite; }
-.pv-sr__lane:nth-child(1) i { background: var(--ruby-red); }
-.pv-sr__lane:nth-child(2) i { background: var(--accent); }
-.pv-sr__lane:nth-child(3) i { background: var(--gold); }
+.pv-sr__lane:nth-child(1) i { background: var(--sr-critical); }
+.pv-sr__lane:nth-child(2) i { background: var(--sr-default); }
+.pv-sr__lane:nth-child(3) i { background: var(--sr-mailers); }
 .pv-sr__lane i:nth-child(2) { animation-delay: -1.1s; }
 .pv-sr__lane i:nth-child(3) { animation-delay: -2.2s; }
 .pv-sr__lane:nth-child(2) i { animation-duration: 4.1s; }
@@ -96,9 +101,9 @@
   font: 11.5px/1.35 var(--mono); animation: jobIn 0.25s var(--ease) both;
 }
 .sr__job::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 2px; background: var(--c); }
-.sr__job--critical { --c: var(--ruby-red); }
-.sr__job--default { --c: var(--accent); }
-.sr__job--mailers { --c: var(--gold); }
+.sr__job--critical { --c: var(--sr-critical); }
+.sr__job--default { --c: var(--sr-default); }
+.sr__job--mailers { --c: var(--sr-mailers); }
 .sr__job-k { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sr__job-m { color: var(--muted); font-size: 10.5px; }
 .sr__job.is-next { outline: 2px solid var(--c); outline-offset: 1px; box-shadow: 0 0 18px -4px var(--c); }
@@ -121,8 +126,9 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .sr__lane:hover, .sr__lane:focus-visible { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); outline: none; }
-.sr__lane--critical { --c: var(--ruby-red); }
-.sr__lane--mailers { --c: var(--gold); }
+.sr__lane--critical { --c: var(--sr-critical); }
+.sr__lane--default { --c: var(--sr-default); }
+.sr__lane--mailers { --c: var(--sr-mailers); }
 .sr__lane.is-full { border-color: var(--ruby-red); }
 .sr__lane-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: 12.5px var(--mono); color: var(--text-2); }
 .sr__lane-head b { color: var(--c); font-weight: 500; }
@@ -145,9 +151,9 @@
 .sr__legend { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; font-size: 14px; color: var(--text-2); }
 .sr__legend b { font: 500 13px var(--mono); margin-right: 6px; color: var(--text); }
 .sr__dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
-.sr__dot--critical { background: var(--ruby-red); }
-.sr__dot--default { background: var(--accent); }
-.sr__dot--mailers { background: var(--gold); }
+.sr__dot--critical { background: var(--sr-critical); }
+.sr__dot--default { background: var(--sr-default); }
+.sr__dot--mailers { background: var(--sr-mailers); }
 
 /* ---------- Gem Match ---------- */
 .gm { display: grid; place-items: center; height: 100%; }
