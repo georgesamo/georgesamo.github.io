@@ -1,9 +1,9 @@
-/* Generated ambient "lo-fi" music, Web Audio only. Style follows the site skin. */
+/* Generated chill cyberpunk lo-fi, Web Audio only (no audio files). Style follows the site skin. */
 (function () {
   "use strict";
 
   var AC = window.AudioContext || window.webkitAudioContext;
-  var MASTER = 0.18, LOOK = 0.12, TICK = 25;
+  var MASTER = 0.32, LOOK = 0.12, TICK = 25;
   var ctx = null, master = null, noiseBuf = null, pulseWave = null;
   var on = false, timer = null, insts = [], cur = null, token = 0, btn = null;
   var STYLES;
@@ -106,129 +106,102 @@
     return g;
   }
 
-  /* ---------- styles ---------- */
+  /* ---------- styles: chill cyberpunk (night-city synth, half-time beat, rain) ----------
+   * Every skin shares one engine: wide detuned saw pads through a slowly sweeping
+   * filter, a sub bass that ducks under the kick (sidechain pump), a soft gated
+   * synth arp into a dotted-eighth delay, half-time drums and rain on the window.
+   * Skins change the key, tempo, brightness and a signature voice.
+   */
+  function cyber(cfg) {
+    var beat = 60 / cfg.bpm;
+    return {
+      delay: [beat * 0.75, cfg.fb || 0.42, cfg.delayTone || 2600],
+      init: function (o) {
+        var b = light() ? 1.25 : 1, i;
+        o.dur = beat / 4;
+        // sidechain: pads + bass go through a gain that dips on every kick
+        var duck = ctx.createGain(); duck.gain.value = 1; duck.connect(o.bus);
+        function pump(t, depth) {
+          duck.gain.cancelScheduledValues(t);
+          duck.gain.setValueAtTime(depth, t);
+          duck.gain.setTargetAtTime(1, t + 0.02, beat * 0.28);
+        }
+        var padLp = filt("lowpass", cfg.padCut * b, 0.9); padLp.connect(duck);
+        lfo(o, 1 / (beat * 16), cfg.padCut * 0.55 * b, padLp.frequency);   // one sweep every 4 bars
+        var arpLp = filt("lowpass", cfg.arpCut * b, 3); arpLp.connect(o.bus);
+        lfo(o, 1 / (beat * 8), cfg.arpCut * 0.4 * b, arpLp.frequency);
+        var bassLp = filt("lowpass", 260, 0.7); bassLp.connect(duck);
+        var rain = cfg.rain ? loopNoise(o, [filt("bandpass", 1300, 0.45), filt("lowpass", 6500, 0.5)], cfg.rain) : null;
+        if (cfg.hum) loopNoise(o, [filt("bandpass", 120, 8)], cfg.hum);   // old monitor hum
+        // optional constant drone (Dark Knight)
+        var drones = [];
+        if (cfg.drone) {
+          var dg = ctx.createGain(); dg.gain.value = cfg.drone; dg.connect(padLp);
+          [[-12, -8], [-12, 9], [-5, 3]].forEach(function (p) {
+            var os = ctx.createOscillator(); os.type = "sawtooth";
+            os.frequency.value = mtof(cfg.prog[0][0] + p[0]); os.detune.value = p[1];
+            os.connect(dg); os.start(); o.nodes.push(os); drones.push({ osc: os, off: p[0] });
+          });
+        }
+        var arpPat = cfg.arpPat || [0, 2, 1, 3, 2, 4, 1, 3];
+        o.play = function (t, s) {
+          var st = s % 16, bar = Math.floor(s / 16), ch = cfg.prog[bar % cfg.prog.length], j;
+          var sw = st % 2 === 1 ? o.dur * (cfg.swing || 0.12) : 0;   // light shuffle
+          // pads, once per bar, slow attack
+          if (st === 0) {
+            for (j = 0; j < ch.length; j++) {
+              voice(o, "sawtooth", mtof(ch[j]), t, beat * 1.2, beat * 5.5, cfg.padVol / ch.length, padLp, 0.18, -9);
+              voice(o, "sawtooth", mtof(ch[j]), t, beat * 1.4, beat * 5.5, cfg.padVol / ch.length, padLp, 0.18, 9);
+            }
+            if (cfg.drone) drones.forEach(function (d) { d.osc.frequency.setTargetAtTime(mtof(ch[0] + d.off), t, beat); });
+            if (rain && bar % 2 === 0) rain.gain.setTargetAtTime(cfg.rain * rnd(0.6, 1.3), t, 2);
+          }
+          // sub bass: root on 1, pickup before 3, octave blip sometimes
+          var root = ch[0] - 12;
+          if (st === 0 || st === 7 || (st === 10 && chance(0.6))) {
+            voice(o, "sine", mtof(root), t + sw, 0.01, beat * (st === 0 ? 1.6 : 0.8), 0.24, bassLp, 0);
+            voice(o, "triangle", mtof(root), t + sw, 0.01, beat * 0.6, 0.06, bassLp, 0);
+          }
+          if (st === 14 && chance(0.35)) voice(o, "sine", mtof(root + 12), t + sw, 0.01, beat * 0.4, 0.12, bassLp, 0);
+          // half-time drums: kick on 1 (+ ghost), snare on 3
+          if (st === 0 || (st === 11 && chance(0.45))) { kick(o, t, st ? 0.22 : 0.34, 95, 40, 0.45); pump(t, 0.3); }
+          if (st === 8) {
+            noise(o, t, "bandpass", 1900, 0.9, 0.09, 0.22, 0.28, 0.003);
+            voice(o, "triangle", 190, t, 0.002, 0.09, 0.07, null, 0.1);
+          }
+          if (st % 2 === 0 && chance(0.9)) noise(o, t + sw, "highpass", 7500, 0.7, st % 4 ? 0.01 : 0.017, 0.035);
+          if (st === 14 && chance(0.25)) noise(o, t + sw, "highpass", 6000, 0.7, 0.014, 0.22);
+          // gated arp: chord tones an octave up, wandering pattern
+          if (chance(cfg.arpDensity || 0.72)) {
+            var n = ch[arpPat[(st + bar * 3) % arpPat.length] % ch.length] + 12 + (cfg.arpUp && st >= 8 && chance(0.25) ? 12 : 0);
+            voice(o, cfg.arpWave || "square", mtof(n), t + sw, 0.004, o.dur * 1.4, cfg.arpVol || 0.026, arpLp, 0.45, rnd(-6, 6));
+          }
+          // signature voice: sparse glassy bell into the delay
+          if (st % 4 === 0 && chance(cfg.bell || 0.08)) {
+            var m = pick(cfg.bellNotes || ch) + 24;
+            voice(o, "sine", mtof(m), t, 0.004, beat * 3, 0.045, null, 0.7);
+            voice(o, "triangle", mtof(m + 7), t, 0.004, beat * 1.2, 0.012, null, 0.6);
+          }
+        };
+      }
+    };
+  }
+
   STYLES = {
-    phthalo: { delay: [0.42, 0.32, 1600], init: function (o) {
-      var b = light() ? 1.15 : 1;
-      o.dur = 60 / 72 / 4;
-      var keys = filt("lowpass", 1800 * b, 0.5); keys.connect(o.bus);
-      var wow = lfo(o, 0.35, 7, null);
-      loopNoise(o, [filt("highpass", 2500, 0.7), filt("lowpass", 9000, 0.7)], 0.006);
-      var prog = [[50, 53, 57, 60, 64], [55, 59, 62, 65, 69], [48, 52, 55, 59, 62], [45, 48, 52, 55, 59]];
-      var turn = [52, 56, 59, 62, 65];
-      var mel = [62, 64, 67, 69, 72, 74, 76];
-      var useTurn = false;
-      function wob(osc) {
-        wow.connect(osc.detune);
-        osc.onended = function () { try { wow.disconnect(osc.detune); } catch (e) {} };
-      }
-      function rhodes(m, t, v, len) {
-        wob(voice(o, "sine", mtof(m), t, 0.03, len, v, keys, 0.25, rnd(-4, 4)));
-        wob(voice(o, "triangle", mtof(m + 12), t, 0.02, len * 0.5, v * 0.18, keys, 0.2));
-      }
-      o.play = function (t, s) {
-        var st = s % 16, bar = Math.floor(s / 16), i;
-        if (st === 0 && bar % 4 === 3) useTurn = chance(0.3);
-        var ch = (bar % 4 === 3 && useTurn) ? turn : prog[bar % 4];
-        if (st % 4 === 2) t += o.dur * 0.22; /* swing */
-        if (st === 0 || (st === 10 && chance(0.35))) {
-          var v = st === 0 ? 0.07 : 0.04;
-          for (i = 0; i < ch.length; i++) {
-            if (i === 0 || chance(0.9)) rhodes(ch[i], t + i * rnd(0.008, 0.025), v * rnd(0.8, 1.1), st === 0 ? 3.2 : 1.6);
-          }
-        }
-        if (st === 0 || (st === 8 && chance(0.7))) voice(o, "sine", mtof(ch[0] - 12), t, 0.01, 0.9, 0.16, null, 0);
-        if (st === 0 || st === 10 || (st === 7 && chance(0.4))) kick(o, t, 0.32, 110, 45, 0.4);
-        if (st === 4 || st === 12) noise(o, t, "bandpass", 1800, 0.8, 0.05, 0.18, 0.15, 0.01);
-        if (st % 2 === 0 && chance(0.85)) noise(o, t, "highpass", 6000, 0.7, st % 4 ? 0.012 : 0.02, 0.05);
-        if (st % 4 === 2 && chance(0.12)) rhodes(pick(mel), t, 0.035, 1.2);
-        if (chance(0.22)) noise(o, t + rnd(0, o.dur), "highpass", 2000, 1, rnd(0.03, 0.12), 0.006);
-      };
-    } },
-
-    knight: { delay: [0.45, 0.55, 2200], init: function (o) {
-      var b = light() ? 1.2 : 1, i;
-      o.dur = 0.25;
-      var lp = filt("lowpass", 380 * b, 2); lp.connect(o.bus);
-      lfo(o, 0.04, 220 * b, lp.frequency);
-      var dg = ctx.createGain(); dg.gain.value = 0.11; dg.connect(lp);
-      var parts = [[0, -9], [0, 8], [7, 4], [12, -5]], roots = [33, 29, 31, 28], drones = [];
-      for (i = 0; i < parts.length; i++) {
-        var os = ctx.createOscillator();
-        os.type = "sawtooth";
-        os.frequency.value = mtof(roots[0] + parts[i][0]);
-        os.detune.value = parts[i][1];
-        os.connect(dg); os.start();
-        o.nodes.push(os); drones.push(os);
-      }
-      var rainG = loopNoise(o, [filt("bandpass", 1400, 0.4), filt("lowpass", 6000, 0.5)], 0.05);
-      loopNoise(o, [filt("highpass", 5000, 0.5)], 0.008);
-      var scale = [57, 60, 62, 64, 65, 67, 69, 72, 74, 76];
-      o.play = function (t, s) {
-        var st = s % 16, bar = Math.floor(s / 16), j;
-        if (st === 0 && bar % 2 === 0) {
-          var r = roots[(bar / 2) % 4];
-          for (j = 0; j < drones.length; j++) drones[j].frequency.setTargetAtTime(mtof(r + parts[j][0]), t, 1.2);
-          rainG.gain.setTargetAtTime(rnd(0.03, 0.07), t, 2);
-        }
-        if (st === 0 && bar % 2 === 1 && chance(0.6)) {
-          kick(o, t, 0.28, 70, 38, 0.35);
-          kick(o, t + 0.27, 0.2, 65, 36, 0.4);
-        }
-        if (st % 4 === 0 && chance(0.13)) {
-          var m = pick(scale);
-          voice(o, "triangle", mtof(m), t, 0.005, 2.8, 0.05, null, 0.6);
-          voice(o, "sine", mtof(m + 12), t, 0.005, 1.2, 0.02, null, 0.5);
-        }
-        if (st % 8 === 4 && chance(0.15)) rainG.gain.setTargetAtTime(rnd(0.02, 0.08), t, 1.5);
-      };
-    } },
-
-    golden: { delay: [0.45, 0.3, 3500], init: function (o) {
-      var b = light() ? 1.1 : 1;
-      o.dur = 60 / 100 / 4;
-      var prog = [[60, 64, 67, 71], [55, 59, 62, 67], [57, 60, 64, 67], [53, 57, 60, 64]];
-      var pad = filt("lowpass", 1400 * b, 0.6); pad.connect(o.bus);
-      var pat = [0, 1, 2, 3, 2, 1, 0, 2];
-      o.play = function (t, s) {
-        var st = s % 16, bar = Math.floor(s / 16), ch = prog[bar % 4], i;
-        if (st === 0) {
-          for (i = 0; i < ch.length; i++) {
-            voice(o, "triangle", mtof(ch[i]), t, 0.4, o.dur * 16, 0.025, pad, 0.2, -6);
-            voice(o, "sawtooth", mtof(ch[i]), t, 0.5, o.dur * 16, 0.008, pad, 0, 7);
-          }
-        }
-        if (chance(0.88)) {
-          var n = ch[pat[(st + (bar % 2) * 3) % 8]] + 12 + ((st >= 12 && chance(0.3)) ? 12 : 0);
-          voice(o, st % 2 ? "triangle" : "square", mtof(n), t, 0.004, 0.16, st % 2 ? 0.05 : 0.025, null, 0.25);
-        }
-        if (st === 0 || st === 6 || st === 8 || (st === 14 && chance(0.5))) voice(o, "triangle", mtof(ch[0] - 24), t, 0.01, 0.3, 0.2);
-        if (st === 0 || st === 8 || (st === 10 && chance(0.3))) kick(o, t, 0.3, 140, 50, 0.28);
-        if (st === 4 || st === 12) {
-          for (i = 0; i < 3; i++) noise(o, t + i * 0.011, "bandpass", 1500, 1.2, 0.07, 0.06, 0.2);
-        }
-        if (st % 2 === 0) noise(o, t, "highpass", 8000, 0.7, 0.015, 0.04);
-        if (st === 0 && chance(0.5)) voice(o, "sine", mtof(ch[1 + Math.floor(Math.random() * 3)] + 24), t, 0.01, 1.6, 0.025, null, 0.6);
-      };
-    } },
-
-    crt: { delay: [0.375, 0.25, 3000], init: function (o) {
-      o.dur = 60 / 120 / 4;
-      var prog = [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62]];
-      var lp = filt("lowpass", light() ? 5200 : 4200, 0.5); lp.connect(o.bus);
-      o.play = function (t, s) {
-        var st = s % 16, bar = Math.floor(s / 16), ch = prog[bar % 4];
-        var n = ch[st % 3] + 12 + (Math.floor(st / 4) % 2) * 12;
-        if (!(st === 15 && chance(0.5))) voice(o, "pulse", mtof(n), t, 0.002, o.dur * 0.85, 0.035, lp, 0.15);
-        if (st % 2 === 0) {
-          voice(o, "triangle", mtof(ch[0] - 12 + (st % 4 === 2 ? 12 : 0)), t, 0.003, o.dur * 1.6, 0.12, lp);
-          noise(o, t, "highpass", 7000, 0.7, st % 4 ? 0.015 : 0.025, 0.03);
-        }
-        if (st === 0 || st === 8 || (st === 11 && chance(0.4))) kick(o, t, 0.25, 180, 55, 0.15);
-        if (st === 4 || st === 12) noise(o, t, "bandpass", 2500, 0.7, 0.05, 0.09);
-        if (bar % 4 === 3 && st >= 12 && chance(0.5)) voice(o, "square", mtof(ch[2] + 24), t, 0.002, 0.08, 0.02, lp);
-      };
-    } }
+    // Phthalo: neon-noir in D minor
+    phthalo: cyber({ bpm: 84, prog: [[50, 57, 60, 64, 65], [46, 53, 57, 60, 62], [53, 57, 60, 64], [45, 52, 55, 60, 64]],
+      padCut: 1100, padVol: 0.07, arpCut: 1900, arpVol: 0.024, rain: 0.035, bell: 0.07 }),
+    // Dark Knight: the original — drone + heavy rain, darker, slower, A minor
+    knight: cyber({ bpm: 78, prog: [[45, 52, 57, 60, 64], [41, 48, 53, 57, 60], [43, 50, 55, 59, 62], [40, 47, 52, 55, 59]],
+      padCut: 700, padVol: 0.06, arpCut: 1300, arpVol: 0.022, arpWave: "sawtooth", rain: 0.06, drone: 0.05, bell: 0.1,
+      bellNotes: [57, 60, 62, 64, 67], fb: 0.5, delayTone: 2000 }),
+    // Golden: dreamy synth-pop haze, F lydian-ish, brighter
+    golden: cyber({ bpm: 90, prog: [[53, 57, 60, 64], [55, 59, 62, 66], [52, 55, 59, 62], [57, 60, 64, 67]],
+      padCut: 1700, padVol: 0.065, arpCut: 3000, arpVol: 0.024, arpWave: "triangle", arpUp: true, rain: 0.015, bell: 0.16, swing: 0.08 }),
+    // CRT: retro terminal — pulse arp, monitor hum, C minor
+    crt: cyber({ bpm: 92, prog: [[48, 55, 60, 63], [44, 51, 56, 60], [46, 53, 58, 62], [43, 50, 55, 58]],
+      padCut: 900, padVol: 0.05, arpCut: 2400, arpVol: 0.03, arpWave: "pulse", arpDensity: 0.85, rain: 0.02, hum: 0.02, bell: 0.05,
+      arpPat: [0, 1, 2, 3, 2, 1, 3, 0] })
   };
 
   /* ---------- instances (one per style, crossfaded) ---------- */
@@ -360,8 +333,8 @@
     btn.type = "button";
     btn.className = "icon-btn lofi-btn";
     btn.setAttribute("aria-pressed", "false");
-    btn.setAttribute("aria-label", "Play generated lo-fi music");
-    btn.title = "lo-fi (generated)";
+    btn.setAttribute("aria-label", "Play generated cyberpunk lo-fi music");
+    btn.title = "night-city lo-fi (generated live)";
     btn.textContent = "♪";
     btn.addEventListener("click", toggle);
     var ref = bar.querySelector("[data-toggle-theme]");
