@@ -171,7 +171,7 @@
       ["resume", "download the PDF"],
       ["github", "open GitHub profile"],
       ["goto &lt;section&gt;", "scroll the page (experience, skills, ...)"],
-      ["play [sidekiq|gems|schema|merge]", "minigames (sign-in)"],
+      ["play [sidekiq|gems|schema|pitwall]", "minigames (sign-in)"],
       ["login / logout / id", "optional account, unlocks the arcade"],
       ["theme [light|dark]", "switch colors"],
       ["leaderboard [game] [week|daily]", "top scores"],
@@ -245,7 +245,7 @@
     play: function (a) {
       var A = window.SamukaArcade;
       if (!A) return "arcade not loaded";
-      var alias = { sidekiq: "sidekiq", "sidekiq-rush": "sidekiq", rush: "sidekiq", gems: "gems", gem: "gems", "gem-match": "gems", match: "gems", schema: "schema", "schema-stack": "schema", stack: "schema", migrate: "schema", merge: "merge", "merge-conflict": "merge", conflict: "merge", git: "merge" };
+      var alias = { sidekiq: "sidekiq", "sidekiq-rush": "sidekiq", rush: "sidekiq", gems: "gems", gem: "gems", "gem-match": "gems", match: "gems", schema: "schema", "schema-stack": "schema", stack: "schema", migrate: "schema", pitwall: "pitwall", "pit-wall": "pitwall", pit: "pitwall", race: "pitwall", f1: "pitwall", gp: "pitwall" };
       var id = alias[(a[0] || "").toLowerCase()];
       if (!id) return A.list().map(function (g) { return '  <span class="b">play ' + g.id + "</span>  " + '<span class="dim">' + esc(g.blurb) + "</span>"; }).join("\n");
       close(); setTimeout(function () { A.open(id); }, 60);
@@ -329,7 +329,7 @@
       return t || 'sign in to collect achievements: <span class="b">login</span>';
     },
     leaderboard: function (a) {
-      var game = /^(sidekiq|rush)/.test(a[0] || "") ? "sidekiq" : /^(schema|stack)/.test(a[0] || "") ? "schema" : /^(merge|conflict)/.test(a[0] || "") ? "merge" : "gems";
+      var game = /^(sidekiq|rush)/.test(a[0] || "") ? "sidekiq" : /^(schema|stack)/.test(a[0] || "") ? "schema" : /^(pit|gp)/.test(a[0] || "") ? "pitwall" : "gems";
       var period = (a.indexOf("week") > -1 || a.indexOf("--week") > -1) ? "week" : (a.indexOf("daily") > -1 || a.indexOf("today") > -1) ? "daily" : "all";
       if (!window.SamukaScores) return "leaderboards are not loaded";
       var el = print('<span class="dim">SELECT * FROM leaderboard(\'' + game + "', '" + period + "') …</span>");
@@ -468,7 +468,7 @@
     if (mode !== "sh" || !v) return;
     var parts = v.split(/\s+/);
     var pool = parts.length > 1
-      ? (parts[0] === "cat" ? Object.keys(FILES) : parts[0] === "goto" ? ["experience", "skills", "education", "languages", "contact", "top"] : parts[0] === "show" ? jobs.map(function (j) { return j.id; }) : parts[0] === "skills" ? groups.map(function (g) { return g.group; }) : parts[0] === "play" ? ["sidekiq", "gems", "schema", "merge"] : parts[0] === "leaderboard" ? ["sidekiq", "gems", "week", "daily"] : parts[0] === "music" || parts[0] === "cursors" ? ["on", "off"] : [])
+      ? (parts[0] === "cat" ? Object.keys(FILES) : parts[0] === "goto" ? ["experience", "skills", "education", "languages", "contact", "top"] : parts[0] === "show" ? jobs.map(function (j) { return j.id; }) : parts[0] === "skills" ? groups.map(function (g) { return g.group; }) : parts[0] === "play" ? ["sidekiq", "gems", "schema", "pitwall"] : parts[0] === "leaderboard" ? ["sidekiq", "gems", "week", "daily"] : parts[0] === "music" || parts[0] === "cursors" ? ["on", "off"] : [])
       : Object.keys(COMMANDS);
     var last = parts[parts.length - 1];
     var hits = pool.filter(function (c) { return c.indexOf(last) === 0; });
