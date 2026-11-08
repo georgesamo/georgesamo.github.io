@@ -75,7 +75,8 @@
       });
       var ide = document.querySelector(".ide");
       ide.setAttribute("data-page", newIde.getAttribute("data-page") || "");
-      swap(".tree__nav", doc); swap(".tabs__files", doc);
+      swap(".tree__nav", doc); swap(".tabs__files", doc); swap(".mnav", doc);
+      var sheet = document.getElementById("msheet"); if (sheet) sheet.hidden = true;
       swap("[data-tab-crumbs]", doc, "text"); swap("[data-status-file]", doc, "text");
       var main = document.querySelector("#main");
       main.className = newMain.className;

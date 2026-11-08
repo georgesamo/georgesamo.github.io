@@ -240,3 +240,57 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .case-card__impact span { font: 12px var(--mono); color: var(--text-2); }
 .case-card__note { margin: 12px 0 0; font: 11.5px var(--mono); }
 .corner__heart { -webkit-text-fill-color: initial; }
+
+/* =========================================================
+   Phones and small tablets: compact top bar + app-style bottom navigation
+   ========================================================= */
+.tabs__brand, .mnav, .msheet { display: none; }
+.acct-btn { white-space: nowrap; }
+@media (max-width: 860px) {
+  :root { --status-h: 0px; --mnav-h: 60px; }
+  .status { display: none; }
+  .tabs { gap: 6px; }
+  .tabs__files, .tabs__crumbs { display: none !important; }
+  .tabs__brand { display: inline-flex; align-items: center; gap: 8px; min-width: 0; padding: 0 12px; color: var(--text); font: 700 14px var(--mono); text-decoration: none; white-space: nowrap; }
+  .tabs__brand b { font-weight: 400; color: var(--muted); }
+  .tabs__brand .tree__logo svg { width: 18px; height: 18px; }
+  .tabs__actions { gap: 6px; padding: 0 8px; min-width: 0; }
+  .tabs__actions .icon-btn { min-width: 34px; height: 32px; padding: 0 6px; }
+  .tabs__actions [data-open-terminal] { display: none; }
+  .acct-btn { height: 32px; padding: 0 9px; }
+  main { padding-bottom: calc(var(--mnav-h) + 28px + env(safe-area-inset-bottom)) !important; }
+  .mnav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+    display: grid; grid-template-columns: repeat(6, 1fr);
+    height: calc(var(--mnav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
+    background: var(--glass); backdrop-filter: blur(14px) saturate(140%); border-top: 1px solid var(--line);
+  }
+  .mnav__item { display: grid; place-items: center; align-content: center; gap: 3px; border: 0; background: transparent; color: var(--muted); font: 10.5px var(--mono); text-decoration: none; cursor: pointer; position: relative; }
+  .mnav__item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .mnav__item.is-here { color: var(--text); }
+  .mnav__item.is-here svg { stroke: var(--accent); filter: drop-shadow(0 0 6px var(--accent-soft)); }
+  .mnav__item.is-here::before { content: ""; position: absolute; top: 0; left: 28%; right: 28%; height: 2px; border-radius: 0 0 2px 2px; background: var(--hl); }
+  .msheet:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 46; }
+  .msheet__backdrop { position: absolute; inset: 0; background: rgba(2, 4, 3, 0.55); animation: fade 0.2s both; }
+  .msheet__card {
+    position: absolute; left: 10px; right: 10px; bottom: calc(var(--mnav-h) + 10px + env(safe-area-inset-bottom));
+    display: grid; gap: 2px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--bg-elev); box-shadow: var(--shadow);
+    animation: termIn 0.25s var(--ease) both;
+  }
+  .msheet__card a, .msheet__card button { display: flex; align-items: center; gap: 10px; padding: 12px; border: 0; border-radius: 10px; background: transparent; color: var(--text); font: 14px var(--mono); text-decoration: none; text-align: left; cursor: pointer; }
+  .msheet__card a:hover, .msheet__card button:hover { background: var(--bg-hover); }
+  .msheet__card small { margin-left: auto; color: var(--muted); }
+  .msheet__card [hidden] { display: none; }
+  .ach-toast { bottom: calc(var(--mnav-h) + 14px); right: 10px; left: 10px; }
+  .arcade__toast { bottom: 16px; }
+  .lobby { padding-top: 28px; gap: 20px; }
+  .lobby__title { font-size: clamp(48px, 15vw, 72px); }
+  .lobby__text { font-size: 15.5px; }
+  .lobby__actions .btn { flex: 1 1 auto; justify-content: center; }
+  .lobby__stats dd { font-size: 14px; }
+  .maker { padding: 18px; }
+}
+@media (max-width: 380px) {
+  .tabs__brand b { display: none; }
+  .online { padding: 3px 7px; }
+}

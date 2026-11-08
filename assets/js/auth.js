@@ -146,7 +146,9 @@
     document.querySelectorAll("[data-play]").forEach(function (b) {
       b.classList.toggle("is-locked", locked);
       if (!b.hasAttribute("data-label")) b.setAttribute("data-label", b.innerHTML);   // keep each button's own text
-      b.innerHTML = locked ? '<span class="btn__prompt">🔒</span> sign in to play' : b.getAttribute("data-label");
+      var lab = b.getAttribute("data-label");
+      b.innerHTML = locked ? lab.replace(/<span class="btn__prompt">▶<\/span>|▶/, '<span class="btn__prompt">🔒</span>') : lab;
+      b.title = locked ? "Sign in to play (free, a few seconds)" : "";
     });
   }
 

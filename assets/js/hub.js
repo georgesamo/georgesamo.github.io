@@ -36,6 +36,16 @@
     document.querySelectorAll("[data-team-only]").forEach(function (el) { el.hidden = !team; });
   }
 
+  // phone "more" sheet
+  document.addEventListener("click", function (e) {
+    var sheet = document.getElementById("msheet"); if (!sheet) return;
+    var btn = e.target.closest("[data-mnav-more]");
+    if (btn) { sheet.hidden = !sheet.hidden; btn.setAttribute("aria-expanded", String(!sheet.hidden)); return; }
+    if (!sheet.hidden && (e.target.closest("[data-mnav-close]") || e.target.closest(".msheet__card a, .msheet__card button"))) {
+      setTimeout(function () { sheet.hidden = true; }, e.target.closest("[data-toggle-theme]") ? 250 : 0);
+    }
+  });
+  document.addEventListener("keydown", function (e) { var sheet = document.getElementById("msheet"); if (e.key === "Escape" && sheet && !sheet.hidden) sheet.hidden = true; });
   document.addEventListener("click", function (e) {
     var a = e.target.closest("[data-acct-open]");
     if (a && !a.closest("[data-wall], [data-pcard]")) { e.preventDefault(); var A = window.SamukaAuth; if (A) A.open(); }

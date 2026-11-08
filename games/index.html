@@ -1,0 +1,86 @@
+---
+layout: shell
+title: Games
+description: "Small games about the Rails stack: Sidekiq Rush, Gem Match, Schema Stack and Merge Conflict, solo or live with a friend."
+permalink: /games/
+tab: games
+file: arcade/games/
+icon: log
+---
+      <!-- ================= GAMES ================= -->
+      <section class="section" id="games" data-file="arcade/games/" data-icon="log">
+        <header class="section__head reveal">
+          <p class="section__path">arcade/<b>games/</b></p>
+          <h2 class="section__title">Games</h2>
+          <p class="section__cmd"><span class="prompt">$</span> bin/arcade --list <span class="muted"># built around the stack I work with every day</span></p>
+        </header>
+        <div class="arcade-cards">
+          <article class="arcade-card reveal">
+            <div class="arcade-card__preview" aria-hidden="true">
+              <div class="pv-sr"><div class="pv-sr__lane" data-q=":critical"><i></i><i></i></div><div class="pv-sr__lane" data-q=":default"><i></i><i></i><i></i></div><div class="pv-sr__lane" data-q=":mailers"><i></i><i></i></div></div>
+            </div>
+            <div class="arcade-card__body">
+              <p class="arcade-card__file">games/sidekiq_rush.rb</p>
+              <h3 class="arcade-card__title">Sidekiq Rush</h3>
+              <p class="arcade-card__text">Hospital jobs pour into Redis. Route claims, imports and reminders to the right queue, hire workers, survive the Monday-morning spike.</p>
+              <div class="arcade-card__row">
+                <button class="btn btn--primary" type="button" data-play="sidekiq"><span class="btn__prompt">▶</span> play</button>
+                <button class="btn" type="button" data-race title="Live 1v1 against a friend">⚔ 1v1</button>
+                <span class="arcade-card__best" data-best="sidekiq"></span>
+              </div>
+            </div>
+          </article>
+          <article class="arcade-card reveal">
+            <div class="arcade-card__preview" aria-hidden="true">
+              <div class="pv-gm">
+                {%- assign pv = "rb,pg,sk,rd,rs,dk,rb,sk,rs,dk,pg,rb,rd,sk,pg,rd,rb,rs,dk,sk,pg" | split: "," -%}
+                {%- for t in pv %}<span class="gm__cell gm--{{ t }}" style="--d: {{ forloop.index0 }}"><span class="gm__gem"><i></i><em>{{ t }}</em></span></span>{% endfor -%}
+              </div>
+            </div>
+            <div class="arcade-card__body">
+              <p class="arcade-card__file">games/gem_match.rb</p>
+              <h3 class="arcade-card__title">Gem Match</h3>
+              <p class="arcade-card__text">Match three gems from the Gemfile. Build power-ups: <b>Pipeline</b> clears a line, <b>Force push</b> blasts 3×3, <b>Bundle</b> wipes a whole kind. Swap two together for combos.</p>
+              <div class="arcade-card__row">
+                <button class="btn btn--primary" type="button" data-play="gems"><span class="btn__prompt">▶</span> play</button>
+                <button class="btn" type="button" data-daily title="Same board for everyone today">📅 daily</button>
+                <span class="arcade-card__best" data-best="gems"></span>
+              </div>
+            </div>
+          </article>
+          <article class="arcade-card reveal">
+            <div class="arcade-card__preview" aria-hidden="true">
+              <div class="pv-ms">{%- assign pvm = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,2,0,0,0,1,0,0,0,0,0,2,2,3,3,1,1,0,2,2,0,2,2,3,3,1,1,0,2,2,2,1,1,1,3,3,3,0,2,1,1" | split: "," -%}{%- for v in pvm %}<i class="pv-ms__c pv-ms__c--{{ v }}"></i>{% endfor -%}</div>
+            </div>
+            <div class="arcade-card__body">
+              <p class="arcade-card__file">games/schema_stack.rb</p>
+              <h3 class="arcade-card__title">Schema Stack</h3>
+              <p class="arcade-card__text">Migrations fall into the schema. Deploy full rows, but <b>create_table</b> first: changes to missing tables land pending and block their row until it exists.</p>
+              <div class="arcade-card__row">
+                <button class="btn btn--primary" type="button" data-play="schema"><span class="btn__prompt">▶</span> play</button>
+                <span class="arcade-card__best" data-best="schema"></span>
+              </div>
+            </div>
+          </article>
+          <article class="arcade-card reveal">
+            <div class="arcade-card__preview" aria-hidden="true">
+              <div class="pv-mc"><span class="pv-mc__l">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD<br><b>User.where(name: q)</b></span><span class="pv-mc__r">&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature<br><b>"name = '#{q}'"</b></span></div>
+            </div>
+            <div class="arcade-card__body">
+              <p class="arcade-card__file">games/merge_conflict.rb</p>
+              <h3 class="arcade-card__title">Merge Conflict</h3>
+              <p class="arcade-card__text">Two branches changed the same line and they're about to collide. Keep HEAD, keep incoming or keep both, and don't let secrets, injections or debug lines through.</p>
+              <div class="arcade-card__row">
+                <button class="btn btn--primary" type="button" data-play="merge"><span class="btn__prompt">▶</span> play</button>
+                <button class="btn" type="button" data-race title="Live versus: the same conflicts for both">⚔ 1v1</button>
+                <span class="arcade-card__best" data-best="merge"></span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+        <div class="lobby__actions" style="margin-top:20px">
+          <button class="btn" type="button" data-daily>📅 daily Gem Match</button>
+          <button class="btn" type="button" data-race>⚔ live 2-player</button>
+          <a class="btn" href="{{ '/leaderboards/' | relative_url }}">🏆 leaderboards</a>
+        </div>
