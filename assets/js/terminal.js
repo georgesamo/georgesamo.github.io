@@ -224,13 +224,17 @@
     },
     cd: function (a) { return COMMANDS.goto(a.length ? [a[0].replace(/[\/.~]/g, "")] : ["top"]); },
     theme: function (a) {
-      var list = S.availableThemes ? S.availableThemes() : ["dark", "light"];
-      if (!a[0]) return "themes: " + list.map(function (t) { return t === S.theme() ? '<span class="hl">' + t + "</span>" : t; }).join("  ") + '\n<span class="dim">usage: theme &lt;name&gt;</span>';
+      var skins = S.availableSkins ? S.availableSkins() : ["phthalo"];
+      var mark = function (x, cur) { return x === cur ? '<span class="hl">' + x + "</span>" : x; };
+      if (!a[0]) return "mode:  " + ["dark", "light"].map(function (m) { return mark(m, S.mode()); }).join("  ") +
+        "\nstyle: " + skins.map(function (s) { return mark(s, S.skin()); }).join("  ") + '\n<span class="dim">usage: theme dark|light|&lt;style&gt;</span>';
       var t = a[0].toLowerCase();
-      if (!S.canUseTheme || !S.canUseTheme(t)) {
-        return S.themes && S.themes[t] ? '<span class="warn">403 Forbidden</span> · theme "' + esc(t) + '" is reserved for a special role' : "unknown theme. try: " + list.join(", ");
+      if (t === "dark" || t === "light") { S.setMode(t, { user: true }); return "mode → " + t; }
+      if (S.skins && S.skins[t]) {
+        if (!S.canUseSkin(t)) return '<span class="warn">403 Forbidden</span> · style "' + esc(t) + '" is reserved for a special role';
+        S.setSkin(t, { user: true }); return "style → " + t + ' <span class="dim">(follows dark/light)</span>';
       }
-      S.setTheme(t, { user: true }); return "theme → " + t;
+      return "unknown theme. try: dark, light, " + skins.join(", ");
     },
     login: function () {
       var A = window.SamukaAuth;

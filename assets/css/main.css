@@ -96,6 +96,9 @@
 
 /* ---------- base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
+/* hard stop at the top and bottom: no rubber-band / elastic overscroll, no scroll chaining from panels */
+html, body { overscroll-behavior: none; }
+.term__out, .bundle-out, .sr__jobs, .arcade__card, .tree__nav, .table-wrap, .code { overscroll-behavior: contain; }
 html { scroll-behavior: smooth; scroll-padding-top: calc(var(--tabs-h) + 16px); -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;

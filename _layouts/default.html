@@ -9,10 +9,12 @@
     // apply saved theme before paint (no flash)
     // cached role is cosmetic only (picks the theme before paint); auth.js verifies it with Supabase
     try {
-      var d = document.documentElement, t = localStorage.getItem("samuka-theme"), r = localStorage.getItem("samuka-role") || "guest";
+      var d = document.documentElement, t = localStorage.getItem("samuka-theme"), s = localStorage.getItem("samuka-skin"), r = localStorage.getItem("samuka-role") || "guest";
       var need = { knight: "samuka", golden: "nino" };
+      if (need[t]) { s = s || t; t = "dark"; }            // older versions stored the skin in samuka-theme
       d.dataset.role = r;
-      if (t === "light" || t === "dark" || (need[t] && need[t] === r)) d.dataset.theme = t;
+      d.dataset.theme = t === "light" ? "light" : "dark";  // mode
+      if (need[s] && need[s] === r) d.dataset.skin = s;    // role skin
     } catch (e) {}
     document.documentElement.classList.add("js");
   </script>

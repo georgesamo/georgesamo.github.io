@@ -24,32 +24,48 @@
   $$("[data-year]").forEach(function (el) { el.textContent = new Date().getFullYear(); });
 
   /* ---------- theme ---------- */
-  // dark/light for everyone; knight (role samuka) and golden (role nino) unlock after sign-in
-  var THEMES = {
-    dark: { meta: "#07110c", label: "dark mode" },
-    light: { meta: "#f3f6f1", label: "light mode" },
-    knight: { meta: "#050506", label: "knight mode", role: "samuka" },
-    golden: { meta: "#120a1f", label: "golden mode", role: "nino" }
+  // Two independent axes:
+  //   mode (data-theme): dark | light, toggled by everyone
+  //   skin (data-skin):  phthalo for everyone; knight (role samuka) and golden (role nino),
+  //                      each with its own dark AND light version
+  var MODES = { dark: "dark mode", light: "light mode" };
+  var SKINS = {
+    phthalo: { meta: { dark: "#07110c", light: "#f3f6f1" } },
+    knight: { meta: { dark: "#050506", light: "#f2efe6" }, role: "samuka" },
+    golden: { meta: { dark: "#120a1f", light: "#f6f1ff" }, role: "nino" }
   };
-  function role() { return document.documentElement.dataset.role || "guest"; }
-  function canUse(t) { return !!THEMES[t] && (!THEMES[t].role || THEMES[t].role === role()); }
-  function available() { return Object.keys(THEMES).filter(canUse); }
-  function currentTheme() { var t = document.documentElement.dataset.theme; return THEMES[t] ? t : "dark"; }
-  function nextTheme() { var a = available(), i = a.indexOf(currentTheme()); return a[(i + 1) % a.length]; }
-  function setTheme(t, opts) {
-    opts = opts || {};
-    if (!canUse(t)) t = "dark";
-    document.documentElement.dataset.theme = t;
-    if (opts.persist !== false) store.set("samuka-theme", t);
+  var root = document.documentElement;
+  function role() { return root.dataset.role || "guest"; }
+  function canUseSkin(s) { return !!SKINS[s] && (!SKINS[s].role || SKINS[s].role === role()); }
+  function availableSkins() { return Object.keys(SKINS).filter(canUseSkin); }
+  function currentMode() { return root.dataset.theme === "light" ? "light" : "dark"; }
+  function currentSkin() { var s = root.dataset.skin; return SKINS[s] ? s : "phthalo"; }
+  function paintTheme(opts) {
     var meta = $('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", THEMES[t].meta);
-    $$("[data-theme-label]").forEach(function (el) { el.textContent = THEMES[nextTheme()].label; });
-    window.dispatchEvent(new CustomEvent("samuka:theme", { detail: { theme: t, user: !!opts.user } }));
+    if (meta) meta.setAttribute("content", SKINS[currentSkin()].meta[currentMode()]);
+    $$("[data-theme-label]").forEach(function (el) { el.textContent = MODES[currentMode() === "light" ? "dark" : "light"]; });
+    window.dispatchEvent(new CustomEvent("samuka:theme", { detail: { theme: currentMode(), skin: currentSkin(), user: !!(opts && opts.user), changed: opts && opts.changed } }));
   }
-  // a stored special theme waits for auth to confirm the role (auth.js re-applies it)
-  setTheme(currentTheme(), { persist: false });
+  function setMode(m, opts) {
+    root.dataset.theme = m === "light" ? "light" : "dark";
+    if (!opts || opts.persist !== false) store.set("samuka-theme", root.dataset.theme);
+    paintTheme({ user: opts && opts.user, changed: "mode" });
+  }
+  function setSkin(s, opts) {
+    if (!canUseSkin(s)) s = "phthalo";
+    if (s === "phthalo") delete root.dataset.skin; else root.dataset.skin = s;
+    if (!opts || opts.persist !== false) store.set("samuka-skin", s);
+    paintTheme({ user: opts && opts.user, changed: "skin" });
+  }
+  // backwards compatible entry point: dark/light set the mode, a skin name sets the skin
+  function setTheme(t, opts) {
+    if (t === "dark" || t === "light") return setMode(t, opts);
+    return setSkin(t, opts);
+  }
+  // the head script already applied stored values; a stored special skin waits for auth.js to confirm the role
+  paintTheme();
   document.addEventListener("click", function (e) {
-    if (e.target.closest("[data-toggle-theme]")) setTheme(nextTheme(), { user: true });
+    if (e.target.closest("[data-toggle-theme]")) setMode(currentMode() === "light" ? "dark" : "light", { user: true });
   });
 
   /* ---------- cursor spotlight ---------- */
@@ -401,7 +417,10 @@
   /* ---------- public API (used by terminal.js / gem.js) ---------- */
   window.Samuka = {
     data: data, years: years, reduced: reduced,
-    setTheme: setTheme, theme: currentTheme, themes: THEMES, availableThemes: available, canUseTheme: canUse,
+    setTheme: setTheme, setMode: setMode, setSkin: setSkin,
+    theme: currentMode, mode: currentMode, skin: currentSkin, skins: SKINS,
+    availableSkins: availableSkins, canUseSkin: canUseSkin,
+    canUseTheme: function (t) { return t === "dark" || t === "light" || canUseSkin(t); },
     go: function (id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: reduced ? "auto" : "smooth" }); },
     focusContact: function () { this.go("contact"); setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, reduced ? 0 : 650); }
   };

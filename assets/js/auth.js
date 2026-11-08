@@ -43,9 +43,13 @@
   }
   function applyTheme() {
     var S = window.Samuka; if (!S) return;
-    var wanted = state.profile && state.profile.theme && state.profile.theme !== "auto" ? state.profile.theme : store.get("samuka-theme");
-    if (wanted) S.setTheme(S.canUseTheme(wanted) ? wanted : "dark", { persist: true });
-    else S.setTheme(S.theme(), { persist: false });
+    // the account remembers the style (skin); dark/light stays a per-device choice
+    if (state.profile) {
+      var p = state.profile.theme;
+      S.setSkin(p === "knight" || p === "golden" ? p : "phthalo", { persist: true });
+    } else {
+      S.setSkin(store.get("samuka-skin") || "phthalo", { persist: false });
+    }
   }
   function emit() {
     window.dispatchEvent(new CustomEvent("samuka:auth", { detail: { user: state.user, role: state.role, profile: state.profile } }));
@@ -63,10 +67,13 @@
       state.profile = { role: "user", theme: "auto", glitches: true, display_name: (state.user.email || "").split("@")[0] };
     } else state.profile = res.data;
   }
+  // a fresh sign-in (magic link / GitHub return, or a local ?as= test login) starts in dark mode
+  var justSignedIn = /(^|[#&])access_token=/.test(location.hash) || (!!mockRole && /[?&]as=/.test(location.search));
   async function onSession(session) {
     state.user = session ? session.user : null;
     if (state.user) await loadProfile(); else state.profile = null;
     applyRole(state.user ? (state.profile && state.profile.role) || "user" : "guest");
+    if (state.user && justSignedIn && window.Samuka) { justSignedIn = false; window.Samuka.setMode("dark"); }
     applyTheme();
     state.ready = true;
     emit();
@@ -89,7 +96,9 @@
     emit();
   }
   window.addEventListener("samuka:theme", function (e) {
-    if (e.detail && e.detail.user && state.user) savePrefs({ theme: e.detail.theme });
+    var d = e.detail || {};
+    if (d.user && d.changed === "skin" && state.user) savePrefs({ theme: d.skin === "phthalo" ? "auto" : d.skin });
+    if (modal && !modal.hidden && state.user) renderModal();
   });
 
   /* ---------- actions ---------- */
@@ -145,12 +154,15 @@
   }
   function themeOptions() {
     var S = window.Samuka; if (!S) return "";
-    var names = { dark: "Phthalo dark", light: "Phthalo light", knight: "Dark Knight", golden: "Golden" };
-    var notes = { knight: "samuka only · noir black & gold", golden: "nino only · purple & gold" };
-    var current = S.theme();
-    return S.availableThemes().map(function (t) {
-      return '<label class="acct__theme acct__theme--' + t + (t === current ? " is-on" : "") + '"><input type="radio" name="theme" value="' + t + '"' + (t === current ? " checked" : "") + '>' +
-        '<span class="acct__swatch" aria-hidden="true"></span><span><b>' + names[t] + "</b>" + (notes[t] ? '<small>' + notes[t] + "</small>" : "") + "</span></label>";
+    var names = { phthalo: "Phthalo", knight: "Dark Knight", golden: "Golden" };
+    var notes = { phthalo: "green & gold · everyone", knight: "samuka only · noir & signal gold", golden: "nino only · purple & gold" };
+    var skin = S.skin(), mode = S.mode();
+    var modes = '<div class="acct__modes" role="radiogroup" aria-label="mode">' + ["dark", "light"].map(function (m) {
+      return '<label class="acct__mode' + (m === mode ? " is-on" : "") + '"><input type="radio" name="mode" value="' + m + '"' + (m === mode ? " checked" : "") + '><span>' + (m === "dark" ? "☾ dark" : "☀ light") + "</span></label>";
+    }).join("") + "</div>";
+    return modes + S.availableSkins().map(function (t) {
+      return '<label class="acct__theme acct__theme--' + t + (t === skin ? " is-on" : "") + '"><input type="radio" name="skin" value="' + t + '"' + (t === skin ? " checked" : "") + '>' +
+        '<span class="acct__swatch" aria-hidden="true"><i></i><i></i></span><span><b>' + names[t] + "</b><small>" + notes[t] + "</small></span></label>";
     }).join("");
   }
   function renderModal() {
@@ -208,7 +220,8 @@
   }
   function onChange(e) {
     var S = window.Samuka;
-    if (e.target.name === "theme" && S) { S.setTheme(e.target.value, { user: true }); renderModal(); }
+    if (e.target.name === "skin" && S) S.setSkin(e.target.value, { user: true });
+    if (e.target.name === "mode" && S) S.setMode(e.target.value, { user: true });
     if (e.target.name === "glitches") savePrefs({ glitches: e.target.checked });
   }
   function onModalClick(e) {
@@ -270,5 +283,10 @@
       setTimeout(function () { onSession(session); }, 0);
     });
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+  // Deferred scripts run while readyState is already "interactive", but DOMContentLoaded only fires
+  // after ALL of them (app.js, glitch.js, ...) have run, so wait for it; "load" is a fallback.
+  var booted = false;
+  function bootOnce() { if (!booted) { booted = true; boot(); } }
+  if (document.readyState === "complete") bootOnce();
+  else { document.addEventListener("DOMContentLoaded", bootOnce); window.addEventListener("load", bootOnce); }
 })();
