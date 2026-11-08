@@ -214,13 +214,13 @@
     // minimal: stripped back and hypnotic
     // ---- song styles (the current playlist) ----
     // hacker techno: tense 16th sequences, data blips, rolling bass, heavy kick + clap
-    hack: { grooves: [11, 12], supersaw: 0, stabs: 0, leadEarly: 0.4, bassVol: 0.75, bpmAbs: [122, 128], lead: [0.25, 0.4], drums: "hack", piano: 0, pad: "darkstab", arp16: true, blips: true, swing: 0, arpMul: 0.85 },
+    hack: { grooves: [11, 12], supersaw: 0.6, stabs: 1, leadEarly: 0.5, bassVol: 0.8, bpmAbs: [122, 128], lead: [0.3, 0.45], drums: "hack", piano: 0, pad: "saw", arp16: false, blips: false, swing: 0, arpMul: 0 },
     // intense: hard/industrial, distorted rumble bass, acid 16ths, ride, tom fills
     intense: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0, bassVol: 0.85, bpmAbs: [132, 140], lead: [0.2, 0.3], drums: "intense", piano: 0, pad: "darkstab", dist: true, acid: true, arp16: true, swing: 0, arpMul: 0.8 },
     // melodic techno: emotional pluck arps, big pads, a lead melody
-    melodictech: { grooves: [11, 4], supersaw: 0.7, stabs: 0, leadEarly: 1, bassVol: 0.7, bpmAbs: [120, 124], lead: [0.5, 0.65], drums: "melodic", piano: 0, pad: "saw", arp16: true, swing: 0, arpMul: 0.9 },
+    melodictech: { grooves: [11, 4], supersaw: 1, stabs: 0.4, leadEarly: 1, bassVol: 0.75, bpmAbs: [120, 124], lead: [0.55, 0.7], drums: "melodic", piano: 0, pad: "saw", arp16: false, swing: 0, arpMul: 0 },
     // retro hacker: pulse-wave sequences and blips over hard techno drums
-    retro: { grooves: [12, 11], supersaw: 0, stabs: 0, leadEarly: 0.5, bassVol: 0.7, bpmAbs: [124, 130], lead: [0.3, 0.45], drums: "hack", piano: 0, pad: "darkstab", arp16: true, blips: true, chipArp: true, swing: 0, arpMul: 0.8 },
+    retro: { grooves: [12, 11], supersaw: 0.5, stabs: 1, leadEarly: 0.5, bassVol: 0.8, bpmAbs: [124, 130], lead: [0.3, 0.45], drums: "hack", piano: 0, pad: "darkstab", arp16: false, blips: false, swing: 0, arpMul: 0 },
     // cold, tense thriller score: steady pulse bass, cold arp, slow pads, heartbeat kick, lonely piano
     robot: { grooves: [12], supersaw: 0, stabs: 0, leadEarly: 0.35, bassVol: 0.55, bpmAbs: [96, 108], lead: [0.25, 0.4], drums: "robot", piano: 0.6, pad: "tri", swing: 0, arpMul: 1.1 },
     minimal: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0.2, bassVol: 0.7, bpmAbs: [123, 127], lead: [0.25, 0.35], drums: "techno", piano: 0, pad: "darkstab", acid: true, swing: 0.03, arpMul: 0.6 }
