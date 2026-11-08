@@ -363,7 +363,7 @@
       var L = window.SamukaLofi; if (!L) return "audio not available in this browser";
       if (a[0] === "off" || a[0] === "stop") { L.stop(); return "♪ off"; }
       if (a[0] === "next" || a[0] === "skip") { if (!L.isOn()) L.start(); else L.next(); var n = L.track(); return "⏭ " + (n ? esc(n.name) : "next track"); }
-      if (a[0] === "now" || (L.isOn() && !a[0])) { var t = L.track(); return t ? "♪ <b>" + esc(t.name) + '</b> <span class="dim">· ' + t.bpm + " bpm · bar " + t.bar + "/" + t.bars + " · track #" + t.no + " · music next | music off</span>" : "nothing playing"; }
+      if (a[0] === "now" || (L.isOn() && !a[0])) { var t = L.track(); return t ? "♪ <b>" + esc(t.name) + '</b> <span class="dim">· ' + (t.style || "") + " · " + t.bpm + " bpm · bar " + t.bar + "/" + t.bars + " · track #" + t.no + " · music next | music off</span>" : "nothing playing"; }
       L.start(); var tr = L.track(); return '♪ playing <b>' + (tr ? esc(tr.name) : "generated lo-fi") + '</b> <span class="dim">(new track every ~3 min · music next · music off)</span>';
     },
     cursors: function (a) {
