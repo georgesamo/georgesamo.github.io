@@ -31,6 +31,7 @@
   var client = null;
   var enabled = !!(mockRole || (cfg.url && cfg.anon_key && window.supabase && window.supabase.createClient));
   var state = { user: null, profile: null, role: "guest", ready: false };
+  var providers = { github: !!cfg.github }; // refreshed from Supabase at boot, so enabling a provider needs no deploy
   var saveTimer = 0, modal = null, notice = "";
 
   /* ---------- state ---------- */
@@ -163,7 +164,7 @@
         '<form class="acct__form" data-acct-email novalidate><label for="acct-email">email</label>' +
         '<div class="acct__row"><input id="acct-email" type="email" name="email" autocomplete="email" required placeholder="you@company.com">' +
         '<button class="btn btn--primary" type="submit">send magic link</button></div></form>' +
-        (cfg.github ? '<button class="btn acct__gh" type="button" data-acct-github>Sign in with GitHub</button>' : "") +
+        (providers.github ? '<div class="acct__or"><span>or</span></div><button class="btn acct__gh" type="button" data-acct-github><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> Sign in with GitHub</button>' : "") +
         '<p class="acct__fine">No password needed: we email you a one-time link. Stored: your email, role and theme choice (Supabase, EU). To delete your account, email <a href="mailto:giorgisamo@gmail.com">giorgisamo@gmail.com</a>.</p>';
       setTimeout(function () { var i = body.querySelector("input"); if (i) i.focus(); }, 30);
       return;
@@ -239,6 +240,11 @@
     if (mockRole) { onSession({ user: { id: "local-" + mockRole, email: mockRole + "@localhost" } }); return; }
     if (!enabled) { applyRole("guest"); state.ready = true; emit(); return; }
     // implicit flow: the email link works in any browser/device, not only the one that asked for it
+    // which sign-in methods are switched on in Supabase (public endpoint)
+    fetch(cfg.url.replace(/\/$/, "") + "/auth/v1/settings", { headers: { apikey: cfg.anon_key } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (s) { if (s && s.external) { providers.github = !!s.external.github; if (modal && !modal.hidden && !state.user) renderModal(); } })
+      .catch(function () {});
     client = window.supabase.createClient(cfg.url, cfg.anon_key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit" } });
     client.auth.getSession().then(function (r) {
       onSession(r.data && r.data.session).then(function () {

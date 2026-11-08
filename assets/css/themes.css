@@ -200,7 +200,9 @@
 .acct__row input { flex: 1 1 220px; min-width: 0; height: 40px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line-strong); background: var(--bg-soft); color: var(--text); font: 14px var(--mono); outline: none; }
 .acct__row input:focus { border-color: var(--hl); box-shadow: 0 0 0 3px var(--hl-soft); }
 .acct__row input.is-invalid { border-color: var(--ruby-red); }
-.acct__gh { width: 100%; justify-content: center; margin-top: 10px; }
+.acct__gh { width: 100%; justify-content: center; gap: 10px; }
+.acct__or { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; font: 11px var(--mono); color: var(--muted); }
+.acct__or::before, .acct__or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .acct__fine { margin-top: 16px !important; font: 11.5px/1.6 var(--mono) !important; color: var(--muted) !important; }
 .acct__who { display: flex; align-items: center; gap: 14px; margin: 6px 0 16px; }
 .acct__who h3 { margin: 0 0 2px; }
