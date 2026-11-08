@@ -98,7 +98,9 @@
 *, *::before, *::after { box-sizing: border-box; }
 /* hard stop at the top and bottom: no rubber-band / elastic overscroll, no scroll chaining from panels */
 html, body { overscroll-behavior: none; }
-.term__out, .bundle-out, .sr__jobs, .arcade__card, .tree__nav, .table-wrap, .code { overscroll-behavior: contain; }
+.term__out, .bundle-out, .sr__jobs, .arcade__card, .tree__nav { overscroll-behavior: contain; }
+/* sideways scrollers (code, tables): keep horizontal scroll inside, let vertical swipes scroll the page */
+.table-wrap, .code { overscroll-behavior-x: contain; overscroll-behavior-y: auto; touch-action: pan-x pan-y; }
 html { scroll-behavior: smooth; scroll-padding-top: calc(var(--tabs-h) + 16px); -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;

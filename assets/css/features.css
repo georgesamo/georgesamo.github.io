@@ -142,7 +142,7 @@
 .wall__err { color: var(--ruby-red); }
 .wall__err:empty { display: none; }
 .wall__signin { margin: 0 0 14px; font-size: 13px; }
-.wall__log { list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; gap: 2px; max-height: 420px; overflow: auto; overscroll-behavior: contain; }
+.wall__log { list-style: none; margin: 0; padding: 0 0 0 4px; display: grid; gap: 2px; max-height: 420px; overflow: auto; overscroll-behavior: auto; }
 .wall__row { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 6px 0 6px 22px; font-size: 13.5px; }
 .wall__row::before { content: ""; position: absolute; left: 5px; top: 0; bottom: 0; width: 2px; background: var(--line-strong); }
 .wall__row:first-child::before { top: 12px; }

@@ -263,8 +263,12 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
     display: grid; grid-template-columns: repeat(6, 1fr);
     height: calc(var(--mnav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
-    background: var(--glass); backdrop-filter: blur(14px) saturate(140%); border-top: 1px solid var(--line);
+    background: var(--chrome); border-top: 1px solid var(--line);
+    /* own compositor layer: stays put while the page scrolls or the browser toolbar slides */
+    transform: translate3d(0, 0, 0); will-change: transform; backface-visibility: hidden;
+    contain: layout paint; touch-action: manipulation;
   }
+  body { background-attachment: scroll, scroll; }
   .mnav__item { display: grid; place-items: center; align-content: center; gap: 3px; border: 0; background: transparent; color: var(--muted); font: 10.5px var(--mono); text-decoration: none; cursor: pointer; position: relative; }
   .mnav__item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .mnav__item.is-here { color: var(--text); }

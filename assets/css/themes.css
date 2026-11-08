@@ -130,9 +130,10 @@
    Glitch scenes
    ========================================================= */
 /* the page itself tears (RGB split + slices), ~140 ms */
-.glx-shift body { animation: glxShift 0.14s steps(3) both; }
-.glx-shift--knight body { filter: contrast(1.4) saturate(0.2) drop-shadow(3px 0 0 rgba(243, 200, 68, 0.5)) drop-shadow(-3px 0 0 rgba(120, 140, 255, 0.4)); }
-.glx-shift--golden body { filter: saturate(1.4) hue-rotate(40deg) drop-shadow(3px 0 0 rgba(244, 201, 93, 0.5)) drop-shadow(-3px 0 0 rgba(185, 140, 255, 0.6)); }
+/* the tear only shakes the page content, never the fixed bars (keeps the phone nav pinned) */
+.glx-shift .ide { animation: glxShift 0.14s steps(3) both; }
+.glx-shift--knight .ide { filter: contrast(1.4) saturate(0.2) drop-shadow(3px 0 0 rgba(243, 200, 68, 0.5)) drop-shadow(-3px 0 0 rgba(120, 140, 255, 0.4)); }
+.glx-shift--golden .ide { filter: saturate(1.4) hue-rotate(40deg) drop-shadow(3px 0 0 rgba(244, 201, 93, 0.5)) drop-shadow(-3px 0 0 rgba(185, 140, 255, 0.6)); }
 @keyframes glxShift {
   0% { clip-path: inset(0 0 0 0); transform: translateX(0); }
   33% { clip-path: inset(12% 0 58% 0); transform: translateX(-6px); }
