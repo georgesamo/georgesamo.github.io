@@ -12,9 +12,9 @@
  *   in the Patch Bay (assets/js/patchbay.js), which wakes after you've heard all five songs.
  * Tracks 7–10 are bonus tracks, one per arcade game, unlocked in every theme by finishing a run of that game:
  *   7 Sidekiq Rush  underground techno, rolling bass and three drops (132 bpm, ~3½ min)
- *   8 Gem Match     somber piano, strings and low brass, hopeful (72 bpm, 5 min)
- *   9 Schema Stack  electric guitar riffs, a singing lead and a solo (150 bpm, 3 min)
- *  10 Pit Wall      a grand-prix fanfare that falls into a tribal fever dream and back (124 bpm, 4 min)
+ *   8 Gem Match     emotional trance: supersaws, a piano breakdown, long bass drops, a soft kick (138 bpm, 4 min)
+ *   9 Schema Stack  a slow climb: fingerpicked guitar and flute, then the band, two guitar solos (76 → 96 bpm, 3 min)
+ *  10 Pit Wall      electro techno: five red lights before every drop, lights out, a V8 and screeching tyres throughout (148 bpm, 4 min)
  * The main rotation is the five songs plus every unlocked bonus track (1–5, 7–10, round again). Track 6 stays out
  *   of it: it plays only when picked in the player, then hands over to Ring Zero.
  * Every song ends with an outro that eases its tempo and tuning into the next track (or itself, when looping)
@@ -585,13 +585,14 @@
     } else if (si === 6) {   // a kick through the wall of the next room, an offbeat hat
       if (st % 4 === 0) kick(o, t, 0.35 + 0.5 * f);
       if (st >= 8 && st % 4 === 2) hat(o, t, 0.5, true);
-    } else if (si === 7) {   // a few soft piano notes over C major 7
-      if (st === 0 || st === 6 || st === 10) piano(o, t, [60, 64, 71][st === 0 ? 0 : st === 6 ? 1 : 2], 0.4, 3);
-    } else if (si === 8) {   // palm-muted chugs on low E, getting closer
-      if (st % 2 === 0 || st >= 12) power(o, t, 40, six * 0.9, 0.3 + 0.6 * f, { mute: 1 });
-    } else if (si === 9) {   // an engine idling, the first red light
-      if (st % 2 === 0) rev(o, t, 28, 0.25 + 0.3 * f);
-      if (st === 8) beep(o, t, 69, six * 3, 0.8);
+    } else if (si === 7) {   // a trance kick fading in under a bright arpeggio
+      if (st % 4 === 0) kick(o, t, 0.3 + 0.5 * f);
+      if (st >= 4) arpNote(o, t, [64, 67, 71, 76][GT.arp[st]], 0.4 + 0.3 * f);
+    } else if (si === 8) {   // one guitar, fingerpicking the opening chord
+      if (st % 2 === 0) { var pi = ST.pick[st / 2]; pluck(o, t, pi === "b" ? 52 : [59, 64, 67][pi], 0.5 + 0.3 * f, 2.2); }
+    } else if (si === 9) {   // engines on the grid, the first red light
+      if (st === 0) vroom(o, t, six * 6, 55, 190, 0.6 + 0.4 * f);
+      if (st === 8) lightOn(o, t, 0.9);
     }
   }
   function outroStep(o, t, st, k) {
@@ -604,7 +605,7 @@
     o.six = o.dur = g.six0 + (g.six - g.six0) * e;   // tempo glides into the next song's
     o.ref = g.ref0 + (g.ref - g.ref0) * e;             // and so does the tuning (432 ↔ 440)
     song.outro(o, t, st, k, N);
-    if (k === N - 2 && st === 0 && [0, 1, 3, 6, 8, 9].indexOf(g.si) >= 0) riser(o, t, o.six * 32, 0.1);   // lift into something fast
+    if (k === N - 2 && st === 0 && [0, 1, 3, 6, 7, 9].indexOf(g.si) >= 0) riser(o, t, o.six * 32, 0.1);   // lift into something fast
     if (k === N - 1) foreshadow(o, t, st, g.si, (st + 1) / 16);
   }
   function unTarget(o) { if (o && o.tgt) { o.six = o.dur = o.tgt.six0; o.ref = o.tgt.ref0; o.tgt = null; } }
@@ -829,6 +830,12 @@
     var c = noise(t, 0.015), cf = filt("highpass", 3000), cg = gain(0); env(cg, t, 0.001, 0.012, 0.3 * v); c.connect(cf); cf.connect(cg); cg.connect(o.drums);
     duckAt(o, t, 0.16);
   }
+  function softKick(o, t, v) {   // a small, round kick: no click, no drive, only a gentle duck
+    var s = osc("sine", 130, t, t + 0.3), g = gain(0);
+    s.frequency.exponentialRampToValueAtTime(o.P.kickLow * 1.15, t + 0.07);
+    env(g, t, 0.002, 0.22, 0.5 * v); s.connect(g); g.connect(o.bus);
+    duckAt(o, t, 0.72);
+  }
   function clap(o, t, v) {
     var n = noise(t, 0.35), bp = filt("bandpass", 1300, 1.1), g = gain(0);
     g.gain.setValueAtTime(0.0001, t);
@@ -863,18 +870,19 @@
   }
   function power(o, t, root, len, v, opt) {   // a distorted power chord (root, fifth, octave); mute = a palm-muted chug
     opt = opt || {};
-    var mute = !!opt.mute, tone = opt.tone || 1, notes = mute ? [root, root + 7] : [root, root + 7, root + 12], dt = (opt.pan || 0) > 0 ? 9 : 5;
-    var sum = gain(0.3), hp = filt("highpass", 85), sh = shaper(Math.min(28, 9 * o.P.drive * tone)), cab = filt("lowpass", (mute ? 1300 : 3400) * (tone < 1 ? 0.6 : 1), 0.8), pk = filt("peaking", 820, 0.9);
+    var mute = !!opt.mute, tone = (opt.tone || 1) * (opt.dark ? 0.6 : 1), dark = opt.dark ? 0.62 : 1, notes = mute ? [root, root + 7] : [root, root + 7, root + 12], dt = (opt.pan || 0) > 0 ? 9 : 5;
+    var sum = gain(0.3), hp = filt("highpass", 85), sh = shaper(Math.min(28, 9 * o.P.drive * tone)), cab = filt("lowpass", (mute ? 1300 : 3400) * (opt.tone < 1 ? 0.6 : 1) * dark, 0.8), pk = filt("peaking", 820, 0.9);
     var g = gain(0), p = panner(opt.pan || 0), stop = t + len + 0.35;
     pk.gain.value = 5;
     notes.forEach(function (m) { [-dt, dt].forEach(function (d) { osc("sawtooth", F(o, m), t, stop, d).connect(sum); }); });
     sum.connect(hp); hp.connect(sh); sh.connect(cab); cab.connect(pk); pk.connect(g);
-    if (mute) env(g, t, 0.002, Math.min(len, 0.14), 0.1 * v); else swell(g, t, 0.004, len * 0.9, 0.2, 0.075 * v);
+    if (opt.dark) v *= 0.85;
+    if (mute) env(g, t, 0.002, Math.min(len, 0.14), 0.1 * v); else swell(g, t, opt.dark ? 0.012 : 0.004, len * 0.9, opt.dark ? 0.35 : 0.2, 0.075 * v);
     g.connect(p); p.connect(o.duck); send(o, p, mute ? 0.06 : 0.22);
   }
-  function makeGuitar(o, t, panV) {   // lead guitar: overdriven saw + square through a cabinet, bends and vibrato
-    var a = osc("sawtooth", 220, t, t + 36000, -5), b = osc("square", 220, t, t + 36000, 5), mix = gain(0.5), hp = filt("highpass", 160), sh = shaper(18);
-    var cab = filt("lowpass", 3800, 0.9), pk = filt("peaking", 1400, 0.8), g = gain(0.0001), p = panner(panV || 0);
+  function makeGuitar(o, t, panV, dark) {   // lead guitar: overdriven saw + square through a cabinet, bends and vibrato; dark = warmer, softer
+    var a = osc("sawtooth", 220, t, t + 36000, -5), b = osc("square", 220, t, t + 36000, 5), mix = gain(0.5), hp = filt("highpass", 160), sh = shaper(dark ? 9 : 18);
+    var cab = filt("lowpass", dark ? 2400 : 3800, 0.9), pk = filt("peaking", dark ? 1000 : 1400, 0.8), g = gain(0.0001), p = panner(panV || 0);
     pk.gain.value = 6;
     [a, b].forEach(function (s) { s.connect(mix); o.vibG.connect(s.detune); o.nodes.push(s); });
     mix.connect(hp); hp.connect(sh); sh.connect(cab); cab.connect(pk); pk.connect(g); g.connect(p); p.connect(o.duck); send(o, p, 0.3, 0.22);
@@ -895,19 +903,7 @@
     var j = i + steps, oct = Math.floor(j / 7); j = ((j % 7) + 7) % 7;
     return m - r + EMIN[j] + oct * 12;
   }
-  function voices(o, t, notes, len, vol) {   // a wordless choir: "ooh" formants, a slow swell
-    var g = gain(0); swell(g, t, len * 0.3, len * 0.65, len * 0.35 + 0.8, vol / Math.sqrt(notes.length));
-    notes.forEach(function (m) {
-      var v = osc("sawtooth", F(o, m), t, t + len + 1.2, Math.random() * 10 - 5), f1 = filt("bandpass", 400, 5), f2 = filt("bandpass", 900, 6), cg = gain(1.6);
-      v.connect(f1); v.connect(f2); f1.connect(cg); f2.connect(cg); cg.connect(g); vibrato(o, v);
-    });
-    g.connect(o.duck); send(o, g, 0.9);
-  }
-  function spic(o, t, m, v) { strings(o, t, [m], o.six * 0.7, 0.05 * v, { a: 0.004, r: 0.09, bright: 1.5 }); }   // spiccato strings
   function beep(o, t, m, len, v) { var s = osc("sine", F(o, m), t, t + len + 0.1), g = gain(0); swell(g, t, 0.005, len, 0.05, 0.07 * v); s.connect(g); g.connect(o.bus); send(o, g, 0.3); }
-  function rev(o, t, m, v) {   // an engine idling: a gritty low blip
-    var s = osc("sawtooth", F(o, m), t, t + 0.14), lp = filt("lowpass", 420, 2), g = gain(0); env(g, t, 0.003, 0.09, 0.09 * v); s.connect(lp); lp.connect(g); g.connect(o.drums);
-  }
   function flyby(o, t, len, v) {   // a car screams past, left to right, its pitch dropping as it goes
     var g = gain(0), lp = filt("lowpass", 2200, 2), sh = shaper(3), p = panner(-0.9);
     [["sawtooth", 1, 0], ["square", 2, 12]].forEach(function (x) {
@@ -995,263 +991,352 @@
     if (k < 3 && DQ.acid[st] != null) o.acid.play(t, 52 + DQ.acid[st], six * 0.7, 0.06 * fade, 500 - k * 120, DQ.accent[st], DQ.slide[st]);
   };
 
-  // 8 · Gem Match · somber and hopeful, piano, strings and low brass (72 bpm, five minutes)
-  var GM = {
-    // [bass, voicing, major?]: Cmaj7 G D/F# Em Am7 Em/G Cmaj7 B7
-    chords: [[48, [52, 55, 59], 1], [43, [50, 55, 59], 1], [42, [50, 54, 57], 1], [40, [52, 55, 59], 0], [45, [52, 55, 60], 0], [43, [52, 55, 59], 0], [48, [52, 55, 59], 1], [47, [51, 54, 57], 1]],
-    pa: { 0: -1, 4: 0, 6: 1, 10: 2, 12: 1 }, pb: { 0: -1, 2: 2, 6: 1, 8: 0, 12: 2 },   // the piano's two bar shapes (-1 = the bass)
-    mel: [[0, 0, 71, 6], [0, 6, 72, 2], [0, 8, 74, 8], [1, 0, 71, 12], [1, 12, 67, 4], [2, 0, 69, 8], [2, 8, 66, 4], [2, 12, 69, 4],
-      [3, 0, 71, 8], [3, 8, 67, 8], [4, 0, 72, 6], [4, 6, 71, 2], [4, 8, 69, 8], [5, 0, 67, 6], [5, 6, 69, 2], [5, 8, 71, 8],
-      [6, 0, 76, 8], [6, 8, 74, 4], [6, 12, 72, 4], [7, 0, 71, 10], [7, 10, 69, 2], [7, 12, 66, 4]],
+  function supersaw(o, t, notes, len, vol, opt) {   // the trance lead: six detuned saws per note, bright, into the echo
+    opt = opt || {};
+    var r = opt.r != null ? opt.r : 0.25, lp = filt("lowpass", opt.cut || 5200, 0.6), hp = filt("highpass", 180), g = gain(0), stop = t + len + r + 0.05;
+    swell(g, t, opt.a || 0.01, len, r, vol / Math.sqrt(notes.length));
+    notes.forEach(function (m) { [-24, -12, -5, 5, 12, 24].forEach(function (d) { osc("sawtooth", F(o, m), t, stop, d).connect(lp); }); });
+    lp.connect(hp); hp.connect(g); g.connect(o.duck); send(o, g, 0.45, opt.delay != null ? opt.delay : 0.25);
+  }
+  var GATE = [1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0];
+  function gatePad(o, t, notes, vol, six) {   // one bar of a trance-gated chord
+    var lp = filt("lowpass", 3000, 0.7), g = gain(0.0001), stop = t + six * 16 + 0.1, v = vol / Math.sqrt(notes.length);
+    for (var i = 0; i < 16; i++) { var tt = t + i * six; if (GATE[i]) { g.gain.setTargetAtTime(v, tt, 0.004); g.gain.setTargetAtTime(0.0001, tt + six * 0.6, 0.012); } }
+    notes.forEach(function (m) { [-10, 0, 10].forEach(function (d) { osc("sawtooth", F(o, m), t, stop, d).connect(lp); }); });
+    lp.connect(g); g.connect(o.duck); send(o, g, 0.3, 0.2);
+  }
+  function pluck(o, t, m, v, len) {   // a fingerpicked clean guitar string
+    var f = F(o, m), g = gain(0), lp = filt("lowpass", 3200, 1);
+    lp.frequency.setValueAtTime(3200, t); lp.frequency.exponentialRampToValueAtTime(700, t + 0.25);
+    [["sawtooth", 1, 0.35, 0], ["triangle", 1, 1, 4], ["sine", 2, 0.25, -3]].forEach(function (p) { var s = osc(p[0], f * p[1], t, t + len + 0.1, p[3]), sg = gain(p[2]); s.connect(sg); sg.connect(lp); });
+    env(g, t, 0.002, len, 0.11 * v); lp.connect(g); g.connect(o.duck); send(o, g, 0.4, 0.12);
+  }
+  function mapBpm(T, pos) {   // a tempo map: straight lines between [bar, bpm] points
+    var i = T.length - 1; while (i > 0 && T[i][0] > pos) i--;
+    var a = T[i], b = T[i + 1];
+    return !b || b[0] <= a[0] ? a[1] : a[1] + (b[1] - a[1]) * (pos - a[0]) / (b[0] - a[0]);
+  }
+  // a V8: a sawtooth at the firing rate, a sub an octave down, and the uneven "burble" of a cross-plane crank
+  function v8Chain(o, t, stop, f, panV) {
+    var a = osc("sawtooth", f, t, stop), b = osc("square", f / 2, t, stop, 7), am = osc("sine", f / 2, t, stop);
+    var body = gain(0.6), amg = gain(0.45), sh = shaper(4), lp = filt("lowpass", 300 + f * 7, 1.4), g = gain(0.0001), p = panner(panV || 0);
+    am.connect(amg); amg.connect(body.gain); a.connect(body); b.connect(body); body.connect(sh); sh.connect(lp); lp.connect(g); g.connect(p); p.connect(o.bus); send(o, p, 0.2);
+    return { oscs: [a, b, am], lp: lp, g: g };
+  }
+  function makeV8(o, t) {   // one engine that runs for the whole track: idle, blips, launch, gear changes, the limiter
+    var c = v8Chain(o, t, t + 36000, 52, -0.15);
+    c.oscs.forEach(function (s) { o.nodes.push(s); });
+    function to(tt, f, tc) {
+      c.oscs[0].frequency.setTargetAtTime(f, tt, tc); c.oscs[1].frequency.setTargetAtTime(f / 2, tt, tc); c.oscs[2].frequency.setTargetAtTime(f / 2, tt, tc);
+      c.lp.frequency.setTargetAtTime(Math.min(4200, 300 + f * 7), tt, tc);
+    }
+    return {
+      rpm: to,
+      level: function (tt, v, tc) { c.g.gain.setTargetAtTime(Math.max(0.0001, v), tt, tc || 0.05); },
+      blip: function (tt, base, peak) { to(tt, peak, 0.04); to(tt + 0.2, base, 0.14); },   // vroom
+      shift: function (tt, gears, gearLen, lo, hi) {   // flat out through the gears
+        for (var i = 0; i < gears; i++) { var g0 = tt + i * gearLen; to(g0, hi * (1 + i * 0.06), gearLen * 0.4); to(g0 + gearLen * 0.97, lo * (1 + i * 0.12), 0.012); }
+        to(tt + gears * gearLen, lo * 1.2, 0.6);
+      },
+      downshift: function (tt, n, step, base) { for (var i = 0; i < n; i++) { to(tt + i * step, base * (1.9 - i * 0.15), 0.015); to(tt + (i + 0.45) * step, base, 0.04); } },   // brap, brap, brap
+      limiter: function (tt, f, n, step) { for (var i = 0; i < n; i++) { to(tt + i * step, f, 0.004); to(tt + (i + 0.5) * step, f * 0.82, 0.004); } }
+    };
+  }
+  function vroom(o, t, len, lo, hi, v) {   // a one-off throttle blip, for tracks that don't carry an engine
+    var c = v8Chain(o, t, t + len + 0.1, lo, 0.2);
+    c.oscs.forEach(function (s, i) { var k = i ? 0.5 : 1; s.frequency.setTargetAtTime(hi * k, t, len * 0.12); s.frequency.setTargetAtTime(lo * k, t + len * 0.35, len * 0.2); });
+    swell(c.g, t, 0.03, len * 0.6, len * 0.35, 0.07 * v);
+  }
+  function tyres(o, t, len, v, panV) {   // tyres screeching through a corner: a wobbling squeal over filtered noise
+    var g = gain(0), p = panner(panV || 0), n = noiseL(t, len + 0.1), bp = filt("bandpass", 2000, 8), bp2 = filt("bandpass", 3200, 7), ng = gain(4);
+    bp.frequency.setValueAtTime(2200, t); bp.frequency.linearRampToValueAtTime(1600, t + len);
+    var s = osc("triangle", 1650, t, t + len + 0.1), sg = gain(0.25), wob = osc("sine", 9, t, t + len + 0.1), wg = gain(70);
+    wob.connect(wg); wg.connect(s.frequency); s.frequency.linearRampToValueAtTime(1250, t + len);
+    n.connect(bp); n.connect(bp2); bp.connect(ng); bp2.connect(ng); ng.connect(g); s.connect(sg); sg.connect(g);
+    swell(g, t, 0.05, len * 0.7, len * 0.3, 0.05 * v);
+    g.connect(p); p.connect(o.bus); send(o, p, 0.35);
+  }
+  function lightOn(o, t, v) {   // a red light clunks on
+    beep(o, t, 81, 0.3, 0.9 * v);
+    var n = noise(t, 0.04), bp = filt("bandpass", 1800, 3), g = gain(0); env(g, t, 0.001, 0.03, 0.22 * v); n.connect(bp); bp.connect(g); g.connect(o.bus);
+  }
+  function lightsOut(o, t, v) {   // ...and all five go out
+    var s = osc("sine", 520, t, t + 0.7), g = gain(0); s.frequency.exponentialRampToValueAtTime(70, t + 0.55); env(g, t, 0.002, 0.55, 0.13 * v); s.connect(g); g.connect(o.bus); send(o, g, 0.5);
+    var n = noise(t, 0.06), hp = filt("highpass", 2500), ng = gain(0); env(ng, t, 0.001, 0.05, 0.28 * v); n.connect(hp); hp.connect(ng); ng.connect(o.bus);
+  }
+  function rollAt(o, t, st, bar, from, len) {   // a snare roll that thickens across `len` bars
+    var p = ((bar - from) * 16 + st) / (len * 16), ev = p < 0.5 ? 4 : p < 0.75 ? 2 : 1;
+    if (st % ev === 0) snare(o, t, 0.2 + 0.7 * p);
+  }
+
+  // 8 · Gem Match · emotional trance (138 bpm, four minutes): supersaws, a piano breakdown, long bass drops
+  var GT = {
+    roots: [40, 36, 43, 38],   // Em C G D, two bars each
+    tri: { 40: [52, 55, 59], 36: [48, 52, 55], 43: [50, 55, 59], 38: [50, 54, 57] },
+    mel: [[0, 71, 3], [3, 74, 3], [6, 76, 2], [8, 79, 4], [12, 78, 2], [14, 76, 2], [16, 74, 6], [22, 71, 2], [24, 74, 4], [28, 76, 4],
+      [32, 72, 3], [35, 76, 3], [38, 79, 2], [40, 84, 4], [44, 83, 2], [46, 79, 2], [48, 76, 8], [56, 74, 4], [60, 72, 4],
+      [64, 71, 3], [67, 74, 3], [70, 79, 2], [72, 83, 4], [76, 81, 2], [78, 79, 2], [80, 78, 6], [86, 79, 2], [88, 81, 4], [92, 83, 4],
+      [96, 81, 3], [99, 78, 3], [102, 74, 2], [104, 78, 4], [108, 81, 4], [112, 79, 6], [118, 78, 2], [120, 76, 8]],
+    arp: [0, 1, 2, 3, 2, 1, 0, 2, 1, 3, 2, 1, 3, 2, 1, 2],
     sec: function (bar) {
-      if (bar < 8) return { id: "first light", piano: 0.75, pad: bar >= 4 ? 0.014 : 0 };
-      if (bar < 16) return { id: "descent", piano: 0.62, pad: 0.016, cello: 0.045 };
-      if (bar < 24) return { id: "the mine", piano: 0.35, pmel: 0.75, pad: 0.014, cello: 0.045 };
-      if (bar < 40) return { id: "lanterns", piano: 0.3, cello: 0.05, str: 0.035, smel: 0.055, horn: 0.03 };
-      if (bar < 48) return { id: "alone", pmel: 0.8, poct: 12, high: 1, pad: 0.014 };
-      if (bar < 64) return { id: "the climb", piano: 0.25, cello: 0.055, str: 0.04, bmel: 0.07, timp: 1 };
-      if (bar < 72) return { id: "summit", cello: 0.06, str: 0.05, bmel: 0.08, smel: 0.045, smoct: 12, timp: 2, choir: 1 };
-      if (bar < 80) return { id: "memory", piano: 0.25, pmel: 0.55, str: 0.03, horn: 0.025, cello: 0.04 };
-      return { id: "rest", piano: 0.62 - (bar - 80) * 0.03, pad: 0.014 };
+      if (bar < 16) return { id: "first light", kick: 1, bass: 0.6, hats: bar >= 8 ? 2 : 1, arp: bar >= 4 ? 0.5 : 0, cut: 300 + bar * 40 };
+      if (bar < 32) return { id: "the climb", kick: bar < 31, bass: bar < 31 ? 0.8 : 0, hats: 2, clap: bar >= 20 && bar < 28, arp: 0.8, gate: bar >= 24 ? 0.6 : 0, cut: 900 + (bar - 16) * 40, roll: bar >= 28 && bar < 31 ? 28 : 0, rl: 3, riser: bar === 28 ? 4 : 0, gap: bar === 31 };
+      if (bar < 56) return { id: "drop", drop: 32, kick: 1, reese: 1, bass: 1, hats: 3, clap: 1, arp: 1, gate: 1, lead: 1, cut: 1600 };
+      if (bar < 72) return { id: "breakdown", piano: 1, pad: 1, str: bar >= 60, lead: bar >= 64 ? 0.5 : 0, arp: bar >= 64 ? 0.6 : 0, roll: bar >= 64 && bar < 71 ? 64 : 0, rl: 7, riser: bar === 64 ? 8 : 0, gap: bar === 71, cut: 400 + Math.max(0, bar - 64) * 150 };
+      if (bar < 104) return { id: "drop", drop: 72, kick: 1, reese: 1, bass: 1, hats: 3, clap: 1, arp: 1, gate: 1, lead: 1, oct: 1, str: 1, ride: 1, cut: 1800 };
+      if (bar < 112) return { id: "breathe", pad: 1, piano: 0.8, arp: 0.7, hats: 1, roll: bar >= 108 && bar < 111 ? 108 : 0, rl: 3, riser: bar === 108 ? 4 : 0, gap: bar === 111, cut: 700 };
+      if (bar < 128) return { id: "drop", drop: 112, kick: 1, reese: 1, bass: 1, hats: 3, clap: 1, arp: 1, gate: 1, lead: 1, oct: 1, str: 1, ride: 1, cut: 1800 };
+      return { id: "home", kick: 1, bass: 0.7, hats: 2, arp: 0.6, pad: 1, cut: 900 - (bar - 128) * 80 };
     }
   };
   var SONG_GEMS = {
-    mood: "Gem Match · somber brass and strings, still hopeful", bpm: 72, bars: 88,
-    init: function (o, t) { o.sub = makeSub(o, t); },
+    mood: "Gem Match · emotional trance, long bass drops", bpm: 138, bars: 134,
+    init: function (o, t) { o.sub = makeSub(o, t); o.reese = makeReese(o, t); },
     play: function (o, t, st, bar) {
-      var sec = GM.sec(bar), last = bar === 87, c = last ? [40, [52, 55, 59], 0] : GM.chords[bar % 8], b = c[0], v = c[1], six = o.six, barLen = six * 16;
-      var len = last ? barLen * 3 : barLen * 1.03;
+      var sec = GT.sec(bar), root = GT.roots[Math.floor(bar / 2) % 4], tri = GT.tri[root], up = tri.map(function (m) { return m + 12; }), six = o.six;
+      o.cut = sec.cut || 600;
       if (st === 0) {
-        o.sub.set(t, b - 12, sec.timp || sec.cello ? 0.07 : 0.04);
-        if (sec.pad) pad(o, t, v.concat(b + 12), len, sec.pad, "warm");
-        if (sec.cello) strings(o, t, [b], len, sec.cello, { a: 1.2, r: last ? 4 : 1.4, bright: 0.55 });
-        if (sec.str) strings(o, t, v.map(function (m) { return m + 12; }), len, sec.str, { a: 1.5, r: last ? 5 : 1.6 });
-        if (sec.horn) brass(o, t, [b, v[1]], len, sec.horn, { a: 1.4 });
-        if (sec.high && bar % 4 === 0) strings(o, t, [v[2] + 24], barLen * 4, 0.022, { a: 3, r: 3, bright: 1.1 });
-        if (sec.timp && (bar % 2 === 0 || sec.timp === 2)) tom(o, t, F(o, b < 43 ? b : b - 12) * 2, sec.timp === 2 ? 0.6 : 0.45);
-        if (sec.choir && o.P.choir) pad(o, t, v.concat(b + 12), len, 0.025);
-        if (bar === 64) crash(o, t, 0.5);
-        if (last) { piano(o, t, 40, 0.7, 8); piano(o, t, 52, 0.5, 8); piano(o, t, 59, 0.4, 8); }
+        o.bassLp.frequency.setTargetAtTime(o.cut * 1.6, t, 0.5);
+        o.sub.set(t, root - 12, sec.gap ? 0.0001 : sec.reese ? 0.185 : sec.bass ? 0.12 : 0.045);
+        if (sec.riser) riser(o, t, six * 16 * sec.riser, 0.13);
+        if (sec.gap) { subDrop(o, t, six * 16, 0.44); pad(o, t, up, six * 16, 0.03, "warm"); }   // the floor falls away for a whole bar
+        if (sec.drop === bar) { crash(o, t, 0.7); subDrop(o, t, six * 16, 0.33); o.reese.rate(t, 1 / (six * 2)); o.reese.play(t, root + 12, six * 30, 0.17); o.reese.bend(t, root, six * 6); }
+        else if (sec.drop != null && bar % 8 === 0) crash(o, t, 0.49);
+        if (sec.reese && bar - sec.drop >= 2 && bar % 2 === 0) { o.reese.rate(t, 0.4); o.reese.play(t, root, six * 30, 0.08); }   // and the bass keeps holding underneath
+        if (sec.pad && bar % 2 === 0) pad(o, t, tri.concat(tri[0] + 12), six * 32, 0.035, "warm");
+        if (sec.str && bar % 2 === 0) strings(o, t, up, six * 32, 0.035, { a: 0.6, r: 1 });
+        if (sec.gate) gatePad(o, t, up, 0.03 * sec.gate, six);
+        if (sec.piano && bar % 2 === 0) { piano(o, t, root, 0.6 * sec.piano, 6); piano(o, t, tri[1], 0.4 * sec.piano, 6); }
       }
-      if (sec.timp === 2 && bar % 4 === 3 && st >= 8) tom(o, t, F(o, 40) * 2, 0.2 + (st - 8) * 0.05);   // a timpani roll into the next phrase
-      if (last) return;
-      var acc = (bar % 2 ? GM.pb : GM.pa)[st];
-      if (sec.piano && acc != null) piano(o, t, acc < 0 ? b + 12 : v[acc] + 12, sec.piano * (st === 0 ? 1 : 0.75), 2.8);
-      melodyAt(GM.mel, bar % 8, st).forEach(function (n) {
-        if (sec.pmel) piano(o, t, n[2] + (sec.poct || 0), sec.pmel, n[3] * six * 1.4);
-        if (sec.smel) strings(o, t, [n[2] + (sec.smoct || 0)], n[3] * six, sec.smel, { a: 0.4, r: 1, bright: 1.1 });
-        if (sec.bmel) brass(o, t, [n[2] - 12], n[3] * six, sec.bmel, { a: 0.25 });
-      });
+      if (sec.gap) return;
+      if (sec.kick && st % 4 === 0) softKick(o, t, 1);
+      if (sec.clap && (st === 4 || st === 12)) clap(o, t, 0.59);
+      if (sec.hats === 1 && st % 4 === 2) hat(o, t, 0.7);
+      if (sec.hats >= 2) { if (st % 4 === 2) hat(o, t, 0.9, true); else if (st % 2 === 1) hat(o, t, sec.hats === 3 ? 0.5 : 0.3); }
+      if (sec.ride && st % 4 === 0) ride(o, t, 0.5);
+      if (sec.roll) rollAt(o, t, st, bar, sec.roll, sec.rl);
+      if (sec.bass && st % 4 !== 0) bassNote(o, t, root + (st % 4 === 2 ? 12 : 0), sec.bass * (st % 4 === 2 ? 0.6 : 0.46), six * 0.8);
+      if (sec.arp) arpNote(o, t, [up[0], up[1], up[2], up[0] + 12][GT.arp[st]], sec.arp * (st % 4 === 0 ? 1 : 0.7));
+      if (sec.lead || sec.piano) {
+        var pos = (bar % 8) * 16 + st;
+        GT.mel.forEach(function (n) {
+          if (n[0] !== pos) return;
+          if (sec.lead) supersaw(o, t, sec.oct ? [n[1], n[1] - 12] : [n[1]], n[2] * six * 0.95, 0.035 * sec.lead, { cut: sec.lead < 1 ? 2200 : 5200 });
+          if (sec.piano) piano(o, t, n[1], 0.75 * sec.piano, n[2] * six * 1.6);
+        });
+      }
     }
   };
-  SONG_GEMS.outroBars = 2;
-  SONG_GEMS.outro = function (o, t, st, k) {   // one last lantern: high piano over a held E minor
-    var six = o.six;
-    if (st === 0 && k === 0) { o.sub.set(t, 28, 0.04); strings(o, t, [55, 59, 64], six * 26, 0.03, { a: 1.5, r: 3 }); }
-    if (k === 0 && (st === 0 || st === 6 || st === 10)) piano(o, t, [71, 76, 79][st === 0 ? 0 : st === 6 ? 1 : 2], 0.35, 4);
-    if (k === 1 && st === 0) piano(o, t, 83, 0.25, 5);
+  SONG_GEMS.outroBars = 4;
+  SONG_GEMS.outro = function (o, t, st, k, N) {   // the anthem's last chord swells and lets go, the kick walks away
+    var six = o.six, fade = 1 - k / N;
+    if (st === 0) {
+      o.sub.set(t, 28, 0.16 * fade + 0.02);
+      if (k === 0) { crash(o, t, 0.63); supersaw(o, t, [64, 71, 76], six * 36, 0.03, { a: 0.02, r: 3, cut: 3500 }); o.reese.rate(t, 0.3); o.reese.play(t, 40, six * 20, 0.13); }
+      if (k === 1) pad(o, t, [52, 55, 59, 64], six * 40, 0.03, "warm");
+      if (k === 2) piano(o, t, 76, 0.5, 4);
+    }
+    if (k < 2 && st % 4 === 0) softKick(o, t, 1 - k * 0.35);
+    if (k < 3 && st % 4 === 2) hat(o, t, 0.6 * fade, true);
+    if (k < 3) arpNote(o, t, [64, 67, 71, 76][GT.arp[st]], (st % 4 === 0 ? 0.9 : 0.6) * fade);
   };
 
-  // 9 · Schema Stack · electric guitars (150 bpm, three minutes): chugging riffs, a singing lead, a solo
-  var SS = {
-    // [step, root, length, palm-muted?]
-    riffA: [[0, 40, 1, 1], [1, 40, 1, 1], [2, 40, 1, 1], [3, 43, 2, 0], [5, 40, 1, 1], [6, 40, 1, 1], [7, 45, 2, 0], [9, 40, 1, 1], [10, 40, 1, 1], [11, 47, 2, 0], [13, 45, 1, 0], [14, 43, 2, 0]],
-    riffB: [[0, 40, 1, 1], [1, 40, 1, 1], [2, 40, 1, 1], [3, 43, 2, 0], [5, 40, 1, 1], [6, 40, 1, 1], [7, 45, 2, 0], [9, 40, 1, 1], [10, 48, 3, 0], [13, 50, 3, 0]],
-    chorus: [48, 43, 50, 40],   // C G D E, a bar each
-    verse: [[0, 64, 2], [2, 67, 2], [4, 69, 3], [7, 71, 1], [8, 74, 4], [12, 71, 2], [14, 69, 2], [16, 67, 6], [22, 69, 2], [24, 71, 8],
-      [32, 76, 3], [35, 74, 1], [36, 71, 2], [38, 74, 2], [40, 76, 4], [44, 79, 2], [46, 76, 2], [48, 74, 4], [52, 71, 4], [56, 69, 2], [58, 67, 2], [60, 69, 4]],
-    hook: [[0, 76, 6], [6, 74, 2], [8, 72, 4], [12, 74, 4], [16, 74, 6], [22, 72, 2], [24, 71, 8], [32, 69, 4], [36, 74, 4], [40, 78, 6], [46, 76, 2], [48, 79, 8], [56, 78, 4], [60, 76, 4]],
-    // the bridge: Am C Em B, two bars each, two guitars in harmony
-    br: [[45, [[0, 76, 12], [12, 74, 4], [16, 72, 16]], [[0, 72, 12], [12, 71, 4], [16, 69, 16]]],
-      [48, [[0, 72, 8], [8, 74, 8], [16, 76, 16]], [[0, 67, 8], [8, 71, 8], [16, 72, 16]]],
-      [40, [[0, 79, 12], [12, 78, 4], [16, 76, 16]], [[0, 76, 12], [12, 74, 4], [16, 71, 16]]],
-      [47, [[0, 75, 16], [16, 78, 16]], [[0, 71, 16], [16, 75, 16]]]],
-    solo: [[64, 67, 71, 76, 79, 76, 71, 67], [69, 72, 76, 81, 79, 76, 72, 69], [71, 74, 78, 83, 81, 78, 74, 71], [76, 74, 71, 67, 69, 71, 74, 76]],
+  // 9 · Schema Stack · a slow climb (76 → 96 bpm, three minutes): fingerpicked guitar and flute over a descending
+  // line, the band coming in, then two guitar solos and a hard-rock finish that ends as quietly as it began
+  var ST = {
+    tempo: [[0, 76], [16, 76], [28, 96], [999, 96]],
+    // the line cliché, a bar each: [bass, three notes above] · Em, Em/D#, Em/D, A/C#, Cmaj7, G/B, Am, B
+    cliche: [[52, [59, 64, 67]], [51, [59, 64, 67]], [50, [59, 64, 67]], [49, [57, 64, 67]], [48, [55, 59, 64]], [47, [55, 62, 67]], [45, [57, 60, 64]], [47, [54, 57, 63]]],
+    pick: ["b", 0, 1, 2, "b", 2, 1, 0],   // the fingerpicking pattern, in eighths
+    flute: [[0, 0, 71, 6], [0, 6, 74, 2], [0, 8, 76, 8], [1, 0, 74, 4], [1, 4, 71, 4], [1, 8, 67, 8], [2, 0, 69, 6], [2, 6, 71, 2], [2, 8, 74, 8],
+      [3, 0, 73, 8], [3, 8, 69, 8], [4, 0, 71, 6], [4, 6, 72, 2], [4, 8, 76, 8], [5, 0, 74, 8], [5, 8, 71, 4], [5, 12, 67, 4],
+      [6, 0, 69, 6], [6, 6, 72, 2], [6, 8, 76, 6], [6, 14, 74, 2], [7, 0, 75, 8], [7, 8, 71, 8]],
+    rock: [40, 38, 36, 38], chords: [52, 50, 48, 50],   // Em D C D: bass roots, power-chord roots
+    anthem: [[0, 76, 4], [4, 79, 2], [6, 76, 2], [8, 74, 4], [12, 71, 4], [16, 74, 4], [20, 78, 2], [22, 74, 2], [24, 69, 8],
+      [32, 72, 4], [36, 76, 2], [38, 72, 2], [40, 67, 4], [44, 72, 4], [48, 74, 6], [54, 76, 2], [56, 78, 8]],
+    // solo I, phrase by phrase (4 bars each): [step, note, length, bend from]
+    solo: [
+      [[0, 76, 6, 74], [6, 79, 2], [8, 81, 4, 79], [12, 79, 2], [14, 76, 2], [16, 74, 8, 72], [24, 71, 4], [28, 74, 4], [32, 72, 6], [38, 71, 2], [40, 67, 4], [44, 69, 4], [48, 71, 4, 69], [52, 74, 4], [56, 76, 8, 74]],
+      [[0, 83, 8, 81], [8, 81, 2], [10, 79, 2], [12, 76, 4], [16, 78, 6, 76], [22, 81, 2], [24, 78, 4], [28, 74, 4], [32, 79, 4], [36, 76, 2], [38, 72, 2], [40, 76, 4], [44, 79, 4], [48, 81, 2], [50, 83, 2], [52, 86, 4, 84], [56, 88, 8, 86]],
+      [[32, 79, 12, 77], [44, 76, 4], [48, 78, 8, 76], [56, 74, 4], [60, 71, 4]]   // after two bars of runs
+    ],
+    runs: { 40: [76, 79, 81, 83, 81, 79, 76, 79, 81, 83, 86, 83, 81, 79, 76, 74], 38: [74, 78, 81, 78, 74, 78, 81, 86, 81, 78, 74, 78, 81, 83, 81, 78], 36: [72, 76, 79, 76, 72, 76, 79, 84, 79, 76, 72, 76, 79, 81, 79, 76] },
     sec: function (bar) {
-      if (bar < 4) return { id: "intro", riff: 1, clean: 1, fill: bar === 3 };
-      if (bar < 12) return { id: "riff", riff: 1, drums: 1, bass: 1, crash: bar === 4 };
-      if (bar < 28) return { id: "verse", riff: 1, drums: 1, bass: 1, lead: "verse", lv: 0.05, fill: bar === 27 };
-      if (bar < 36) return { id: "pre-chorus", chords: [48, 50], drums: 1, bass: 1, roll: bar >= 34 };
-      if (bar < 52) return { id: "chorus", chorus: 1, drums: 2, bass: 1, lead: "hook", lv: 0.06, crash: bar % 4 === 0, fill: bar === 51 };
-      if (bar < 60) return { id: "bridge", bridge: 1, half: 1 };
-      if (bar < 76) return { id: "solo", riff: 1, drums: 2, bass: 1, solo: 1, crash: bar === 60 || bar === 68, fill: bar === 75 };
-      if (bar < 84) return { id: "breakdown", riff: 1, half: 1, heavy: 1, bass: 1, toms: 1 };
-      if (bar < 100) return { id: "chorus", chorus: 1, drums: 2, bass: 1, lead: "hook", lv: 0.065, harm: 1, crash: bar % 4 === 0, fill: bar === 99 };
-      return { id: "finale", riff: 1, drums: 2, bass: 1, end: bar === 107, crash: bar === 100 };
+      if (bar < 8) return { id: "fingerpicked", pick: 0.8 };
+      if (bar < 16) return { id: "the flute", pick: 0.75, flute: 1, cello: 0.5 };
+      if (bar < 20) return { id: "rising", pick: 0.7, flute: 1, cello: 0.7, clean: 1, pad: 1 };
+      if (bar < 28) return { id: "rising", pick: 0.6, lead: 1, cello: 0.8, clean: 1, drums: 1, pad: 1, fill: bar === 27 };
+      if (bar < 36) return { id: "hard rock", rock: 1, drums: 2, anthem: 1, crash: bar === 28 || bar === 32, fill: bar === 35 };
+      if (bar < 52) return { id: "solo", rock: 1, drums: 2, solo: 1, crash: bar % 4 === 0, fill: bar === 51 };
+      if (bar < 60) return { id: "shred", rock: 1, drums: 2, shred: 1, twin: bar >= 56, crash: bar % 4 === 0, fill: bar === 59 };
+      return { id: "finale", rock: 1, drums: 2, anthem: 1, harm: 1, crash: bar === 60, end: bar === 63 };
     }
   };
   var SONG_STACK = {
-    mood: "Schema Stack · electric guitar riffs", bpm: 150, bars: 108,
-    init: function (o, t) { o.sub = makeSub(o, t); o.g1 = makeGuitar(o, t, -0.2); o.g2 = makeGuitar(o, t, 0.35); },
+    mood: "Schema Stack · a slow climb to two guitar solos", bpm: 76, range: [76, 96], bars: 64,
+    tempo: function (pos) { return mapBpm(ST.tempo, pos); },
+    init: function (o, t) { o.sub = makeSub(o, t); o.g1 = makeGuitar(o, t, -0.2, true); o.g2 = makeGuitar(o, t, 0.35, true); o.fl = makeLead(o, t, "glass", 0.3); },
     play: function (o, t, st, bar) {
-      var sec = SS.sec(bar), six = o.six;
-      if (st === 0) o.sub.set(t, 28, sec.clean ? 0.04 : 0.12);
-      if (sec.end) {   // the last bar: three hits and a ringing E
+      var sec = ST.sec(bar), six = o.six, cl = ST.cliche[bar % 8], ri = bar % 4, rr = ST.rock[ri];
+      o.cut = 420;   // a round, dark bass
+      if (st === 0) o.sub.set(t, sec.rock ? rr - 12 : cl[0] - 24, sec.rock ? 0.08 : 0.04);
+      if (sec.end) {   // three last hits, a held E, the lead wailing over it
         if (st === 0 || st === 3 || st === 6) {
-          var ln = st === 6 ? six * 30 : six * 2;
-          power(o, t, 40, ln, 1.1, { pan: -0.45 }); power(o, t, 40, ln, 1.1, { pan: 0.45 }); kick(o, t, 1); crash(o, t, 0.9); bassNote(o, t, 28, 1, ln * 0.9);
+          var ln = st === 6 ? six * 26 : six * 2;
+          power(o, t, 40, ln, 1.1, { pan: -0.45, dark: 1 }); power(o, t, 40, ln, 1.1, { pan: 0.45, dark: 1 }); kick(o, t, 1); crash(o, t, 0.9); bassNote(o, t, 40, 0.7, ln * 0.9);
         }
         if (st === 6) o.g1.play(t, 76, six * 9, 0.06, 74);
         return;
       }
-      if (sec.riff) (bar % 2 ? SS.riffB : SS.riffA).forEach(function (n) {
-        if (n[0] !== st) return;
-        power(o, t, n[1], n[2] * six * 0.92, (sec.clean ? 0.6 : 1) * (sec.heavy ? 1.2 : 1), { mute: !!n[3], pan: n[3] ? 0 : (st % 2 ? 0.35 : -0.35), tone: sec.clean ? 0.5 : 1 });
-        if (sec.bass) bassNote(o, t, n[1] - 12, n[3] ? 0.75 : 1, n[2] * six * 0.9);
+      if (sec.pick && st % 2 === 0) { var pi = ST.pick[st / 2]; pluck(o, t, pi === "b" ? cl[0] : cl[1][pi], sec.pick * (pi === "b" ? 1 : 0.75), 2.2); }
+      if (st === 0) {
+        if (sec.pad) pad(o, t, cl[1], six * 16, 0.02, "warm");
+        if (sec.cello) strings(o, t, [cl[0] - 12], six * 16, 0.045 * sec.cello, { a: 0.3, r: 0.8, bright: 0.5 });
+        if (sec.clean) power(o, t, cl[0], six * 7, 0.5, { tone: 0.5, pan: -0.3, dark: 1 });
+      }
+      if (sec.clean && st === 8) power(o, t, cl[0], six * 7, 0.4, { tone: 0.5, pan: 0.3, dark: 1 });
+      if (sec.flute) melodyAt(ST.flute, bar % 8, st).forEach(function (n) { o.fl.play(t, n[2] + 12, n[3] * six, 0.08); });
+      if (sec.lead) melodyAt(ST.flute, bar % 8, st).forEach(function (n) { o.g1.play(t, n[2], n[3] * six, 0.045, n[3] >= 8 ? n[2] - 2 : null); });
+      if (sec.rock && st % 2 === 0) {   // driving eighths, double-tracked
+        power(o, t, ST.chords[ri], six * 1.9, st % 4 === 0 ? 1 : 0.7, { pan: -0.45, dark: 1 });
+        power(o, t, ST.chords[ri], six * 1.9, st % 4 === 0 ? 0.9 : 0.6, { pan: 0.45, dark: 1 });
+        bassNote(o, t, rr, st % 4 === 0 ? 0.65 : 0.5, six * 1.8);
+      }
+      var sp = ri * 16 + st;
+      if (sec.anthem) ST.anthem.forEach(function (n) {
+        if (n[0] !== sp) return;
+        o.g1.play(t, n[1], n[2] * six, 0.06, n[2] >= 4 && st % 4 === 0 ? n[1] - 2 : null);
+        if (sec.harm) o.g2.play(t, dia(n[1], -2), n[2] * six, 0.045);
       });
-      var cr = sec.chorus ? SS.chorus[bar % 4] : sec.chords ? sec.chords[bar % 2] : 0;
-      if (cr && st % 2 === 0) {   // driving eighths, double-tracked left and right
-        power(o, t, cr, six * 1.9, st % 4 === 0 ? 1 : 0.75, { pan: -0.45 });
-        if (sec.chorus) power(o, t, cr, six * 1.9, st % 4 === 0 ? 0.9 : 0.65, { pan: 0.45 });
-        if (sec.bass) bassNote(o, t, cr - 12, st % 4 === 0 ? 1 : 0.8, six * 1.8);
-      }
-      if (sec.bridge) {
-        var bi = SS.br[Math.floor((bar - 52) / 2) % 4], bst = ((bar - 52) % 2) * 16 + st;
-        if (bst === 0) { power(o, t, bi[0], six * 30, 0.6, { pan: -0.5 }); power(o, t, bi[0], six * 30, 0.6, { pan: 0.5 }); }
-        bi[1].forEach(function (n) { if (n[0] === bst) o.g1.play(t, n[1], n[2] * six, 0.055); });
-        bi[2].forEach(function (n) { if (n[0] === bst) o.g2.play(t, n[1], n[2] * six, 0.045); });
-        if (st % 4 === 0) bassNote(o, t, bi[0] - 12, 0.8, six * 3.6);
-      }
-      if (sec.lead) {
-        var pos = (bar % 4) * 16 + st;
-        SS[sec.lead].forEach(function (n) {
-          if (n[0] !== pos) return;
-          o.g1.play(t, n[1], n[2] * six, sec.lv, n[2] >= 4 && st % 4 === 0 ? n[1] - 2 : null);   // long notes start with a bend
-          if (sec.harm) o.g2.play(t, dia(n[1], -2), n[2] * six, sec.lv * 0.75);
-        });
-      }
       if (sec.solo) {
-        if (bar < 72) { var nn = SS.solo[bar % 4][st % 8]; o.g1.play(t, nn, six * 0.95, 0.05, st === 0 ? nn - 2 : null); }
-        else { var hp = (bar % 4) * 16 + st; SS.hook.forEach(function (n) { if (n[0] === hp) o.g1.play(t, n[1], n[2] * six, 0.06, n[1] - 2); }); }
+        var ph = Math.floor((bar - 36) / 4);
+        if (ph === 2 && ri < 2) o.g1.play(t, ST.runs[rr][st], six * 0.95, 0.05);
+        else if (ph === 3) ST.anthem.forEach(function (n) { if (n[0] === sp) { o.g1.play(t, n[1], n[2] * six, 0.06, n[1] - 2); o.g2.play(t, dia(n[1], -2), n[2] * six, 0.05); } });
+        else ST.solo[ph].forEach(function (n) { if (n[0] === sp) o.g1.play(t, n[1], n[2] * six, 0.06, n[3]); });
       }
-      if (sec.half) {
-        if (st === 0 || (sec.heavy && st === 3) || st === 10) kick(o, t, 1);
-        if (st === 8) snare(o, t, 1.1);
-        if (st % 4 === 0) (sec.heavy ? ride : hat)(o, t, 0.8);
-      } else if (sec.drums && !(sec.fill && st >= 8)) {
-        if (st === 0 || st === 8 || (st === 6 && bar % 2) || (sec.drums === 2 && st === 10)) kick(o, t, 1);
+      if (sec.shred) { var nn = ST.runs[rr][st]; o.g1.play(t, nn, six * 0.95, 0.05, st === 0 ? nn - 2 : null); if (sec.twin) o.g2.play(t, dia(nn, -2), six * 0.95, 0.04); }
+      if (sec.drums === 1) {
+        if (st === 0 || st === 8) kick(o, t, 0.7);
+        if ((st === 4 || st === 12) && !(sec.fill && st >= 8)) snare(o, t, 0.55);
+        if (st % 4 === 2) hat(o, t, 0.5);
+      } else if (sec.drums === 2 && !(sec.fill && st >= 8)) {
+        if (st === 0 || st === 8 || (st === 10 && bar % 2)) kick(o, t, 1);
         if (st === 4 || st === 12) snare(o, t, 1.05);
-        if (st % 2 === 0) (sec.drums === 2 ? ride : hat)(o, t, st % 4 === 0 ? 0.9 : 0.6);
+        if (st % 2 === 0) (sec.solo || sec.shred ? ride : hat)(o, t, st % 4 === 0 ? 0.9 : 0.6);
       }
       if (sec.crash && st === 0) crash(o, t, 0.8);
-      if (sec.fill && st >= 8) tom(o, t, [220, 200, 170, 150, 130, 110, 95, 80][st - 8], 1);
-      if (sec.roll && st % (bar === 34 ? 2 : 1) === 0) snare(o, t, 0.3 + 0.5 * ((bar - 34) * 16 + st) / 32);
-      if (sec.toms && bar % 2 === 1 && st >= 12) tom(o, t, [140, 120, 100, 85][st - 12], 1);
+      if (sec.fill && st >= 8) tom(o, t, [220, 200, 170, 150, 130, 110, 95, 80][st - 8], sec.drums === 1 ? 0.7 : 1);
     }
   };
   SONG_STACK.outroBars = 4;
-  SONG_STACK.outro = function (o, t, st, k, N) {   // a held E that rings, a run down the neck, the lead feeding back
-    var six = o.six;
-    if (st === 0) o.sub.set(t, 28, 0.14 * (1 - k / N) + 0.02);
-    if (st === 0 && k === 0) { power(o, t, 40, six * 30, 1, { pan: -0.45 }); power(o, t, 40, six * 30, 1, { pan: 0.45 }); crash(o, t, 1); kick(o, t, 1.1); bassNote(o, t, 28, 1, six * 28); }
-    if (k === 1) { o.g1.play(t, [88, 86, 83, 79, 76, 74, 71, 67, 64, 67, 71, 74, 76, 79, 83, 86][st], six * 0.95, 0.045); if (st >= 8) tom(o, t, [220, 200, 170, 150, 130, 110, 95, 80][st - 8], 0.8); }
-    if (k === 2 && st === 0) { o.g1.play(t, 88, six * 26, 0.04, 86); kick(o, t, 0.9); crash(o, t, 0.6); }
-    if (k === 2 && st % 4 === 0) power(o, t, 40, six * 0.9, 0.5 - st * 0.02, { mute: 1 });
+  SONG_STACK.outro = function (o, t, st, k, N) {   // the chord rings out, and the song ends as it began: one guitar, picking quietly
+    var six = o.six, fade = 1 - k / N;
+    if (st === 0) o.sub.set(t, 28, 0.08 * fade + 0.02);
+    if (k === 0 && st === 0) o.g1.play(t, 79, six * 12, 0.04, 76);
+    if (k >= 1 && st % 2 === 0) { var pi = ST.pick[st / 2]; pluck(o, t, pi === "b" ? 52 : [59, 64, 67][pi], 0.6 * fade + 0.15, 2.4); }
+    if (k === 2 && st === 0) o.fl.play(t, 88, six * 14, 0.07);
   };
 
-  // 10 · Pit Wall · a grand-prix fanfare (brass, driving strings) that loses its mind in the middle (124 bpm)
+  // 10 · Pit Wall · electro techno (148 bpm, four minutes): five red lights before every drop, lights out,
+  // and a V8 that idles, blips, launches, changes gear and bounces off the limiter all the way through
   var PW = {
-    roots: [40, 36, 43, 38], madRoots: [40, 41, 40, 38],   // Em C G D · Em F Em D (Phrygian, for the fever dream)
-    tri: { 40: [52, 55, 59], 36: [48, 52, 55], 43: [47, 50, 55], 38: [50, 54, 57], 41: [53, 57, 60] },
-    ost: [0, 12, 7, 12, 0, 12, 7, 12, 0, 12, 7, 12, 5, 12, 7, 12],
+    roots: [40, 36, 43, 38],   // Em C G D, two bars each
+    tri: { 40: [52, 55, 59], 36: [48, 52, 55], 43: [47, 50, 55], 38: [50, 54, 57] },
     fan: [[0, 64, 2], [2, 71, 6], [8, 69, 2], [10, 71, 2], [12, 76, 12], [24, 74, 4], [28, 71, 4],
       [32, 72, 6], [38, 71, 2], [40, 67, 8], [48, 64, 4], [52, 67, 4], [56, 72, 8],
       [64, 71, 6], [70, 74, 2], [72, 79, 12], [84, 78, 4], [88, 74, 8],
       [96, 78, 6], [102, 76, 2], [104, 74, 4], [108, 69, 4], [112, 74, 6], [118, 76, 10]],
-    mad: [[0, 76, 6], [6, 77, 2], [8, 76, 4], [12, 71, 4], [16, 74, 12], [28, 72, 4], [32, 71, 8], [40, 67, 4], [44, 70, 4], [48, 71, 16]],
-    tribe: { 0: 1, 3: 0.6, 6: 0.8, 8: 0.5, 10: 0.9, 12: 0.6, 14: 0.7 },
+    perc: { 3: 0.5, 7: 0.4, 11: 0.6, 14: 0.45 },
     sec: function (bar) {
-      if (bar < 8) return { id: "the grid", idle: 1, tick: 1, lights: bar >= 2 && bar <= 6 };
-      if (bar < 16) return { id: "lights out", ost: 0.8, drums: 1, pulse: 1, low: 1, fly: bar === 8, crash: bar === 8 };
-      if (bar < 32) return { id: "the theme", ost: 1, drums: 2, pulse: 1, fan: 0.075, low: 1, strPad: 1, crash: bar % 8 === 0 };
-      if (bar < 40) return { id: "overtake", ost: 1, drums: 2, stabs: 1, roll: bar >= 38, riser: bar === 36, strPad: 1, fly: bar === 32 };
-      if (bar < 48) return { id: "off the map", mad: 1, ost: 0.5 * (1 - (bar - 40) / 8), choir: 0.6, wob: 0.6, tribe: 0.5, mlead: bar >= 44 ? 0.06 : 0 };
-      if (bar < 72) return { id: "fever dream", mad: 1, choir: 1, wob: 1, tribe: 1, trap: 1, mlead: 0.075, crash: bar === 48 || bar === 64 };
-      if (bar < 80) return { id: "the fever breaks", mad: 1, choir: 0.8, wob: 1, tribe: 1, roll: bar >= 78, riser: bar === 76, fanLead: 0.065 };
-      if (bar < 104) return { id: "final laps", ost: 1, drums: 2, fan: 0.085, wob: 0.8, choir: 0.6, strPad: 1, tribe: 0.6, crash: bar % 8 === 0, pulse: 1, fly: bar === 96 };
-      if (bar < 112) return { id: "last lap", ost: 1, drums: 2, stabs: 1, pulse: 1, roll: bar >= 110, riser: bar === 108, strPad: 1, fan: 0.07, low: 1 };
-      return { id: "chequered flag", flag: 1 };
+      if (bar < 8) return { id: "the grid", idle: 1, lights: bar >= 3 ? bar - 2 : 0, pad: bar >= 4 };
+      if (bar < 24) return { id: "lights out", out: bar === 8, kick: 1, bass: 0.8, hats: bar >= 12 ? 2 : 1, clap: bar >= 16, perc: bar >= 16 ? 0.6 : 0, arp: 0.5, cut: 500 + (bar - 8) * 50, fly: bar === 16 || bar === 20, corner: bar >= 12 };
+      if (bar < 32) return { id: "formation lap", kick: bar < 31, bass: bar < 31 ? 1 : 0, hats: 2, clap: 1, perc: 0.8, arp: 0.5, acid: 0.4, cut: 1300, corner: bar < 27, roll: bar >= 27 ? 27 : 0, rl: 5, riser: bar === 27 ? 5 : 0, lights: bar >= 27 ? bar - 26 : 0, rev: bar >= 27 };
+      if (bar < 64) return { id: "race", out: bar === 32, drop: 32, big: 1, reese: 1, bass: 1, hats: 3, clap: 1, perc: 1, arp: 0.5, gate: 0.7, stab: 1, acid: 0.4, cut: 1700, fly: bar % 4 === 2, corner: 1 };
+      if (bar < 80) return { id: "pit lane", idle: bar < 75, pad: 1, str: 1, pit: bar < 74, arp: bar >= 72 ? 0.5 : 0, hats: bar >= 68 ? 1 : 0, roll: bar >= 74 ? 74 : 0, rl: 6, riser: bar === 74 ? 6 : 0, lights: bar >= 75 ? bar - 74 : 0, rev: bar >= 75, cut: 500 };
+      if (bar < 120) return { id: "full throttle", out: bar === 80, drop: 80, big: 1, reese: 1, bass: 1, hats: 3, clap: 1, perc: 1, brk: 1, arp: 0.5, gate: 0.7, stab: 1, acid: 0.5, ride: 1, cut: 1900, fly: bar % 4 === 2, shift: bar === 96, corner: bar !== 96 && bar !== 97 };
+      if (bar < 128) return { id: "last lap", kick: bar < 127, bass: bar < 127 ? 1 : 0, hats: 2, perc: 1, arp: 0.5, toms: bar < 123, corner: bar < 123, fly: bar === 120, roll: bar >= 123 ? 123 : 0, rl: 5, riser: bar === 123 ? 5 : 0, lights: bar >= 123 ? bar - 122 : 0, rev: bar >= 123, cut: 1100 };
+      if (bar < 136) return { id: "chequered flag", out: bar === 128, drop: 128, big: 1, reese: 1, bass: 1, hats: 3, clap: 1, perc: 1, brk: 1, arp: 0.5, gate: 0.7, lead: 0.8, ride: 1, cut: 1900, fly: bar === 132, corner: 1 };
+      return { id: "cool-down lap", kick: 1, bass: 0.7, hats: 2, arp: 0.6, pad: 1, idle: 1, cut: 900 - (bar - 136) * 60 };
     }
   };
   var SONG_PIT = {
-    mood: "Pit Wall · grand-prix fanfare into a fever dream", bpm: 124, bars: 120,
-    init: function (o, t) { o.sub = makeSub(o, t); o.reese = makeReese(o, t); o.lead = makeLead(o, t, o.P.lead, 0); },
+    mood: "Pit Wall · electro techno, lights out, V8s and screeching tyres", bpm: 148, bars: 144,
+    init: function (o, t) { o.sub = makeSub(o, t); o.reese = makeReese(o, t); o.acid = makeAcid(o, t); o.v8 = makeV8(o, t); },
     play: function (o, t, st, bar) {
-      var sec = PW.sec(bar), six = o.six, root = (sec.mad ? PW.madRoots : PW.roots)[Math.floor(bar / 2) % 4], tri = PW.tri[root];
-      if (sec.flag) {   // the chequered flag: Em, C, D, then the whole orchestra on an open E
-        var fb = bar - 112, fr = [40, 40, 36, 36, 38, 38, 40, 40][fb], fch = fb >= 6 ? [40, 47, 52, 59, 64] : PW.tri[fr];
-        if (st === 0 && fb % 2 === 0) {
-          brass(o, t, fch, six * (fb >= 6 ? 30 : 28), 0.09, { a: 0.05 }); strings(o, t, fch.map(function (m) { return m + 12; }), six * (fb >= 6 ? 30 : 28), 0.05, { a: 0.1, r: 2 });
-          boom(o, t, 0.9); crash(o, t, 0.9); kick(o, t, 1); o.sub.set(t, fr - 12, 0.2);
-        }
-        if (fb % 2 === 1 && st >= 8) tom(o, t, 150, 0.3 + (st - 8) * 0.07);   // timpani roll
-        if (fb < 6 && st % 2 === 0) spic(o, t, fr + 12 + PW.ost[st], 0.7);
-        return;
-      }
+      var sec = PW.sec(bar), root = PW.roots[Math.floor(bar / 2) % 4], tri = PW.tri[root], up = tri.map(function (m) { return m + 12; }), six = o.six, v8 = o.v8;
+      o.cut = sec.cut || 600;
       if (st === 0) {
-        o.sub.set(t, root - 12, sec.wob ? 0.26 : sec.drums ? 0.2 : sec.idle ? 0.06 : 0.12);
-        if (sec.strPad && bar % 2 === 0) strings(o, t, tri.map(function (m) { return m + 12; }), six * 32, 0.035, { a: 0.8, r: 1.2 });
-        if (sec.choir && bar % 2 === 0) voices(o, t, tri.map(function (m) { return m + 12; }), six * 32, 0.03 * sec.choir);
-        if (sec.wob) o.reese.rate(t, bar % 4 === 3 ? 3 / (six * 4) : 1 / (six * 2));   // wobbles in eighths, triplets at each turn
+        o.bassLp.frequency.setTargetAtTime(o.cut * 1.6, t, 0.5);
+        o.sub.set(t, root - 12, sec.reese ? 0.155 : sec.bass ? 0.1 : 0.045);
+        if (sec.idle) { v8.level(t, 0.06, 0.3); v8.rpm(t, 52, 0.25); }
+        if (sec.lights) lightOn(o, t, 1);
+        if (sec.rev) { v8.level(t, 0.07, 0.2); v8.rpm(t, 90 + sec.lights * 45, six * 4); }   // revving on the grid, higher with every light
+        if (sec.rev && sec.lights === 5) v8.limiter(t + six * 8, 330, 8, six);   // ...and bouncing off the limiter
+        if (sec.out) { lightsOut(o, t, 1); v8.level(t, 0.085, 0.02); v8.shift(t, 5, six * 6, 110, 320); v8.level(t + six * 30, 0.045, 1.5); }
+        if (sec.drop === bar) { crash(o, t, 0.7); subDrop(o, t, six * 12, 0.25); o.reese.rate(t, 0.3); o.reese.play(t, root + 12, six * 30, 0.13); o.reese.bend(t, root, six * 4); }
+        else if (sec.drop != null && bar % 8 === 0) crash(o, t, 0.49);
+        if (sec.reese && bar - sec.drop >= 2 && bar % 2 === 0) { o.reese.rate(t, 0.25); o.reese.play(t, root, six * 30, 0.06); }
+        if (sec.corner && !sec.out && bar % 2 === 0) v8.rpm(t, 150 + (bar % 8) * 20, six * 8);   // flat out down the straight
+        if (sec.pit && bar % 2 === 0) { vroom(o, t + six * 4, six * 10, 60, 150, 0.7); }   // a car crawling down the pit lane
+        if (sec.pit && bar % 4 === 3) tyres(o, t + six * 8, six * 6, 0.8, 0.4);   // ...and one wheelspinning out of its box
+        if (sec.corner && !sec.out && bar % 8 === 1) v8.level(t, 0.045, 0.5);
+        if (sec.shift) { v8.level(t, 0.08, 0.05); v8.shift(t, 4, six * 8, 120, 330); v8.level(t + six * 32, 0.045, 1.2); }
         if (sec.fly) flyby(o, t, six * 16, 1);
-        if (sec.riser) riser(o, t, six * 64, 0.12);
-        if (sec.crash) { crash(o, t, 0.8); boom(o, t, 0.7); }
-        if (sec.lights) beep(o, t, 69, six * 3, 1);   // one more red light
-        if (sec.low && bar % 2 === 0) brass(o, t, [root], six * 6, 0.06, { a: 0.03 });
+        if (sec.riser) riser(o, t, six * 16 * sec.riser, 0.13);
+        if (sec.pad && bar % 2 === 0) pad(o, t, tri.concat(tri[0] + 12), six * 32, 0.03, "warm");
+        if (sec.str && bar % 2 === 0) strings(o, t, up, six * 32, 0.035, { a: 0.6, r: 1 });
+        if (sec.gate) gatePad(o, t, up, 0.03 * sec.gate, six);
       }
-      if (sec.idle) rev(o, t, bar === 7 ? 28 + st * 0.75 : 28 + (st % 4 === 0 ? 2 : 0), bar === 7 ? 0.6 + st * 0.03 : 0.5);
-      if (sec.tick && st % 4 === 0) hat(o, t, st === 0 ? 0.7 : 0.4);
-      if (sec.ost && (bar !== 39 || st < 8)) spic(o, t, root + 12 + PW.ost[st], sec.ost * (st % 4 === 0 ? 1 : 0.7));
-      if (sec.pulse && st % 2 === 0) arpNote(o, t, tri[(st / 2) % 3] + 12, st % 4 === 0 ? 0.8 : 0.5);
-      if (sec.drums) {
-        if (st === 0 || st === 8 || (sec.drums === 2 && (st === 11 || (bar % 2 && st === 14)))) kick(o, t, 1);
-        if (st === 4 || st === 12) { snare(o, t, 1); if (sec.drums === 2) tom(o, t, 70, 0.6); }   // a taiko under the backbeat
-        if (st % 2 === 0) hat(o, t, st % 4 === 2 ? 0.8 : 0.4);
+      if (sec.idle && bar % 2 === 1 && st === 8 && !sec.lights) v8.blip(t, 52, 175);   // vroom, vroom
+      if (sec.idle && st === 12 && !sec.lights) v8.blip(t, 52, 140);
+      if (sec.corner && bar % 2 === 1) {   // a corner every two bars
+        if (st === 6) v8.rpm(t, 85, 0.05);              // off the throttle
+        if (st === 7) v8.downshift(t, 3, six, 85);      // three downshifts
+        if (st === 9 && bar % 4 === 3) tyres(o, t, six * 5, 1, bar % 8 === 3 ? -0.5 : 0.5);   // the tyres let go
+        if (st === 10) v8.rpm(t, 260, six * 3);         // back on it
       }
-      if (sec.stabs && bar % 2 === 0 && (st === 0 || st === 3 || st === 6 || st === 10)) brass(o, t, tri, six * 1.2, 0.06, { a: 0.01 });
-      if (sec.roll && st % (bar % 2 ? 1 : 2) === 0) snare(o, t, 0.3 + 0.5 * ((bar % 2) * 16 + st) / 32);
-      if (sec.tribe && PW.tribe[st] != null) tom(o, t, (st < 8 ? 118 : 92) * (st % 3 === 0 ? 1 : 1.25), PW.tribe[st] * sec.tribe);
-      if (sec.trap) {
-        if (st === 0 || st === 10) kick(o, t, 1);
-        if (st === 8) { snare(o, t, 1); clap(o, t, 0.8); }
-        hat(o, t, st % 2 ? 0.35 : 0.6);
-        if (st >= 13 && bar % 2) hat(o, t + six / 2, 0.4);   // hi-hat rolls
-      }
-      if (sec.wob && (st === 0 || st === 8)) o.reese.play(t, root, six * 7.6, 0.2 * sec.wob);
-      if (sec.wob && st === 14) o.reese.play(t, root + 12, six * 1.8, 0.18 * sec.wob);
-      if (sec.fan) {
-        var fp = (bar % 8) * 16 + st;
+      if (sec.fly && st === 8 && bar % 8 === 6) flyby(o, t, six * 12, 0.7);   // and a second car right behind
+      if (sec.idle && sec.lights && st === 12) v8.blip(t, 52, 150 + sec.lights * 25);
+      if (sec.kick && st % 4 === 0) softKick(o, t, 1);
+      if (sec.big && st % 4 === 0) softKick(o, t, 1);
+      if (sec.clap && (st === 4 || st === 12)) clap(o, t, 0.65);
+      if (sec.perc && PW.perc[st]) tom(o, t, st < 8 ? 210 : 160, PW.perc[st] * sec.perc * 0.55);
+      if (sec.hats === 1 && st % 4 === 2) hat(o, t, 0.7);
+      if (sec.hats >= 2) { if (st % 4 === 2) hat(o, t, 0.9, true); else hat(o, t, sec.hats === 3 ? 0.32 : 0.22); }
+      if (sec.ride && st % 4 === 0) ride(o, t, 0.5);
+      if (sec.toms && bar % 2 === 1 && st >= 8) tom(o, t, [220, 200, 170, 150, 130, 110, 95, 80][st - 8], 0.9);
+      if (sec.roll) rollAt(o, t, st, bar, sec.roll, sec.rl);
+      if (sec.bass && st % 4 === 2) bassNote(o, t, root, sec.bass * 0.45, six * 1.6);   // a plain offbeat bass, nothing busy
+      if (sec.stab && (st === 3 || st === 10 || (st === 14 && bar % 2))) techStab(o, t, tri, st === 3 ? 0.7 : 0.45, 0.4);   // rhythm, not melody
+      if (sec.acid && DQ.acid[st] != null) o.acid.play(t, 52 + DQ.acid[st] + (root - 40), six * (DQ.slide[st] ? 1.1 : 0.7), 0.06 * sec.acid, 900, DQ.accent[st], DQ.slide[st]);
+      if (sec.arp) arpNote(o, t, [up[0], up[1], up[2], up[0] + 12][GT.arp[st]], sec.arp * (st % 4 === 0 ? 1 : 0.7));
+      if (sec.lead) {   // the fanfare comes back once, for the chequered flag
+        var pos = (bar % 8) * 16 + st;
         PW.fan.forEach(function (n) {
-          if (n[0] !== fp) return;
-          brass(o, t, [n[1] - 12, n[1]], n[2] * six, sec.fan, { a: 0.03 });
-          if (bar >= 80) strings(o, t, [n[1] + 12], n[2] * six, 0.035, { a: 0.05, r: 0.4, bright: 1.3 });
+          if (n[0] !== pos) return;
+          supersaw(o, t, [n[1]], n[2] * six * 0.95, 0.035 * sec.lead, { cut: 3800 });
         });
       }
-      if (sec.mlead) {
-        var mp = (bar % 4) * 16 + st;
-        PW.mad.forEach(function (n) { if (n[0] === mp) o.lead.play(t, n[1], n[2] * six, sec.mlead); });
-        if (st === 8 && bar % 4 === 3) screech(o, t, 83, six * 8, 0.035);
-      }
-      if (sec.fanLead) { var fl = (bar % 2) * 16 + st; PW.fan.forEach(function (n) { if (n[0] === fl) o.lead.play(t, n[1], n[2] * six, sec.fanLead); }); }
     }
   };
   SONG_PIT.outroBars = 4;
-  SONG_PIT.outro = function (o, t, st, k, N) {   // the cars come home: one last flyby, the horns hold E, the engine cools
-    var six = o.six, fade = 1 - k / N;
+  SONG_PIT.outro = function (o, t, st, k, N) {   // the cars come home: one last flyby, the engine winds down, the ignition goes off
+    var six = o.six, fade = 1 - k / N, v8 = o.v8;
     if (st === 0) {
-      o.sub.set(t, 28, 0.2 * fade + 0.02);
-      if (k === 0) { flyby(o, t, six * 24, 1); strings(o, t, [52, 59, 64], six * 40, 0.04, { a: 1, r: 3 }); brass(o, t, [40, 47, 52], six * 30, 0.05, { a: 0.8 }); }
-      if (k === 2) beep(o, t, 76, six * 6, 0.6);
+      o.sub.set(t, 28, 0.15 * fade + 0.02);
+      if (k === 0) { flyby(o, t, six * 24, 1); crash(o, t, 0.56); supersaw(o, t, [64, 71, 76], six * 36, 0.03, { a: 0.02, r: 3, cut: 3500 }); v8.level(t, 0.06, 0.3); v8.rpm(t, 70, 0.5); }
+      if (k === 1) { v8.blip(t, 60, 200); v8.downshift(t + six * 6, 3, six, 70); tyres(o, t + six * 8, six * 4, 0.7, -0.3); }
+      if (k === 2) { v8.rpm(t, 22, 0.5); v8.level(t + six * 2, 0.0001, 0.3); lightsOut(o, t + six * 8, 0.6); }
     }
-    if (k < 2 && st % 2 === 0) spic(o, t, 52 + PW.ost[st], 0.7 * fade);
-    if (k < 2 && (st === 0 || st === 8)) tom(o, t, 70, 0.6 * fade);
-    if (k >= 2 && st % 4 === 0) rev(o, t, 28, 0.4 * fade);
+    if (k < 2 && st % 4 === 0) softKick(o, t, 1 - k * 0.35);
+    if (k < 2 && st % 4 === 2) hat(o, t, 0.6 * fade, true);
+    if (k < 3) arpNote(o, t, [64, 67, 71, 76][GT.arp[st]], (st % 4 === 0 ? 0.9 : 0.6) * fade);
   };
 
   var BONUS = [
     { si: 6, game: "sidekiq", name: "Sidekiq Rush", song: SONG_QUEUE, titles: { phthalo: "Dead Letter Queue", knight: "Bunker 0x1F", golden: "Gilded Backpressure" } },
-    { si: 7, game: "gems", name: "Gem Match", song: SONG_GEMS, titles: { phthalo: "Bedrock & Moss", knight: "Embers Under Stone", golden: "Lanterns Below" } },
-    { si: 8, game: "schema", name: "Schema Stack", song: SONG_STACK, titles: { phthalo: "Pending Migration", knight: "Rollback Riot", golden: "Clean Lines" } },
+    { si: 7, game: "gems", name: "Gem Match", song: SONG_GEMS, titles: { phthalo: "Facets of Light", knight: "Embers Rising", golden: "Prism Anthem" } },
+    { si: 8, game: "schema", name: "Schema Stack", song: SONG_STACK, titles: { phthalo: "Stairway to Production", knight: "The Long Migration", golden: "Golden Stairs" } },
     { si: 9, game: "pitwall", name: "Pit Wall", song: SONG_PIT, titles: { phthalo: "Lights Out", knight: "Red Flag Fever", golden: "Chequered Mirage" } }
   ];
   BONUS.forEach(function (b) { b.song.game = b.game; Object.keys(THEMES).forEach(function (k) { THEMES[k].titles[b.si] = b.titles[k]; }); });
@@ -1590,7 +1675,7 @@
         songs.push({ no: 6, title: P.titles[5], mood: CUT_MOOD, bpm: bpmRange(P), bars: SONG_CUT.bars, outro: SONG_CUT.outroBars, secs: Math.round(trackSecs(k, 5)), suite: true, locked: !suiteOpen(k), heard: heardCount(k) });
         BONUS.forEach(function (b) {
           var s = b.song;
-          songs.push({ no: b.si + 1, title: P.titles[b.si], mood: s.mood, bpm: Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round(trackSecs(k, b.si)), bonus: true, game: b.game, gameName: b.name, locked: !bonusOpen(b.game) });
+          songs.push({ no: b.si + 1, title: P.titles[b.si], mood: s.mood, bpm: s.range ? Math.round(s.range[0] * P.bpm) + "–" + Math.round(s.range[1] * P.bpm) : Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round(trackSecs(k, b.si)), bonus: true, game: b.game, gameName: b.name, locked: !bonusOpen(b.game) });
         });
         return { theme: k, name: P.name, songs: songs };
       });

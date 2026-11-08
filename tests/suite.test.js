@@ -62,10 +62,11 @@
         b.forEach(function (s, i) { expect(s.bonus).toBe(true); expect(s.locked).toBe(true); expect(s.no).toBe(7 + i); expect(s.outro >= 2).toBe(true); });
       });
     });
-    it("runs to the asked lengths: techno 3-4 min, gems 5, guitars 3, the race 4", function () {
+    it("runs to the asked lengths: techno 3-4 min, trance 4, guitars about 3, the race 4", function () {
       expect(secs(6) >= 180 && secs(6) <= 240).toBe(true);
-      expect(Math.abs(secs(7) - 300) <= 10).toBe(true);
-      expect(Math.abs(secs(8) - 180) <= 6).toBe(true);
+      expect(Math.abs(secs(7) - 240) <= 6).toBe(true);
+      expect(secs(8) >= 175 && secs(8) <= 200).toBe(true);
+      expect(L().catalog()[0].songs[8].bpm).toBe("76–96");
       expect(Math.abs(secs(9) - 240) <= 6).toBe(true);
     });
     it("unlocks a bonus track in every theme when a run of its game ends", function () {
