@@ -1,0 +1,79 @@
+/* =========================================================
+   Schema Stack + Regex Golf
+   table colours are fixed per mode (like the Sidekiq lanes) so they stay distinct on every skin
+   ========================================================= */
+:root { --ms-users: #3ad08f; --ms-orders: #f2c14e; --ms-invoices: #b98cff; --ms-rollback: #ff4d5e; }
+:root[data-theme="light"] { --ms-users: #127a4c; --ms-orders: #a06d00; --ms-invoices: #6d3fc4; --ms-rollback: #c8102e; }
+
+/* ---------- Schema Stack ---------- */
+.ms { display: grid; grid-template-columns: auto minmax(150px, 220px); gap: 18px; justify-content: center; align-items: start; padding: 10px; }
+.ms__board { display: grid; grid-template-columns: repeat(10, var(--msc, 24px)); grid-template-rows: repeat(18, var(--msc, 24px)); gap: 2px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--code-bg); box-shadow: inset 0 0 40px -20px var(--accent); }
+.ms__board i, .ms__next i { border-radius: 4px; background: color-mix(in srgb, var(--line) 45%, transparent); }
+.ms__board i[class], .ms__next i[class] { --c: var(--accent); background: var(--c); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25), inset 0 2px 0 rgba(255, 255, 255, 0.18); }
+.ms .is-users, .ms-dot.is-users, .ms__tables .is-users i { --c: var(--ms-users); }
+.ms .is-orders, .ms-dot.is-orders, .ms__tables .is-orders i { --c: var(--ms-orders); }
+.ms .is-invoices, .ms-dot.is-invoices, .ms__tables .is-invoices i { --c: var(--ms-invoices); }
+.ms .is-rollback { --c: var(--ms-rollback); }
+.ms-dot { background: var(--c) !important; }
+.ms__board i.is-pending, .ms__next i.is-pending { background: repeating-linear-gradient(135deg, var(--c) 0 4px, color-mix(in srgb, var(--c) 30%, transparent) 4px 8px) !important; opacity: 0.85; }
+.ms__board i.is-create { outline: 2px solid var(--hl); outline-offset: -2px; }
+.ms__board i.is-live { filter: brightness(1.12); }
+.ms__board i.is-ghost { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); }
+.ms__side { display: grid; gap: 8px; align-content: start; font: 12px var(--mono); }
+.ms__label { margin: 6px 0 0; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10.5px; }
+.ms__next { display: grid; grid-template-columns: repeat(4, 18px); grid-template-rows: repeat(4, 18px); gap: 2px; }
+.ms__next i:not([class]) { background: transparent; }
+.ms__mig { margin: 0; color: var(--green); overflow-wrap: anywhere; min-height: 2.6em; }
+.ms__tables { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ms__tables li { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+.ms__tables i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); }
+.ms__pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+.ms__pad button { height: 40px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--bg-soft); color: var(--text); font: 16px var(--mono); cursor: pointer; touch-action: manipulation; }
+.ms__pad button:active { background: var(--accent-soft); }
+.ms__pad [data-k="down"] { grid-column: 1 / 2; }
+.ms__pad [data-k="drop"] { grid-column: 2 / 4; }
+@media (hover: hover) and (pointer: fine) { .ms__pad { opacity: 0.6; } }
+@media (max-width: 640px) {
+  .ms { grid-template-columns: auto; justify-items: center; }
+  .ms__board { --msc: min(20px, calc((100vw - 80px) / 11)); }
+  .ms__side { grid-template-columns: 1fr 1fr; width: 100%; }
+  .ms__pad { grid-column: 1 / -1; }
+}
+/* card preview */
+.pv-ms { position: absolute; inset: 14px; display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(7, 1fr); gap: 3px; width: 190px; margin: auto; }
+.pv-ms__c { border-radius: 3px; }
+.pv-ms__c--1 { background: var(--ms-users); }
+.pv-ms__c--2 { background: var(--ms-orders); }
+.pv-ms__c--3 { background: repeating-linear-gradient(135deg, var(--ms-invoices) 0 3px, transparent 3px 6px); }
+.arcade-card:hover .pv-ms__c--1 { animation: pvGem 1.6s var(--ease) infinite; }
+
+/* ---------- Regex Golf ---------- */
+.rg { max-width: 720px; margin: 0 auto; padding: 14px 16px 18px; }
+.rg__title { margin: 4px 0 12px; font: 800 26px/1.15 var(--sans); letter-spacing: -0.02em; }
+.rg__title .muted { font: 500 14px var(--mono); }
+.rg__input { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--code-bg); font: 20px var(--mono); }
+.rg__input:focus-within { border-color: var(--hl); box-shadow: 0 0 0 3px var(--hl-soft); }
+.rg__input input { flex: 1; min-width: 0; height: 40px; border: 0; outline: none; background: transparent; color: var(--green); font: 20px var(--mono); letter-spacing: 0.02em; }
+.rg__slash { color: var(--muted); }
+.rg__input b { min-width: 2.5ch; text-align: right; color: var(--hl); font: 600 14px var(--mono); }
+.rg__err { min-height: 1.3em; margin: 6px 2px; font: 12px var(--mono); color: var(--ruby-red); }
+.rg__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rg__col { margin: 0 0 6px; font: 11px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; }
+.rg__col--hit { color: var(--sr-default, #f2c14e); color: var(--accent); }
+.rg__col--miss { color: var(--ruby-red); }
+.rg ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.rg li { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); font: 14px var(--mono); overflow-wrap: anywhere; transition: background 0.2s, border-color 0.2s; }
+.rg li span { width: 1.2em; flex: none; text-align: center; }
+.rg li.is-ok { border-color: color-mix(in srgb, var(--accent) 45%, transparent); background: var(--accent-soft); }
+.rg li.is-bad { border-color: color-mix(in srgb, var(--ruby-red) 45%, transparent); }
+.rg__cols > div:last-child li.is-bad { background: color-mix(in srgb, var(--ruby-red) 12%, transparent); }
+.rg mark { background: var(--hl-soft); color: var(--text); border-radius: 3px; box-shadow: inset 0 -2px 0 var(--hl); }
+.rg__actions { display: flex; gap: 8px; margin-top: 14px; }
+.rg.is-solved .rg__input { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), 0 0 24px -6px var(--accent); }
+@media (max-width: 560px) { .rg__cols { grid-template-columns: 1fr; } }
+.pv-rg { position: absolute; inset: 0; display: grid; place-content: center; gap: 5px; font: 12px var(--mono); }
+.pv-rg code { font-size: 20px; color: var(--muted); }
+.pv-rg code b { color: var(--green); font-weight: 500; }
+.pv-rg__ok { color: var(--accent); }
+.pv-rg__no { color: var(--ruby-red); }
+.pcard__stats--games { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }

@@ -17,9 +17,12 @@ lang_label: YAML
         <div class="boards">
           <div class="lb" data-leaderboard data-fixed data-game="gems" data-limit="25" aria-live="polite"></div>
           <div class="lb" data-leaderboard data-fixed data-game="sidekiq" data-limit="25" aria-live="polite"></div>
+          <div class="lb" data-leaderboard data-fixed data-game="schema" data-limit="25" aria-live="polite"></div>
+          <div class="lb" data-leaderboard data-fixed data-game="regex" data-limit="25" aria-live="polite"></div>
         </div>
         <div class="lobby__actions" style="margin-top:20px">
-          <button class="btn btn--primary" type="button" data-daily>📅 today's daily</button>
+          <button class="btn btn--primary" type="button" data-daily>📅 daily Gem Match</button>
+          <button class="btn" type="button" data-daily="regex">⛳ daily regex hole</button>
           <a class="btn" href="{{ '/u/' | relative_url }}">🪪 your player card</a>
         </div>
       </section>

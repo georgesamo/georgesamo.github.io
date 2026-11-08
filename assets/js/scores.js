@@ -6,7 +6,8 @@
  */
 (function () {
   "use strict";
-  var GAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match" };
+  var GAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match", schema: "Schema Stack", regex: "Regex Golf" };
+  var DAILY = { gems: true, regex: true };
   var PERIODS = { all: "all-time", week: "this week", daily: "daily" };
   var EPOCH = Date.UTC(2026, 10, 8); // daily #1
   var panels = [], cache = {};
@@ -20,13 +21,13 @@
   function db() { var a = A(); return a && a.client && !a.mock() ? a.client() : null; }
   function today() { return new Date().toISOString().slice(0, 10); }
   function dailyNo() { return Math.floor((Date.parse(today()) - EPOCH) / 864e5) + 1; }
-  function dailyKey() { var u = user(); return "samuka-daily-" + (u ? u.id : "anon") + "-" + today(); }
+  function dailyKey(game) { var u = user(); return "samuka-daily-" + (u ? u.id : "anon") + "-" + today() + (game && game !== "gems" ? "-" + game : ""); }
 
   /* ---------- saving ---------- */
   window.addEventListener("samuka:game", function (e) {
     var d = e.detail || {};
     if (d.name !== "over" || !user() || !GAMES[d.game]) return;
-    if (d.mode === "daily") store.set(dailyKey(), JSON.stringify({ score: d.score, grid: grid(d.log || []) }));
+    if (d.mode === "daily") store.set(dailyKey(d.game), JSON.stringify({ score: d.score, grid: d.game === "gems" ? grid(d.log || []) : "" }));
     var c = db();
     if (!c) { // local test session: keep a fake board in sessionStorage so the UI can be tried
       mockSave(d); afterSave(d.game); return;
@@ -96,7 +97,7 @@
       (fixed ? '<p class="lb__fixed">' + GAMES[v.game] + "</p>" : '<div class="lb__tabs" role="tablist">' + Object.keys(GAMES).map(function (g) {
         return '<button type="button" role="tab" aria-selected="' + (g === v.game) + '" data-lb-game="' + g + '">' + GAMES[g] + "</button>";
       }).join("") + "</div>") +
-      '<div class="lb__tabs lb__tabs--sub">' + Object.keys(PERIODS).filter(function (p) { return p !== "daily" || v.game === "gems"; }).map(function (p) {
+      '<div class="lb__tabs lb__tabs--sub">' + Object.keys(PERIODS).filter(function (p) { return p !== "daily" || DAILY[v.game]; }).map(function (p) {
         return '<button type="button" aria-pressed="' + (p === v.period) + '" data-lb-period="' + p + '">' + PERIODS[p] + "</button>";
       }).join("") + "</div></div>" +
       '<div class="lb__body" data-lb-body><p class="muted">loading…</p></div>' +
@@ -104,7 +105,7 @@
   }
   async function load(pn) {
     if (!pn) return loadAll();
-    if (pn.view.game !== "gems" && pn.view.period === "daily") pn.view.period = "all";
+    if (!DAILY[pn.view.game] && pn.view.period === "daily") pn.view.period = "all";
     renderPanel(pn);
     var body = pn.el.querySelector("[data-lb-body]");
     try { body.innerHTML = rowsHtml(await fetchBoard(pn.view.game, pn.view.period, pn.limit)); }
@@ -152,40 +153,41 @@
     var m = Math.max(1, Math.round((next - now) / 60000));
     return (m >= 60 ? Math.floor(m / 60) + " h " : "") + (m % 60) + " min";
   }
-  async function alreadyPlayed() {
-    var local = store.get(dailyKey());
+  async function alreadyPlayed(game) {
+    var local = store.get(dailyKey(game));
     if (local) { try { return JSON.parse(local); } catch (e) { return { score: 0, grid: "" }; } }
     var c = db(); if (!c) return null;
-    var r = await c.from("scores").select("score").eq("mode", "daily").eq("game", "gems").eq("day", today()).maybeSingle();
+    var r = await c.from("scores").select("score").eq("mode", "daily").eq("game", game).eq("day", today()).maybeSingle();
     return r.data ? { score: r.data.score, grid: "" } : null;
   }
-  async function openDaily() {
+  async function openDaily(game) {
+    game = DAILY[game] ? game : "gems";
     var Ar = window.SamukaArcade, a = A();
     if (!Ar) return;
     if (a && a.enabled && !user()) { a.open({ reason: "arcade" }); return; }
-    var done = await alreadyPlayed();
+    var done = await alreadyPlayed(game);
     if (done) {
-      Ar.open("gems", { mode: "daily", seed: "gems-daily-" + today(), replay: true });
+      Ar.open(game, { mode: "daily", seed: game + "-daily-" + today(), replay: true });
       // show the result card instead of a new attempt
       setTimeout(function () {
         var stage = document.querySelector(".arcade [data-stage]");
         var o = stage && stage.querySelector(".arcade__overlay .arcade__card");
-        if (o) o.innerHTML = '<p class="arcade__kicker">$ rails gems:daily</p><h3>You already played daily #' + dailyNo() + "</h3>" +
+        if (o) o.innerHTML = '<p class="arcade__kicker">$ rails ' + (game === "regex" ? "regex" : "gems") + ':daily</p><h3>You already played ' + (game === "regex" ? "today's hole" : "daily #" + dailyNo()) + "</h3>" +
           "<p>Your score: <b>" + Number(done.score).toLocaleString("en-US") + "</b></p>" +
           (done.grid ? '<pre class="daily__grid">' + esc(done.grid) + '</pre><button class="btn btn--primary" type="button" data-daily-share data-text="' + esc(shareText(done.score, done.grid)) + '">⧉ copy result</button>' : "") +
-          '<p class="muted">New board in ' + untilTomorrow() + '.</p><div class="lb-mini" data-lb-mini="gems"></div>';
-        fillMinis("gems", "daily");
+          '<p class="muted">New ' + (game === "regex" ? "hole" : "board") + " in " + untilTomorrow() + '.</p><div class="lb-mini" data-lb-mini="' + game + '"></div>';
+        fillMinis(game, "daily");
       }, 60);
       return;
     }
-    Ar.open("gems", { mode: "daily", seed: "gems-daily-" + today() });
+    Ar.open(game, { mode: "daily", seed: game + "-daily-" + today() });
   }
 
   document.addEventListener("click", function (e) {
     var t;
     if ((t = e.target.closest("[data-lb-game]"))) { var pg = panelOf(t); if (pg) { pg.view.game = t.getAttribute("data-lb-game"); load(pg); } }
     else if ((t = e.target.closest("[data-lb-period]"))) { var pp = panelOf(t); if (pp) { pp.view.period = t.getAttribute("data-lb-period"); load(pp); } }
-    else if ((t = e.target.closest("[data-daily]"))) { e.preventDefault(); openDaily(); }
+    else if ((t = e.target.closest("[data-daily]"))) { e.preventDefault(); openDaily(t.getAttribute("data-daily") || "gems"); }
     else if ((t = e.target.closest("[data-daily-share]"))) {
       var text = t.getAttribute("data-text");
       var done = function () { t.textContent = "✓ copied"; setTimeout(function () { t.textContent = "⧉ copy result"; }, 1600); };
@@ -209,5 +211,5 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("samuka:page", boot);
 
-  window.SamukaScores = { dailyIntro: dailyIntro, dailyCard: dailyCard, openDaily: openDaily, board: fetchBoard, reload: function () { cache = {}; loadAll(); } };
+  window.SamukaScores = { fillMini: fillMinis, games: GAMES, dailyIntro: dailyIntro, dailyCard: dailyCard, openDaily: openDaily, board: fetchBoard, reload: function () { cache = {}; loadAll(); } };
 })();

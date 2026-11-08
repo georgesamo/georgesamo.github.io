@@ -19,6 +19,9 @@
     { key: "race_win", icon: "🏁", title: "Race condition", how: "Win a live 1v1 Sidekiq Rush" },
     { key: "gems_duel", icon: "⚔", title: "Merge conflict resolved", how: "Win a live Gem Match versus" },
     { key: "coop_ship", icon: "🚀", title: "Pair programming, shipped", how: "Reach the co-op target in Gem Match" },
+    { key: "clean_row", icon: "🧱", title: "Clean migration", how: "Deploy a one-table row in Schema Stack" },
+    { key: "big_bang", icon: "💥", title: "Big-bang migration", how: "Deploy 4 rows at once in Schema Stack" },
+    { key: "regex_par", icon: "⛳", title: "Under par", how: "Hole out at or under par in Regex Golf" },
     { key: "weekly", icon: "🗓", title: "Sprint goal met", how: "Finish a weekly challenge" },
     { key: "chatty", icon: "💬", title: "Standup attended", how: "Say something in the live chat" },
     { key: "wall", icon: "📝", title: "First commit", how: "Leave a commit on the wall" },
@@ -103,6 +106,12 @@
       if (d.name === "over" && d.score >= 4000) unlock("gems_4000");
       if (d.name === "over" && d.mode === "daily") unlock("daily");
     }
+    if (d.game === "schema") {
+      if (d.name === "clean_row") unlock("clean_row");
+      if (d.name === "big_bang") unlock("big_bang");
+    }
+    if (d.game === "regex" && d.name === "par") unlock("regex_par");
+    if (d.name === "over" && d.mode === "daily" && d.game === "regex") unlock("daily");
     if (d.game === "sidekiq") {
       if (d.name === "retry" && uid) {
         var k = "samuka-retries-" + uid, n = (parseInt(store.get(k) || "0", 10) || 0) + 1;
