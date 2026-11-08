@@ -201,3 +201,22 @@ language sql stable security definer set search_path = public as $$
   select row_to_json(t) from (select id, name, relation, body, approved from public.testimonials where user_id = auth.uid()) t
 $$;
 grant execute on function public.my_testimonial() to authenticated;
+
+-- ---------- Nino's corner: dates to count down to (team only) ----------
+create table if not exists public.nino_dates (
+  id         bigint generated always as identity primary key,
+  title      text not null check (char_length(title) between 1 and 80),
+  day        date not null,
+  emoji      text not null default '💜' check (char_length(emoji) <= 8),
+  created_by uuid default auth.uid() references auth.users (id) on delete set null,
+  created_at timestamptz not null default now()
+);
+alter table public.nino_dates enable row level security;
+drop policy if exists "nino dates: team only" on public.nino_dates;
+create policy "nino dates: team only" on public.nino_dates for all to authenticated
+  using (public.my_role() in ('samuka', 'nino')) with check (public.my_role() in ('samuka', 'nino'));
+revoke all on public.nino_dates from anon, authenticated;
+grant select, delete on public.nino_dates to authenticated;
+grant insert (title, day, emoji) on public.nino_dates to authenticated;
+
+notify pgrst, 'reload schema';

@@ -49,6 +49,20 @@ layout: blog
     <span class="pr-tabs__tab">Files changed <b>1</b></span>
   </div>
 
+  {%- if page.case %}
+  <section class="case-card" aria-label="Case study summary">
+    <dl class="case-card__facts">
+      {%- if page.case.context %}<div><dt>context</dt><dd>{{ page.case.context | escape }}</dd></div>{% endif %}
+      {%- if page.case.role %}<div><dt>my role</dt><dd>{{ page.case.role | escape }}</dd></div>{% endif %}
+      {%- if page.case.duration %}<div><dt>duration</dt><dd>{{ page.case.duration | escape }}</dd></div>{% endif %}
+      {%- if page.case.stack %}<div><dt>stack</dt><dd>{% for s in page.case.stack %}<code>{{ s | escape }}</code> {% endfor %}</dd></div>{% endif %}
+    </dl>
+    {%- if page.case.impact %}
+    <ul class="case-card__impact">{% for m in page.case.impact %}<li><b>{{ m.value | escape }}</b><span>{{ m.label | escape }}</span></li>{% endfor %}</ul>
+    {%- endif %}
+    <p class="case-card__note muted"># details anonymised: no client names, no patient data</p>
+  </section>
+  {%- endif %}
   <div class="pr-thread">
     <div class="pr-comment">
       <div class="pr-comment__avatar" aria-hidden="true">{% include ruby.svg %}</div>
