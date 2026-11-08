@@ -1,0 +1,22 @@
+{
+  "name": "Samuka's Arcade",
+  "short_name": "Samuka",
+  "description": "Small games about the Rails stack, live 2-player, leaderboards, and the profile of Samuka, Senior Ruby on Rails engineer.",
+  "id": "/",
+  "start_url": "/?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#07110c",
+  "theme_color": "#07110c",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "/assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Daily Gem Match", "url": "/?daily=1", "icons": [{ "src": "/assets/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Leaderboards", "url": "/leaderboards/" },
+    { "name": "Samuka's profile", "url": "/samuka/" }
+  ]
+}

@@ -102,6 +102,7 @@
     stage.className = "arcade__stage arcade__stage--" + id;
     currentId = id;
     current = games[id].mount(stage, api(id, stage, opts)) || {};
+    emit(id, "start", null, opts);
     stage.focus({ preventScroll: true });
     return true;
   }

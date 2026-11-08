@@ -22,6 +22,10 @@
   {% seo title=false %}
   <title>{% if page.title_full %}{{ page.title_full }}{% elsif page.title and page.url != "/samuka/" %}{{ page.title }} · Samuka{% else %}Samuka · Giorgi Samukashvili, Senior Ruby on Rails Engineer{% endif %}</title>
   <link rel="icon" href="{{ '/assets/favicon.svg' | relative_url }}" type="image/svg+xml">
+  <link rel="manifest" href="{{ '/assets/manifest.webmanifest' | relative_url }}">
+  <link rel="apple-touch-icon" href="{{ '/assets/icons/apple-touch-icon.png' | relative_url }}">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Samuka">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Noto+Sans+Georgian:wght@500&display=swap" rel="stylesheet">
@@ -67,5 +71,8 @@
   <script src="{{ '/assets/js/events.js' | relative_url }}" defer></script>
   <script src="{{ '/assets/js/chat.js' | relative_url }}" defer></script>
   <script src="{{ '/assets/js/nav.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/analytics.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/testimonials.js' | relative_url }}" defer></script>
+  <script src="{{ '/assets/js/install.js' | relative_url }}" defer></script>
 </body>
 </html>

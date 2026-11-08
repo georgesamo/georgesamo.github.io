@@ -19,7 +19,7 @@
     dlg.hidden = true;
     dlg.innerHTML = '<div class="adm__backdrop" data-adm-close></div><div class="adm__win" role="dialog" aria-modal="true" aria-labelledby="adm-title">' +
       '<div class="adm__bar"><span class="dots"><i data-adm-close></i><i></i><i></i></span><span id="adm-title">rails admin</span><button class="arcade__x" type="button" data-adm-close aria-label="Close admin">esc</button></div>' +
-      '<div class="adm__tabs" role="tablist"><button type="button" role="tab" data-adm-tab="users">users</button><button type="button" role="tab" data-adm-tab="wall">wall</button></div>' +
+      '<div class="adm__tabs" role="tablist"><button type="button" role="tab" data-adm-tab="users">users</button><button type="button" role="tab" data-adm-tab="wall">wall</button><button type="button" role="tab" data-adm-tab="analytics">analytics</button><button type="button" role="tab" data-adm-tab="tm">testimonials</button></div>' +
       '<div class="adm__body" data-adm-body></div></div>';
     document.body.appendChild(dlg);
     dlg.addEventListener("click", onClick);
@@ -71,10 +71,54 @@
     tab = t; paintTabs(); body('<p class="muted">loading…</p>');
     try {
       if (t === "users") { await loadUsers(); paintUsers(); }
+      else if (t === "analytics") await paintAnalytics();
+      else if (t === "tm") await paintTm();
       else { await loadWall(); paintWall(); }
     } catch (err) {
       body('<p class="adm__err">' + esc(err.message || String(err)) + '</p><p class="muted">If this says the function does not exist, run <code>supabase/features.sql</code> in the Supabase SQL editor.</p>');
     }
+  }
+  /* ---------- analytics ---------- */
+  var anDays = 30;
+  function chart(days) {
+    var W = 720, H = 160, pad = 22, n = Math.max(days.length, 1), max = 1;
+    days.forEach(function (d) { max = Math.max(max, d.views, d.visitors); });
+    var bw = (W - pad * 2) / n;
+    var bars = days.map(function (d, i) {
+      var x = pad + i * bw, hv = (d.views / max) * (H - 40), hu = (d.visitors / max) * (H - 40);
+      return '<rect class="bar" x="' + (x + 1).toFixed(1) + '" y="' + (H - 20 - hv).toFixed(1) + '" width="' + Math.max(1, bw * 0.55).toFixed(1) + '" height="' + hv.toFixed(1) + '"><title>' + d.day + ": " + d.views + " views</title></rect>" +
+        '<rect class="bar2" x="' + (x + 1 + bw * 0.55).toFixed(1) + '" y="' + (H - 20 - hu).toFixed(1) + '" width="' + Math.max(1, bw * 0.3).toFixed(1) + '" height="' + hu.toFixed(1) + '"><title>' + d.day + ": " + d.visitors + " visitors</title></rect>";
+    }).join("");
+    var labels = days.length ? '<text x="' + pad + '" y="' + (H - 4) + '">' + days[0].day + '</text><text x="' + (W - pad) + '" y="' + (H - 4) + '" text-anchor="end">' + days[days.length - 1].day + '</text><text x="' + pad + '" y="12">max ' + max + "</text>" : "";
+    return '<svg class="an-chart" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="Views and visitors per day">' + bars + labels + "</svg>";
+  }
+  function listBox(title, rows, label, val) {
+    var max = 1; rows.forEach(function (r) { max = Math.max(max, r[val]); });
+    return '<div class="an-list"><h5>' + title + "</h5>" + (rows.length ? "<ol>" + rows.map(function (r) {
+      return '<li><i style="width:' + (r[val] / max * 100).toFixed(0) + '%"></i><span>' + esc(r[label]) + "</span><b>" + r[val] + "</b></li>";
+    }).join("") + "</ol>" : '<p class="muted">nothing yet</p>') + "</div>";
+  }
+  async function paintAnalytics() {
+    var c = db(), d;
+    if (!c) d = { totals: { views: 12, visitors: 5 }, days: [{ day: "2026-11-07", views: 4, visitors: 2 }, { day: "2026-11-08", views: 8, visitors: 3 }], pages: [{ path: "/", views: 7 }, { path: "/samuka/", views: 5 }], sections: [{ name: "experience", reads: 3 }], referrers: [{ host: "linkedin.com", visitors: 2 }], plays: [{ game: "gems", plays: 4 }] };
+    else { var r = await c.rpc("analytics_summary", { p_days: anDays }); if (r.error) throw r.error; d = r.data; }
+    body('<div class="adm__stats">' + [7, 30, 90].map(function (n) { return '<button class="wall__mod" type="button" data-an-days="' + n + '"' + (n === anDays ? ' style="color:var(--hl)"' : "") + ">" + n + " days</button>"; }).join("") + '<span class="muted">no cookies · no IPs · per-tab ids only</span></div>' +
+      '<div class="an-tiles"><div><b>' + d.totals.views + "</b><span>page views</span></div><div><b>" + d.totals.visitors + "</b><span>visits</span></div><div><b>" +
+      (d.plays || []).reduce(function (n, p) { return n + p.plays; }, 0) + "</b><span>games started</span></div></div>" +
+      chart(d.days || []) +
+      '<div class="an-lists">' + listBox("pages", d.pages || [], "path", "views") + listBox("profile sections read", d.sections || [], "name", "reads") +
+      listBox("came from", d.referrers || [], "host", "visitors") + listBox("games", d.plays || [], "game", "plays") + "</div>");
+  }
+  /* ---------- testimonials ---------- */
+  var tms = [];
+  async function paintTm() {
+    var c = db();
+    if (!c) tms = [];
+    else { var r = await c.from("testimonials").select("id, name, relation, body, approved, created_at").order("approved").order("created_at", { ascending: false }); if (r.error) throw r.error; tms = r.data || []; }
+    body(tms.length ? '<ul class="adm__tm">' + tms.map(function (t) {
+      return '<li class="' + (t.approved ? "" : "is-pending") + '" data-adm-tm="' + t.id + '"><b>' + esc(t.name) + "</b><small>" + esc(t.relation) + " · " + day(t.created_at) + (t.approved ? " · live" : " · waiting for approval") + "</small>" + esc(t.body) +
+        '<div class="adm__acts" style="margin-top:8px"><button class="wall__mod" type="button" data-tm-approve>' + (t.approved ? "unpublish" : "approve") + '</button><button class="wall__mod" type="button" data-tm-del>delete</button></div></li>';
+    }).join("") + "</ul>" : '<p class="muted">No testimonials yet. Visitors can leave one on /samuka/.</p>');
   }
   function msg(text, bad) { var m = dlg.querySelector("[data-adm-msg]"); if (m) { m.textContent = text; m.classList.toggle("is-bad", !!bad); } }
   async function onChange(e) {
@@ -95,6 +139,16 @@
   async function onClick(e) {
     if (e.target.closest("[data-adm-close]")) return close();
     var t = e.target.closest("[data-adm-tab]"); if (t) return show(t.getAttribute("data-adm-tab"));
+    var nd = e.target.closest("[data-an-days]"); if (nd) { anDays = +nd.getAttribute("data-an-days"); return show("analytics"); }
+    var tmEl = e.target.closest("[data-adm-tm]");
+    if (tmEl && db()) {
+      var tid = +tmEl.getAttribute("data-adm-tm"), tm = tms.filter(function (x) { return x.id === tid; })[0], rr;
+      if (e.target.closest("[data-tm-approve]")) rr = await db().from("testimonials").update({ approved: !tm.approved }).eq("id", tid);
+      else if (e.target.closest("[data-tm-del]")) { if (!confirm("Delete this testimonial permanently?")) return; rr = await db().from("testimonials").delete().eq("id", tid); }
+      else return;
+      if (rr.error) { alert(rr.error.message); return; }
+      return show("tm");
+    }
     var li = e.target.closest("[data-adm-wall]"); if (!li) return;
     var id = +li.getAttribute("data-adm-wall"), w = wall.filter(function (x) { return x.id === id; })[0], c = db(), r;
     if (!c) return;
