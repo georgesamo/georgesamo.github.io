@@ -238,7 +238,7 @@
     if (mockRole === "guest") { onSession(null); return; }
     if (mockRole) { onSession({ user: { id: "local-" + mockRole, email: mockRole + "@localhost" } }); return; }
     if (!enabled) { applyRole("guest"); state.ready = true; emit(); return; }
-    client = window.supabase.createClient(cfg.url, cfg.anon_key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" } });
+    client = window.supabase.createClient(cfg.url, cfg.anon_key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit" } } // implicit: the email link works in any browser/device, not only the one that asked for it);
     client.auth.getSession().then(function (r) { onSession(r.data && r.data.session); });
     client.auth.onAuthStateChange(function (event, session) {
       if (event === "INITIAL_SESSION") return;
