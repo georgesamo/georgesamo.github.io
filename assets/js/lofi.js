@@ -186,7 +186,9 @@
     // techno: rolling off-beat bass
     { 2: [0, 0.2, 1], 3: [0, 0.14, 0.8], 6: [0, 0.2, 1], 7: [0, 0.14, 0.8], 10: [0, 0.2, 1], 11: [0, 0.14, 0.8], 14: [0, 0.2, 1], 15: [12, 0.14, 0.6] },
     // cold sequenced pulse (thriller-score feel)
-    { 0: [0, 0.3, 1], 2: [0, 0.3, 1], 4: [0, 0.3, 1], 6: [0, 0.3, 1], 8: [0, 0.3, 1], 10: [0, 0.3, 1], 12: [0, 0.3, 1], 14: [0, 0.3, 1] }
+    { 0: [0, 0.3, 1], 2: [0, 0.3, 1], 4: [0, 0.3, 1], 6: [0, 0.3, 1], 8: [0, 0.3, 1], 10: [0, 0.3, 1], 12: [0, 0.3, 1], 14: [0, 0.3, 1] },
+    // deep house: off-beat bass with little pickups
+    { 2: [0, 0.35, 1], 6: [0, 0.35, 1], 7: [7, 0.2, 0.4], 10: [0, 0.35, 1], 14: [0, 0.35, 1], 15: [10, 0.2, 0.4] }
   ];
   // per-track flavours, shared by every skin (each skin weights them differently)
   // pad: saw | tri | ep (electric piano) | choir | wob (vapor wobble)   melody: lead | piano | bells
@@ -221,6 +223,18 @@
     melodictech: { grooves: [11, 4], supersaw: 1, stabs: 0.4, leadEarly: 1, bassVol: 0.75, bpmAbs: [120, 124], lead: [0.55, 0.7], drums: "melodic", piano: 0, pad: "saw", arp16: false, swing: 0, arpMul: 0 },
     // retro hacker: pulse-wave sequences and blips over hard techno drums
     retro: { grooves: [12, 11], supersaw: 0.5, stabs: 1, leadEarly: 0.5, bassVol: 0.8, bpmAbs: [124, 130], lead: [0.3, 0.45], drums: "hack", piano: 0, pad: "darkstab", arp16: false, blips: false, swing: 0, arpMul: 0 },
+    // intense hacker techno, no hum: chopped stabs instead of sustained pads, no sub drone
+    hackint: { grooves: [11, 10], supersaw: 0.7, stabs: 1, leadEarly: 0.6, bassVol: 0.75, bpmAbs: [128, 134], lead: [0.35, 0.5], drums: "hack", piano: 0, pad: "chop", nosub: true, swing: 0, arpMul: 0 },
+    // broken-beat techno
+    breaks: { grooves: [10, 11], supersaw: 0.5, stabs: 0.6, leadEarly: 0.4, bassVol: 0.75, bpmAbs: [128, 134], lead: [0.3, 0.45], drums: "breaks", piano: 0, pad: "chop", nosub: true, swing: 0.06, arpMul: 0 },
+    // deep house: warm electric-piano chords, shuffled hats, off-beat bass
+    deephouse: { grooves: [13], supersaw: 0.3, stabs: 0, leadEarly: 0.55, bassVol: 0.7, bpmAbs: [118, 123], lead: [0.4, 0.55], drums: "deephouse", piano: 0, pad: "ep", swing: 0.16, arpMul: 0 },
+    // dark, gritty house: distorted bass, dark stabs
+    darkhouse: { grooves: [13, 10], supersaw: 0, stabs: 0.5, leadEarly: 0.2, bassVol: 0.85, bpmAbs: [122, 126], lead: [0.2, 0.3], drums: "deephouse", piano: 0, pad: "darkstab", dist: true, swing: 0.12, arpMul: 0 },
+    // heavy half-time: big clap on 3, toms, distorted bass, slow acid
+    halftime: { grooves: [2, 11], supersaw: 0.4, stabs: 0, leadEarly: 0.3, bassVol: 0.85, bpmAbs: [134, 140], lead: [0.25, 0.4], drums: "halftime", piano: 0, pad: "darkstab", dist: true, acid: true, swing: 0, arpMul: 0.7 },
+    // melodic house: choir pads and a lead line
+    melodichouse: { grooves: [13], supersaw: 0.8, stabs: 0, leadEarly: 1, bassVol: 0.7, bpmAbs: [118, 123], lead: [0.5, 0.65], drums: "deephouse", piano: 0, pad: "choir", swing: 0.12, arpMul: 0 },
     // cold, tense thriller score: steady pulse bass, cold arp, slow pads, heartbeat kick, lonely piano
     robot: { grooves: [12], supersaw: 0, stabs: 0, leadEarly: 0.35, bassVol: 0.55, bpmAbs: [96, 108], lead: [0.25, 0.4], drums: "robot", piano: 0.6, pad: "tri", swing: 0, arpMul: 1.1 },
     minimal: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0.2, bassVol: 0.7, bpmAbs: [123, 127], lead: [0.25, 0.35], drums: "techno", piano: 0, pad: "darkstab", acid: true, swing: 0.03, arpMul: 0.6 }
@@ -239,29 +253,33 @@
   };
   STYLES = MOODS;
   var SONGS = {
+    // Phthalo: intense hacker techno without hum
     phthalo: [
-      ["root@phthalo", "hack", 124, 45, "minor"], ["Zero Day", "hack", 126, 47, "minor"], ["Handshake", "hack", 122, 50, "dorian"],
-      ["Packet Loss", "hack", 125, 48, "minor"], ["Rootkit", "hack", 127, 45, "minor"], ["Cold Boot", "hack", 123, 52, "minor"],
-      ["Brute Force", "hack", 128, 46, "minor"], ["Daemon Mode", "hack", 124, 49, "dorian"], ["Buffer Overflow", "hack", 126, 50, "minor"],
-      ["Exit Code 0", "hack", 122, 47, "minor"]
+      ["root@phthalo", "hackint", 130, 45, "minor"], ["Zero Day", "breaks", 132, 47, "minor"], ["Handshake", "deephouse", 122, 50, "dorian"],
+      ["Packet Loss", "hackint", 128, 48, "minor"], ["Rootkit", "breaks", 130, 45, "minor"], ["Cold Boot", "deephouse", 121, 52, "minor"],
+      ["Brute Force", "hackint", 134, 46, "minor"], ["Daemon Mode", "deephouse", 123, 49, "dorian"], ["Buffer Overflow", "breaks", 131, 50, "minor"],
+      ["Exit Code 0", "hackint", 129, 47, "minor"]
     ],
+    // Dark Knight: dark and gritty
     knight: [
-      ["Rooftop Pursuit", "intense", 136, 45, "minor"], ["Iron Signal", "intense", 134, 46, "minor"], ["Night Protocol", "intense", 138, 48, "minor"],
-      ["Crimson Breach", "intense", 140, 45, "minor"], ["Steel Vigil", "intense", 133, 50, "minor"], ["Searchlight", "intense", 135, 47, "minor"],
-      ["Undercity", "intense", 137, 44, "minor"], ["No Mercy Mode", "intense", 140, 46, "minor"], ["Last Patrol", "intense", 132, 49, "dorian"],
-      ["Gargoyle Drop", "intense", 136, 48, "minor"]
+      ["Rooftop Pursuit", "intense", 136, 45, "minor"], ["Iron Signal", "darkhouse", 124, 46, "minor"], ["Night Protocol", "halftime", 140, 48, "minor"],
+      ["Crimson Breach", "intense", 138, 45, "minor"], ["Steel Vigil", "darkhouse", 125, 50, "minor"], ["Searchlight", "halftime", 138, 47, "minor"],
+      ["Undercity", "darkhouse", 123, 44, "minor"], ["No Mercy Mode", "intense", 140, 46, "minor"], ["Last Patrol", "halftime", 136, 49, "minor"],
+      ["Gargoyle Drop", "intense", 134, 48, "minor"]
     ],
+    // Golden: somber and melodic
     golden: [
-      ["Lavender Code", "melodictech", 122, 50, "minor"], ["Golden Hour Deploy", "melodictech", 121, 52, "major"], ["Starlight Commit", "melodictech", 123, 48, "minor"],
-      ["Purple Pipeline", "melodictech", 120, 53, "dorian"], ["Moonlit Merge", "melodictech", 122, 47, "minor"], ["Confetti Compile", "melodictech", 124, 55, "major"],
-      ["Lilac Loop", "melodictech", 121, 50, "dorian"], ["Bloom Stack", "melodictech", 123, 52, "minor"], ["Velvet Release", "melodictech", 120, 48, "major"],
-      ["Encore Build", "melodictech", 124, 50, "minor"]
+      ["Lavender Code", "melodictech", 122, 50, "minor"], ["Golden Hour Deploy", "deephouse", 120, 52, "minor"], ["Starlight Commit", "melodichouse", 121, 48, "minor"],
+      ["Purple Pipeline", "melodictech", 120, 53, "dorian"], ["Moonlit Merge", "deephouse", 119, 47, "minor"], ["Confetti Compile", "melodichouse", 122, 55, "minor"],
+      ["Lilac Loop", "deephouse", 120, 50, "dorian"], ["Bloom Stack", "melodictech", 123, 52, "minor"], ["Velvet Release", "melodichouse", 119, 48, "minor"],
+      ["Encore Build", "melodictech", 121, 50, "minor"]
     ],
+    // CRT: retro hacker techno and broken beats
     crt: [
-      ["Phosphor", "retro", 126, 45, "minor"], ["Scanline Runner", "retro", 128, 48, "minor"], ["Modem Song", "retro", 124, 50, "dorian"],
-      ["Cathode Dreams", "retro", 125, 47, "minor"], ["Sector 7", "retro", 127, 45, "minor"], ["Null Pointer", "retro", 129, 46, "minor"],
-      ["High Score", "retro", 128, 52, "minor"], ["Floppy Boot", "retro", 124, 49, "dorian"], ["Raster Bars", "retro", 126, 50, "minor"],
-      ["Overflow", "retro", 130, 48, "minor"]
+      ["Phosphor", "retro", 126, 45, "minor"], ["Scanline Runner", "breaks", 130, 48, "minor"], ["Modem Song", "retro", 124, 50, "dorian"],
+      ["Cathode Dreams", "deephouse", 121, 47, "minor"], ["Sector 7", "breaks", 131, 45, "minor"], ["Null Pointer", "retro", 129, 46, "minor"],
+      ["High Score", "hackint", 130, 52, "minor"], ["Floppy Boot", "retro", 124, 49, "dorian"], ["Raster Bars", "breaks", 129, 50, "minor"],
+      ["Overflow", "hackint", 132, 48, "minor"]
     ]
   };
   var queues = {};
@@ -330,7 +348,7 @@
       drums: fl.drums, piano: chance(fl.piano), calm: !!fl.calm, chip: !!fl.chip, pad: fl.pad || (fl.calm ? "tri" : "saw"), melody: fl.melody || "lead", arp16: !!fl.arp16, arpMul: fl.arpMul || 1,
       supersaw: chance(fl.supersaw), stabs: chance(fl.stabs), leadEarly: chance(fl.leadEarly), bassVol: fl.bassVol,
       name: name, no: trackNo, mode: mode, skin: skinName(skinId),
-      bpm: song[2], dist: !!fl.dist, acid: !!fl.acid, blips: !!fl.blips,
+      bpm: song[2], dist: !!fl.dist, acid: !!fl.acid, blips: !!fl.blips, nosub: !!fl.nosub,
       progA: pa.map(function (c) { return voicing(key, c[0], c[1]); }),
       progB: pb.map(function (c) { return voicing(key, c[0], c[1]); }),
       scale: scale,
@@ -538,6 +556,23 @@
         if (st === 4 || st === 12) clap(t, 1.25);
         if (st === 2 || st === 3 || st === 10 || st === 11) rumble(t);
         if (bar % 8 === 7 && st >= 12) tom(t, cfg.progA[0][0] + 14 - (st - 12) * 3, 1.1);
+      } else if (d === "deephouse") {
+        if (st % 4 === 2) openHat(t, 0.75);
+        else if (st % 2 === 1) hat(t + sw, 0.3);
+        if (st === 4 || st === 12) clap(t, 0.7);
+        if ((st === 6 || st === 14) && chance(0.35)) rim(t + sw, 0.5);
+      } else if (d === "breaks") {
+        hat(t + sw, st % 2 ? 0.4 : 0.75);
+        if (st === 14) openHat(t, 0.9);
+        if (st === 4 || st === 12) clap(t, 1.1);
+        if (st === 15 && chance(0.4)) snare(t, 0.4);
+        if (bar % 4 === 3 && st >= 13) tom(t, cfg.progA[0][0] + 12 - (st - 13) * 3, 0.9);
+      } else if (d === "halftime") {
+        if (st % 2 === 0) hat(t, st % 4 ? 0.5 : 0.8);
+        if (st % 4 === 2) ride(t, 0.9);
+        if (st === 8) clap(t, 1.4);
+        if (st === 2 || st === 3) rumble(t);
+        if (bar % 4 === 3 && st >= 12) tom(t, cfg.progA[0][0] + 14 - (st - 12) * 3, 1.1);
       } else if (d === "melodic") {
         if (st % 4 === 2) openHat(t, 0.85); else if (st % 2 === 1) hat(t, 0.35);
         if (st === 4 || st === 12) clap(t, 0.8);
@@ -558,7 +593,9 @@
         case "vapor": return st === 0 || (st === 9 && chance(0.5));
         case "chip": return st === 0 || st === 8;
         case "electro": return st % 4 === 0;
-        case "hack": case "intense": case "melodic": return st % 4 === 0;
+        case "hack": case "intense": case "melodic": case "deephouse": return st % 4 === 0;
+        case "breaks": return st === 0 || st === 10 || (st === 7 && chance(0.6));
+        case "halftime": return st === 0 || (st === 6 && chance(0.5)) || (st === 11 && chance(0.6));
         case "robot": return st === 0 || (st === 3 && chance(0.6));   // heartbeat
         case "techno": return st % 4 === 0;
         default: return st === 0 || (st === 11 && chance(0.4));
@@ -602,13 +639,13 @@
         if (cfg.chip) {
           voice(o, "triangle", mtof(root + g[0]), t, 0.002, beat * g[1], 0.16 * bv, bassLp, 0);
         } else {
-          voice(o, "sine", mtof(root + g[0]), t + sw, 0.008, beat * g[1], 0.17 * bv, subLp, 0);
+          if (!cfg.nosub) voice(o, "sine", mtof(root + g[0]), t + sw, 0.008, beat * g[1], 0.17 * bv, subLp, 0);
           voice(o, "sawtooth", mtof(root + g[0]), t + sw, 0.01, beat * g[1] * 0.8, 0.08 * bv, bassIn, 0.05);
           voice(o, "sawtooth", mtof(root + g[0]), t + sw, 0.01, beat * g[1] * 0.8, 0.05 * bv, bassIn, 0, 12);
         }
       }
-      var fourFloor = /^(electro|techno|hack|intense|melodic)$/.test(cfg.drums);
-      if (sec.kick && kickHere(st, bar) && (cfg.drums === "hack" || cfg.drums === "intense")) { kickHard(t, cfg.drums === "intense" ? 1.1 : 1); pump(t, 0.22); }
+      var fourFloor = /^(electro|techno|hack|intense|melodic|deephouse)$/.test(cfg.drums);
+      if (sec.kick && kickHere(st, bar) && /^(hack|intense|breaks|halftime)$/.test(cfg.drums)) { kickHard(t, /^(intense|halftime)$/.test(cfg.drums) ? 1.15 : 1); pump(t, 0.22); }
       else if (sec.kick && kickHere(st, bar)) {
         kick(o, t, cfg.calm ? 0.09 : fourFloor ? 0.21 : cfg.drums === "outrun" ? 0.17 : st ? 0.13 : 0.2, fourFloor ? 120 : 95, fourFloor ? 42 : 45, fourFloor ? 0.28 : 0.32);
         if (!cfg.calm) pump(t, fourFloor ? 0.22 : 0.45);

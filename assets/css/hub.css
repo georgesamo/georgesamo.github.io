@@ -265,7 +265,8 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
      its own slot under it, as normal layout (not position: fixed), so it can never drift, float
      with the page or leave a gap. The window itself never scrolls, so the address bar stays put. */
   html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
-  body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; background-attachment: scroll, scroll; }
+  /* the frame is pinned to the visible screen edges: no leftover area can show below the bar */
+  body { position: fixed; inset: 0; display: flex; flex-direction: column; height: auto; overflow: hidden; background-attachment: scroll, scroll; }
   .ide { flex: 1 1 auto; min-height: 0; height: auto; grid-template-rows: minmax(0, 1fr); }
   .editor {
     min-height: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch;
