@@ -240,6 +240,8 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .case-card__impact span { font: 12px var(--mono); color: var(--text-2); }
 .case-card__note { margin: 12px 0 0; font: 11.5px var(--mono); }
 .corner__heart { -webkit-text-fill-color: initial; }
+.gem-trace__jump { margin-top: 10px; display: none; }
+@media (max-width: 860px) { .gem-trace__jump { display: inline-flex; } }
 
 /* =========================================================
    Phones and small tablets: compact top bar + app-style bottom navigation
@@ -258,17 +260,23 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   .tabs__actions .icon-btn { min-width: 34px; height: 32px; padding: 0 6px; }
   .tabs__actions [data-open-terminal] { display: none; }
   .acct-btn { height: 32px; padding: 0 9px; }
-  main { padding-bottom: calc(var(--mnav-h) + 28px + env(safe-area-inset-bottom)) !important; }
+  main { padding-bottom: 32px !important; }
   .mnav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
     display: grid; grid-template-columns: repeat(6, 1fr);
     height: calc(var(--mnav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
     background: var(--chrome); border-top: 1px solid var(--line);
-    /* own compositor layer: stays put while the page scrolls or the browser toolbar slides */
-    transform: translate3d(0, 0, 0); will-change: transform; backface-visibility: hidden;
-    contain: layout paint; touch-action: manipulation;
+    touch-action: manipulation;
   }
+  /* Phones: the page scrolls inside the app frame, not the browser window. The window itself never
+     scrolls, so the mobile address bar never slides in/out and nothing can drag the bottom bar. */
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   body { background-attachment: scroll, scroll; }
+  .ide { height: calc(100vh - var(--mnav-h) - env(safe-area-inset-bottom)); height: calc(100dvh - var(--mnav-h) - env(safe-area-inset-bottom)); min-height: 0; }
+  .editor {
+    height: 100%; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain; scroll-behavior: smooth; scroll-padding-top: calc(var(--tabs-h) + 16px);
+  }
   .mnav__item { display: grid; place-items: center; align-content: center; gap: 3px; border: 0; background: transparent; color: var(--muted); font: 10.5px var(--mono); text-decoration: none; cursor: pointer; position: relative; }
   .mnav__item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .mnav__item.is-here { color: var(--text); }

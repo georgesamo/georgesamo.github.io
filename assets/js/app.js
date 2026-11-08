@@ -212,15 +212,19 @@
     sections.forEach(function (s) { spy.observe(s); });
   }
   var posQueued = false;
-  window.addEventListener("scroll", function () {
+  function onScroll() {
     if (posQueued) return; posQueued = true;
     requestAnimationFrame(function () {
       posQueued = false;
-      var ln = Math.floor(window.scrollY / 23) + 1;
+      var ed = document.querySelector(".editor");
+      var ln = Math.floor(Math.max(window.scrollY, ed ? ed.scrollTop : 0) / 23) + 1;
       if (statusPos) statusPos.textContent = "Ln " + ln + ", Col " + ((ln * 7) % 41 + 1);
       drawGraphProgress();
     });
-  }, { passive: true });
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  // phones scroll inside .editor (see hub.css)
+  var edEl = document.querySelector(".editor"); if (edEl) edEl.addEventListener("scroll", onScroll, { passive: true });
 
   /* ---------- git graph ---------- */
   var gitlog = null, paths = [], lens = [0, 0], gitRO = null;
@@ -345,23 +349,29 @@
         ? '<p>Freshly added to the toolbox: pairing with Claude to explore code, write specs and ship refactors faster, with human review on every line.</p>'
         : '<p class="muted">Not in the commit log, but used in day-to-day work.</p>';
     } else {
-      html += '<p class="muted" style="margin-top:8px">' + total + " matching line" + (total > 1 ? "s" : "") + " highlighted in the career log ↑</p>";
+      html += '<p class="muted" style="margin-top:8px">' + total + " matching line" + (total > 1 ? "s" : "") + " highlighted in the career log ↑</p>" +
+        '<button class="btn gem-trace__jump" type="button" data-trace-jump>show in career log ↑</button>';
     }
     if (traceBody) traceBody.outerHTML = '<div data-trace-body>' + html + "</div>";
     traceBody = $("[data-trace-body]");
   }
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest("[data-trace-jump]")) return;
+    var first = $(".commit.is-hit"); if (!first) return;
+    if (!first.classList.contains("is-open")) $("button.commit__head", first).click();
+    first.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+  });
   function initGems() {
   traceBody = $("[data-trace-body]"); hitLines = [];
   $$(".gem").forEach(function (g) {
+    var downAt = null;
+    g.addEventListener("pointerdown", function (e) { downAt = [e.clientX, e.clientY]; }, { passive: true });
     g.addEventListener("mouseenter", function () { trace(g); });
     g.addEventListener("focus", function () { trace(g); });
-    g.addEventListener("click", function () {
+    // a tap only fills the trace box; it never moves the page (a swipe that starts on a gem must just scroll)
+    g.addEventListener("click", function (e) {
+      if (downAt && Math.abs(e.clientX - downAt[0]) + Math.abs(e.clientY - downAt[1]) > 8) return;
       trace(g);
-      var first = $(".commit.is-hit");
-      if (first && window.matchMedia("(max-width: 860px)").matches) {
-        if (!first.classList.contains("is-open")) $("button.commit__head", first).click();
-        first.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
-      }
     });
   });
   }
@@ -477,6 +487,11 @@
   /* ---------- go ---------- */
   boot().then(function () {
     setupReveal();
+    // phones scroll inside .editor, where the browser doesn't apply #anchors on load by itself
+    if (location.hash && window.matchMedia("(max-width: 860px)").matches) {
+      var hashTarget = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      if (hashTarget) setTimeout(function () { hashTarget.scrollIntoView({ behavior: "instant", block: "start" }); }, 60);
+    }
     $$("[data-scramble]").forEach(scramble);
     buildGraph();
     window.dispatchEvent(new Event("samuka:ready"));

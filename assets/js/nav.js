@@ -52,6 +52,11 @@
     });
   }
 
+  function toTop(y) {
+    window.scrollTo(0, y);
+    var ed = document.querySelector(".editor");
+    if (ed && ed.scrollHeight > ed.clientHeight) { var b = ed.style.scrollBehavior; ed.style.scrollBehavior = "auto"; ed.scrollTop = y; ed.style.scrollBehavior = b; }
+  }
   async function go(url, opts) {
     opts = opts || {};
     var u = new URL(url, location.href);
@@ -85,9 +90,8 @@
       if (opts.push !== false) history.pushState({ samuka: true }, "", u.pathname + u.search + u.hash);
       if (u.hash) {
         var target = document.getElementById(decodeURIComponent(u.hash.slice(1)));
-        if (target) setTimeout(function () { target.scrollIntoView(); }, 30); else window.scrollTo(0, 0);
-      } else if (opts.scroll != null) window.scrollTo(0, opts.scroll);
-      else window.scrollTo(0, 0);
+        if (target) setTimeout(function () { target.scrollIntoView(); }, 30); else toTop(0);
+      } else toTop(opts.scroll || 0);
       window.dispatchEvent(new CustomEvent("samuka:page", { detail: { url: u.href } }));
       var h = main.querySelector("h1, h2"); if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
     } catch (err) {
