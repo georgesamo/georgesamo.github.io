@@ -1,0 +1,137 @@
+---
+layout: default
+---
+{%- comment -%}
+  Shared editor chrome for every page: file tree, open-file tabs (the site's main
+  navigation), status bar, terminal. Front matter a page can set:
+    tab: lobby | leaderboards | events | samuka | player | pulls | nino   (which tab is active)
+    file: path shown in the crumbs / status bar (the profile page updates it on scroll)
+    icon: rb | log | gem | yml | md | pr
+    lang: status-bar language label
+    boot: true   (play the "rails server" intro once per session)
+{%- endcomment -%}
+{%- assign tab = page.tab | default: layout.tab | default: "lobby" -%}
+{%- assign file = page.file | default: "arcade/lobby.rb" -%}
+{%- if tab == "pulls" and page.file == nil -%}{%- if page.slug -%}{%- assign file = "pulls/" | append: page.slug | append: ".md" -%}{%- else -%}{%- assign file = "pulls/index.md" -%}{%- endif -%}{%- endif -%}
+{%- assign icon = page.icon | default: layout.icon | default: "rb" -%}
+{%- assign file_parts = file | split: "/" -%}
+{%- assign on_profile = false -%}{%- if tab == "samuka" -%}{%- assign on_profile = true -%}{%- endif -%}
+{%- assign on_lobby = false -%}{%- if tab == "lobby" -%}{%- assign on_lobby = true -%}{%- endif -%}
+{%- assign tabs = "lobby|lobby.rb|rb|/,leaderboards|leaderboards.yml|yml|/leaderboards/,events|events.rb|rb|/events/,samuka|samuka.rb|rb|/samuka/,pulls|pulls|pr|/blog/" | split: "," -%}
+
+{%- if page.boot -%}
+<div class="boot" id="boot" aria-hidden="true">
+  <pre class="boot__log" id="boot-log"></pre>
+  <p class="boot__skip">press any key to skip</p>
+</div>
+{%- endif %}
+
+<div class="spotlight" aria-hidden="true"></div>
+
+<div class="ide" data-page="{{ tab }}">
+  <!-- ================= sidebar / file tree ================= -->
+  <aside class="tree" aria-label="Site">
+    <div class="tree__head">
+      <span class="tree__logo">{% include ruby.svg %}</span>
+      <a class="tree__home" href="{{ '/' | relative_url }}">samuka</a>
+      <span class="tree__branch">⎇ main</span>
+    </div>
+    <nav class="tree__nav">
+      <p class="tree__dir">▾ arcade</p>
+      <a href="{{ '/' | relative_url }}"{% if on_lobby %} data-nav="lobby"{% endif %}{% if tab == "lobby" %} class="is-here"{% endif %}><i class="fi fi--rb"></i>lobby.rb</a>
+      <a href="{% if on_lobby %}#games{% else %}{{ '/#games' | relative_url }}{% endif %}"{% if on_lobby %} data-nav="games"{% endif %}><i class="fi fi--log"></i>games/</a>
+      <a href="{{ '/leaderboards/' | relative_url }}"{% if tab == "leaderboards" %} class="is-here"{% endif %}><i class="fi fi--yml"></i>leaderboards.yml</a>
+      <a href="{{ '/events/' | relative_url }}"{% if tab == "events" %} class="is-here"{% endif %}><i class="fi fi--rb"></i>events.rb</a>
+      <a href="{% if on_lobby %}#wall{% else %}{{ '/#wall' | relative_url }}{% endif %}"{% if on_lobby %} data-nav="wall"{% endif %}><i class="fi fi--log"></i>visitors.log</a>
+      <p class="tree__dir">▾ app/models <span class="tree__tag">creator</span></p>
+      <a href="{% if on_profile %}#hero{% else %}{{ '/samuka/' | relative_url }}{% endif %}"{% if on_profile %} data-nav="hero"{% endif %}{% if tab == "samuka" %} class="is-here"{% endif %}><i class="fi fi--rb"></i>samuka.rb</a>
+      <a href="{% if on_profile %}#experience{% else %}{{ '/samuka/#experience' | relative_url }}{% endif %}"{% if on_profile %} data-nav="experience"{% endif %}><i class="fi fi--log"></i>career.log</a>
+      <a href="{% if on_profile %}#skills{% else %}{{ '/samuka/#skills' | relative_url }}{% endif %}"{% if on_profile %} data-nav="skills"{% endif %}><i class="fi fi--gem"></i>Gemfile</a>
+      <a href="{% if on_profile %}#education{% else %}{{ '/samuka/#education' | relative_url }}{% endif %}"{% if on_profile %} data-nav="education"{% endif %}><i class="fi fi--rb"></i>schema.rb</a>
+      <a href="{% if on_profile %}#languages{% else %}{{ '/samuka/#languages' | relative_url }}{% endif %}"{% if on_profile %} data-nav="languages"{% endif %}><i class="fi fi--yml"></i>languages.yml</a>
+      <a href="{% if on_profile %}#projects{% else %}{{ '/samuka/#projects' | relative_url }}{% endif %}"{% if on_profile %} data-nav="projects"{% endif %}><i class="fi fi--log"></i>repos</a>
+      <a href="{% if on_profile %}#contact{% else %}{{ '/samuka/#contact' | relative_url }}{% endif %}"{% if on_profile %} data-nav="contact"{% endif %}><i class="fi fi--rb"></i>routes.rb</a>
+      <p class="tree__dir">▾ pulls</p>
+      <a href="{{ '/blog/' | relative_url }}"{% if tab == "pulls" and page.url == "/blog/" %} class="is-here"{% endif %}><i class="fi fi--pr"></i>all pull requests</a>
+      {%- if tab == "pulls" %}
+      {%- for p in site.posts limit: 12 %}
+      <a href="{{ p.url | relative_url }}" class="blog-tree__post{% if p.url == page.url %} is-here{% endif %}"><i class="fi fi--md"></i>{{ p.title | escape }}</a>
+      {%- endfor %}
+      {%- endif %}
+      <p class="tree__dir tree__dir--team" data-team-only hidden>▾ team</p>
+      <a href="{{ '/nino/' | relative_url }}" data-team-only hidden{% if tab == "nino" %} class="is-here"{% endif %}><i class="fi fi--md"></i>ninos-corner.md</a>
+    </nav>
+    <a class="creator" href="{{ '/samuka/' | relative_url }}">
+      <span class="creator__avatar" aria-hidden="true">S</span>
+      <span class="creator__txt"><small>made by</small><b>Samuka</b><span>Senior Rails engineer · hire me →</span></span>
+    </a>
+    <div class="tree__foot">
+      <button class="tree__btn" data-open-terminal type="button"><span>&gt;_</span> terminal <kbd>Ctrl K</kbd></button>
+      <button class="tree__btn" data-toggle-theme type="button"><span class="theme-ico" aria-hidden="true"></span> <span data-theme-label>light mode</span></button>
+    </div>
+  </aside>
+
+  <!-- ================= editor ================= -->
+  <div class="editor">
+    <div class="tabs" role="navigation" aria-label="Main">
+      <div class="tabs__files">
+        {%- for t in tabs -%}
+          {%- assign tp = t | split: "|" -%}
+          {%- if tp[0] == tab -%}
+        <a class="tabs__tab is-active" href="{{ tp[3] | relative_url }}" aria-current="page"><i class="fi fi--{{ icon }}" data-tab-icon></i><span data-tab-name>{{ file_parts | last }}</span><span class="tabs__dot"></span></a>
+          {%- else -%}
+        <a class="tabs__tab tabs__tab--idle tabs__tab--{{ tp[0] }}" href="{{ tp[3] | relative_url }}"><i class="fi fi--{{ tp[2] }}"></i><span>{{ tp[1] }}</span></a>
+          {%- endif -%}
+        {%- endfor -%}
+        {%- if tab == "player" or tab == "nino" %}
+        <a class="tabs__tab is-active" href="{{ page.url | relative_url }}" aria-current="page"><i class="fi fi--{{ icon }}" data-tab-icon></i><span data-tab-name>{{ file_parts | last }}</span><span class="tabs__dot"></span></a>
+        {%- endif %}
+      </div>
+      <div class="tabs__crumbs" data-tab-crumbs>{{ file_parts | join: " › " }}</div>
+      <div class="tabs__actions">
+        <button type="button" class="acct-btn" data-account hidden>sign in</button>
+        <button type="button" class="icon-btn" data-toggle-theme aria-label="Toggle light and dark theme"><span class="theme-ico"></span></button>
+        <button type="button" class="icon-btn" data-open-terminal aria-label="Open terminal">&gt;_</button>
+      </div>
+    </div>
+
+    {%- assign main_class = page.main_class | default: layout.main_class -%}
+    <main id="main"{% if main_class %} class="{{ main_class }}"{% endif %}>
+      {{ content }}
+      <footer class="foot">
+        <p><span class="c-comment"># built with Jekyll, vanilla JS and a lot of</span> <span class="ruby-word">♦</span> <span class="c-comment">· © <span data-year>2026</span> Giorgi “Samuka” Samukashvili ·</span> <a href="{{ '/samuka/' | relative_url }}">about the creator</a></p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<!-- ================= status bar ================= -->
+<div class="status" aria-hidden="true">
+  <span class="status__item status__item--accent">⎇ main</span>
+  <span class="status__item">✓ 0 problems</span>
+  <span class="status__item status__hide-sm" data-status-file>{{ file }}</span>
+  <span class="status__spacer"></span>
+  <span class="status__viz" data-viz></span>
+  <span class="status__item" data-status-pos>Ln 1, Col 1</span>
+  <span class="status__item status__hide-sm">UTF-8</span>
+  <span class="status__item status__hide-sm">{{ page.lang_label | default: layout.lang_label | default: "Ruby 3.3" }}</span>
+  <button class="status__item status__btn" type="button" data-open-terminal tabindex="-1">&gt;_ Ctrl K</button>
+</div>
+
+<!-- ================= terminal ================= -->
+<div class="term" id="term" hidden>
+  <div class="term__backdrop" data-close-terminal></div>
+  <div class="term__win" role="dialog" aria-modal="true" aria-label="Interactive terminal">
+    <div class="term__bar">
+      <span class="dots"><i data-close-terminal></i><i></i><i></i></span>
+      <span class="term__title">visitor@samuka: ~</span>
+      <button class="term__x" type="button" data-close-terminal aria-label="Close terminal">esc</button>
+    </div>
+    <div class="term__out" id="term-out" aria-live="polite"></div>
+    <form class="term__in" id="term-form" autocomplete="off">
+      <label class="term__ps1" for="term-input" id="term-ps1"><span class="u">visitor@samuka</span>:<span class="d">~</span>$</label>
+      <input id="term-input" spellcheck="false" autocapitalize="off" autocomplete="off">
+    </form>
+  </div>
+</div>
+<canvas class="rain" id="rain" aria-hidden="true"></canvas>

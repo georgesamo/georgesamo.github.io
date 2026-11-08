@@ -9,7 +9,7 @@
   var GAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match" };
   var PERIODS = { all: "all-time", week: "this week", daily: "daily" };
   var EPOCH = Date.UTC(2026, 10, 8); // daily #1
-  var view = { game: "gems", period: "all" }, panel = null, cache = {};
+  var panels = [], cache = {};
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
   var store = {
     get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -41,7 +41,7 @@
   function afterSave(game, period) {
     cache = {};
     fillMinis(game, period);
-    if (panel) load();
+    loadAll();
     // podium check across the boards the score could land on
     ["all", "week"].concat(period === "daily" ? ["daily"] : []).forEach(function (p) {
       fetchBoard(game, p, 3).then(function (rows) {
@@ -82,33 +82,36 @@
     if (!rows.length) return '<p class="lb__empty muted">No scores yet. Be the first.</p>';
     return '<ol class="lb__list">' + rows.map(function (r) {
       var medal = r.rank === 1 ? "lb__row--gold" : r.rank === 2 ? "lb__row--steel" : r.rank === 3 ? "lb__row--violet" : "";
-      return '<li class="lb__row ' + medal + (r.me ? " is-me" : "") + '"><span class="lb__rank">' + r.rank + '</span><span class="lb__name">' + esc(r.name) +
+      return '<li class="lb__row ' + medal + (r.me ? " is-me" : "") + '"><span class="lb__rank">' + r.rank + '</span><span class="lb__name"><a href="/u/?n=' + encodeURIComponent(r.name) + '">' + esc(r.name) + "</a>" +
         (r.role === "samuka" || r.role === "nino" ? ' <span class="lb__role lb__role--' + r.role + '">' + r.role + "</span>" : "") + (r.me ? ' <span class="lb__you">you</span>' : "") +
         '</span><span class="lb__score">' + Number(r.score).toLocaleString("en-US") + "</span></li>";
     }).join("") + "</ol>";
   }
 
-  /* ---------- the panel in the arcade section ---------- */
-  function renderPanel() {
-    panel.innerHTML =
-      '<div class="lb__head"><p class="lb__title"><span class="prompt">$</span> rails leaderboard:show</p>' +
-      '<div class="lb__tabs" role="tablist">' + Object.keys(GAMES).map(function (g) {
-        return '<button type="button" role="tab" aria-selected="' + (g === view.game) + '" data-lb-game="' + g + '">' + GAMES[g] + "</button>";
-      }).join("") + "</div>" +
-      '<div class="lb__tabs lb__tabs--sub">' + Object.keys(PERIODS).filter(function (p) { return p !== "daily" || view.game === "gems"; }).map(function (p) {
-        return '<button type="button" aria-pressed="' + (p === view.period) + '" data-lb-period="' + p + '">' + PERIODS[p] + "</button>";
+  /* ---------- leaderboard panels ([data-leaderboard], optional data-game / data-period / data-limit / data-fixed) ---------- */
+  function renderPanel(pn) {
+    var v = pn.view, el = pn.el, fixed = el.hasAttribute("data-fixed");
+    el.innerHTML =
+      '<div class="lb__head"><p class="lb__title"><span class="prompt">$</span> rails leaderboard:show' + (fixed ? "[" + v.game + "]" : "") + "</p>" +
+      (fixed ? '<p class="lb__fixed">' + GAMES[v.game] + "</p>" : '<div class="lb__tabs" role="tablist">' + Object.keys(GAMES).map(function (g) {
+        return '<button type="button" role="tab" aria-selected="' + (g === v.game) + '" data-lb-game="' + g + '">' + GAMES[g] + "</button>";
+      }).join("") + "</div>") +
+      '<div class="lb__tabs lb__tabs--sub">' + Object.keys(PERIODS).filter(function (p) { return p !== "daily" || v.game === "gems"; }).map(function (p) {
+        return '<button type="button" aria-pressed="' + (p === v.period) + '" data-lb-period="' + p + '">' + PERIODS[p] + "</button>";
       }).join("") + "</div></div>" +
       '<div class="lb__body" data-lb-body><p class="muted">loading…</p></div>' +
       (user() ? "" : '<p class="lb__note muted">Sign in to put your name on the board. Your email is never shown; set a nickname in your account.</p>');
   }
-  async function load() {
-    if (!panel) return;
-    if (view.game !== "gems" && view.period === "daily") view.period = "all";
-    renderPanel();
-    var body = panel.querySelector("[data-lb-body]");
-    try { body.innerHTML = rowsHtml(await fetchBoard(view.game, view.period, 10)); }
+  async function load(pn) {
+    if (!pn) return loadAll();
+    if (pn.view.game !== "gems" && pn.view.period === "daily") pn.view.period = "all";
+    renderPanel(pn);
+    var body = pn.el.querySelector("[data-lb-body]");
+    try { body.innerHTML = rowsHtml(await fetchBoard(pn.view.game, pn.view.period, pn.limit)); }
     catch (err) { body.innerHTML = '<p class="muted">Leaderboard is offline right now.</p>'; console.warn("[scores]", err.message || err); }
   }
+  function loadAll() { panels.forEach(function (pn) { load(pn); }); }
+  function panelOf(el) { var root = el.closest("[data-leaderboard]"); return panels.filter(function (p) { return p.el === root; })[0]; }
   async function fillMinis(game, period) {
     var els = document.querySelectorAll('[data-lb-mini="' + game + '"]');
     if (!els.length) return;
@@ -180,8 +183,8 @@
 
   document.addEventListener("click", function (e) {
     var t;
-    if ((t = e.target.closest("[data-lb-game]"))) { view.game = t.getAttribute("data-lb-game"); load(); }
-    else if ((t = e.target.closest("[data-lb-period]"))) { view.period = t.getAttribute("data-lb-period"); load(); }
+    if ((t = e.target.closest("[data-lb-game]"))) { var pg = panelOf(t); if (pg) { pg.view.game = t.getAttribute("data-lb-game"); load(pg); } }
+    else if ((t = e.target.closest("[data-lb-period]"))) { var pp = panelOf(t); if (pp) { pp.view.period = t.getAttribute("data-lb-period"); load(pp); } }
     else if ((t = e.target.closest("[data-daily]"))) { e.preventDefault(); openDaily(); }
     else if ((t = e.target.closest("[data-daily-share]"))) {
       var text = t.getAttribute("data-text");
@@ -195,13 +198,15 @@
     var d = e.detail || {};
     if (d.name === "over" && d.mode === "free") setTimeout(function () { fillMinis(d.game, "all"); }, 30);
   });
-  window.addEventListener("samuka:auth", function () { cache = {}; if (panel) load(); });
+  window.addEventListener("samuka:auth", function () { cache = {}; loadAll(); });
 
   function boot() {
-    panel = document.querySelector("[data-leaderboard]");
-    if (panel) load();
+    panels = Array.prototype.map.call(document.querySelectorAll("[data-leaderboard]"), function (el) {
+      return { el: el, view: { game: el.getAttribute("data-game") || "gems", period: el.getAttribute("data-period") || "all" }, limit: +(el.getAttribute("data-limit") || 10) };
+    });
+    loadAll();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 
-  window.SamukaScores = { dailyIntro: dailyIntro, dailyCard: dailyCard, openDaily: openDaily, board: fetchBoard, show: function (g, p) { view.game = g || view.game; view.period = p || view.period; load(); } };
+  window.SamukaScores = { dailyIntro: dailyIntro, dailyCard: dailyCard, openDaily: openDaily, board: fetchBoard, reload: function () { cache = {}; loadAll(); } };
 })();

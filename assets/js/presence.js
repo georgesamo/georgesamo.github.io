@@ -113,6 +113,7 @@
       Object.keys(ghosts).forEach(function (id) { if (!peers[id]) dropGhost(id); });
       count = Object.keys(peers).length + 1;
       paintBadge();
+      window.dispatchEvent(new CustomEvent("samuka:presence", { detail: { count: count } }));
       if (count > 1 && window.SamukaAch) window.SamukaAch.unlock("crowd");
     });
     channel.on("broadcast", { event: "cursor" }, onCursor);

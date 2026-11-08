@@ -93,7 +93,14 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async function () {
       var res = await client.from("profiles").update(patch).eq("id", state.user.id);
-      if (res.error) console.warn("[auth] could not save preferences", res.error.message);
+      if (res.error) {
+        console.warn("[auth] could not save preferences", res.error.message);
+        if ("nickname" in patch && /duplicate|unique/i.test(res.error.message)) {
+          state.profile.nickname = null;
+          var ni = modal && modal.querySelector('input[name="nickname"]');
+          if (ni) { ni.setCustomValidity("That nickname is taken. Try another one."); ni.reportValidity(); ni.addEventListener("input", function () { ni.setCustomValidity(""); }, { once: true }); }
+        }
+      }
     }, 400);
     emit();
   }
@@ -137,7 +144,8 @@
     var locked = enabled && !state.user;
     document.querySelectorAll("[data-play]").forEach(function (b) {
       b.classList.toggle("is-locked", locked);
-      b.innerHTML = locked ? '<span class="btn__prompt">🔒</span> sign in to play' : '<span class="btn__prompt">▶</span> play';
+      if (!b.hasAttribute("data-label")) b.setAttribute("data-label", b.innerHTML);   // keep each button's own text
+      b.innerHTML = locked ? '<span class="btn__prompt">🔒</span> sign in to play' : b.getAttribute("data-label");
     });
   }
 

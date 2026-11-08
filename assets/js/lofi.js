@@ -4,7 +4,7 @@
 
   var AC = window.AudioContext || window.webkitAudioContext;
   var MASTER = 0.32, LOOK = 0.12, TICK = 25;
-  var ctx = null, master = null, noiseBuf = null, pulseWave = null;
+  var ctx = null, master = null, noiseBuf = null, pulseWave = null, analyser = null;
   var on = false, timer = null, insts = [], cur = null, token = 0, btn = null;
   var STYLES;
 
@@ -25,6 +25,7 @@
       comp.threshold.value = -18; comp.ratio.value = 4;
       master = ctx.createGain(); master.gain.value = 0;
       master.connect(comp); comp.connect(ctx.destination);
+      analyser = ctx.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.8; comp.connect(analyser);
       var len = ctx.sampleRate * 2, d, i;
       noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
       d = noiseBuf.getChannelData(0);
@@ -329,7 +330,7 @@
   function toggle() { if (on) stop(); else start(); }
   function isOn() { return on; }
 
-  window.SamukaLofi = { toggle: toggle, start: start, stop: stop, isOn: isOn };
+  window.SamukaLofi = { toggle: toggle, start: start, stop: stop, isOn: isOn, analyser: function () { return on ? analyser : null; } };
 
   window.addEventListener("samuka:theme", function (e) {
     if (!on || !ctx) return;

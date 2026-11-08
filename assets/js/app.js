@@ -95,6 +95,7 @@
     store.sset("samuka-booted", "1");
     el.classList.add("is-on");
     document.documentElement.style.overflow = "hidden";
+    var ide = document.querySelector(".ide"), lobby = !!(ide && ide.getAttribute("data-page") === "lobby");
     var now = new Date();
     var stamp = now.toISOString().replace("T", " ").slice(0, 19);
     var lines = [
@@ -110,8 +111,8 @@
       ['* Listening on <span class="b-hi">https://georgesamo.github.io</span>', 160],
       ['<span class="b-dim">Use Ctrl-C to stop</span>', 120],
       ['Started GET "/" for <span class="b-hi">you</span> at ' + stamp, 90],
-      ['Processing by <span class="b-ok">PortfolioController#show</span> as HTML', 90],
-      ['  Rendered app/models/samuka.rb, log/career.log, Gemfile, db/migrate', 110],
+      lobby ? ['Processing by <span class="b-ok">ArcadeController#lobby</span> as HTML', 90] : ['Processing by <span class="b-ok">PortfolioController#show</span> as HTML', 90],
+      lobby ? ['  Rendered arcade/lobby.rb, games/sidekiq_rush.rb, games/gem_match.rb, leaderboards.yml', 110] : ['  Rendered app/models/samuka.rb, log/career.log, Gemfile, db/migrate', 110],
       ['<span class="b-ok">Completed 200 OK</span> in 42ms (Views: 12.4ms | ActiveRecord: 0.0ms | Allocations: 2048)', 380]
     ];
     var skipped = false;
@@ -426,8 +427,14 @@
     theme: currentMode, mode: currentMode, skin: currentSkin, skins: SKINS,
     availableSkins: availableSkins, canUseSkin: canUseSkin,
     canUseTheme: function (t) { return t === "dark" || t === "light" || canUseSkin(t); },
-    go: function (id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: reduced ? "auto" : "smooth" }); },
-    focusContact: function () { this.go("contact"); setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, reduced ? 0 : 650); }
+    go: function (id) {
+      var el = document.getElementById(id);
+      if (el) { el.scrollIntoView({ behavior: reduced ? "auto" : "smooth" }); return; }
+      // the section lives on the other page: arcade hub (/) or the creator's profile (/samuka/)
+      var hub = { lobby: 1, games: 1, boards: 1, wall: 1, arcade: 1 };
+      location.href = (hub[id] ? "/#" + (id === "arcade" ? "games" : id) : "/samuka/#" + (id === "hero" ? "" : id));
+    },
+    focusContact: function () { if (!form) { location.href = "/samuka/#contact"; return; } this.go("contact"); setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, reduced ? 0 : 650); }
   };
 
   /* ---------- go ---------- */

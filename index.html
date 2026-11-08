@@ -1,250 +1,54 @@
 ---
-layout: default
-title: Samuka · Senior Ruby on Rails Engineer
+layout: shell
+title: Arcade
+title_full: "Samuka's Arcade · small games about the Rails stack"
+description: "Samuka's arcade: Sidekiq Rush, Gem Match, a daily puzzle, live 1v1 races, leaderboards and achievements. Built for fun by Samuka, Senior Ruby on Rails engineer."
+tab: lobby
+file: arcade/lobby.rb
+icon: rb
+boot: true
 ---
-{%- assign r = site.data.resume -%}
-{%- assign p = r.person -%}
-
-<!-- ================= boot overlay ================= -->
-<div class="boot" id="boot" aria-hidden="true">
-  <pre class="boot__log" id="boot-log"></pre>
-  <p class="boot__skip">press any key to skip</p>
-</div>
-
-<div class="spotlight" aria-hidden="true"></div>
-
-<div class="ide">
-  <!-- ================= sidebar / file tree ================= -->
-  <aside class="tree" aria-label="Sections">
-    <div class="tree__head">
-      <span class="tree__logo">{% include ruby.svg %}</span>
-      <span>samuka</span>
-      <span class="tree__branch">⎇ main</span>
-    </div>
-    <nav class="tree__nav">
-      <p class="tree__dir">▾ app/models</p>
-      <a href="#hero" data-nav="hero"><i class="fi fi--rb"></i>samuka.rb</a>
-      <p class="tree__dir">▾ log</p>
-      <a href="#experience" data-nav="experience"><i class="fi fi--log"></i>career.log</a>
-      <p class="tree__dir">▾ /</p>
-      <a href="#skills" data-nav="skills"><i class="fi fi--gem"></i>Gemfile</a>
-      <p class="tree__dir">▾ db/migrate</p>
-      <a href="#education" data-nav="education"><i class="fi fi--rb"></i>schema.rb</a>
-      <p class="tree__dir">▾ config/locales</p>
-      <a href="#languages" data-nav="languages"><i class="fi fi--yml"></i>languages.yml</a>
-      <p class="tree__dir">▾ app</p>
-      <a href="#projects" data-nav="projects"><i class="fi fi--log"></i>repos</a>
-      <p class="tree__dir">▾ pulls</p>
-      <a href="{{ '/blog/' | relative_url }}"><i class="fi fi--pr"></i>pull requests</a>
-      <p class="tree__dir">▾ bin</p>
-      <a href="#arcade" data-nav="arcade"><i class="fi fi--log"></i>arcade</a>
-      <p class="tree__dir">▾ log</p>
-      <a href="#wall" data-nav="wall"><i class="fi fi--log"></i>visitors.log</a>
-      <p class="tree__dir">▾ config</p>
-      <a href="#contact" data-nav="contact"><i class="fi fi--rb"></i>routes.rb</a>
-    </nav>
-    <div class="tree__foot">
-      <button class="tree__btn" data-open-terminal type="button"><span>&gt;_</span> terminal <kbd>Ctrl K</kbd></button>
-      <button class="tree__btn" data-toggle-theme type="button"><span class="theme-ico" aria-hidden="true"></span> <span data-theme-label>light mode</span></button>
-    </div>
-  </aside>
-
-  <!-- ================= editor ================= -->
-  <div class="editor">
-    <div class="tabs" role="presentation">
-      <div class="tabs__tab"><i class="fi fi--rb" data-tab-icon></i><span data-tab-name>samuka.rb</span><span class="tabs__dot"></span></div>
-      <div class="tabs__crumbs" data-tab-crumbs>app › models › samuka.rb</div>
-      <div class="tabs__actions">
-        <button type="button" class="acct-btn" data-account hidden>sign in</button>
-        <button type="button" class="icon-btn" data-toggle-theme aria-label="Toggle light and dark theme"><span class="theme-ico"></span></button>
-        <button type="button" class="icon-btn" data-open-terminal aria-label="Open terminal">&gt;_</button>
-      </div>
-    </div>
-
-    <main id="main">
-      <!-- ================= HERO ================= -->
-      <section class="hero" id="hero" data-file="app/models/samuka.rb" data-icon="rb">
-        <div class="hero__copy">
-          <p class="hero__hello"><span class="c-comment"># <span class="ka" lang="ka">გამარჯობა</span> · hello, I'm</span></p>
-          <h1 class="hero__name"><span data-scramble="Samuka">Samuka</span><span class="hero__cursor" aria-hidden="true"></span></h1>
-          <p class="hero__role">{{ p.role }} <span class="hero__sep">/</span> <span class="hero__loc">{{ p.location }}</span></p>
-          <p class="hero__tagline">{{ p.tagline }}</p>
-          <div class="hero__actions">
-            <button class="btn btn--primary" type="button" data-open-terminal><span class="btn__prompt">$</span> open terminal <kbd>Ctrl K</kbd></button>
-            <a class="btn" href="{{ '/assets/samuka-resume.pdf' | relative_url }}" download="Samuka - Giorgi Samukashvili - Resume.pdf">resume.pdf <span aria-hidden="true">↓</span></a>
-            <a class="btn btn--ghost" href="#contact">POST /contact</a>
+{%- assign p = site.data.resume.person -%}
+      <!-- ================= LOBBY ================= -->
+      <section class="lobby" id="lobby" data-file="arcade/lobby.rb" data-icon="rb">
+        <div class="lobby__copy">
+          <p class="hero__hello"><span class="c-comment"># arcade/lobby.rb · insert coin</span></p>
+          <h1 class="lobby__title"><span data-scramble="Samuka's">Samuka's</span><br><span class="lobby__title-2">Arcade</span><span class="hero__cursor" aria-hidden="true"></span></h1>
+          <p class="lobby__text">Small games about the Rails stack: route Sidekiq jobs, match gems from the Gemfile, race a friend live, climb the boards, collect achievements. Free, a few seconds to sign in.</p>
+          <div class="lobby__actions">
+            <button class="btn btn--primary" type="button" data-play="gems"><span class="btn__prompt">▶</span> play Gem Match</button>
+            <button class="btn" type="button" data-play="sidekiq">▶ Sidekiq Rush</button>
+            <button class="btn" type="button" data-daily>📅 daily</button>
+            <button class="btn" type="button" data-race>⚔ 1v1</button>
           </div>
+          <dl class="lobby__stats" data-hub-stats>
+            <div><dt>online now</dt><dd data-hub-online>1</dd></div>
+            <div><dt>today</dt><dd data-hub-daily>daily #1</dd></div>
+            <div><dt>your achievements</dt><dd data-hub-ach>sign in</dd></div>
+            <div><dt>event</dt><dd data-hub-event>—</dd></div>
+          </dl>
         </div>
-
-        <div class="hero__stage">
-          <canvas id="gem-canvas" aria-label="A rotating wireframe gem with skills orbiting it" role="img"></canvas>
-          <p class="hero__hint"><span>drag to spin</span> · <span>click to shatter</span></p>
-        </div>
-
-        <figure class="code-card hero__code reveal" aria-label="Profile summary as Ruby code">
-          <figcaption class="code-card__bar"><span class="dots"><i></i><i></i><i></i></span>app/models/samuka.rb</figcaption>
-<pre class="code" data-type><code><span class="ln"><span class="k">class</span> <span class="t">Samuka</span> &lt; <span class="t">Engineer</span></span>
-<span class="ln">  <span class="m">role</span>      <span class="s">"{{ p.role }}"</span></span>
-<span class="ln">  <span class="m">based_in</span>  <span class="s">"{{ p.location }}"</span></span>
-<span class="ln">  <span class="m">shipping</span>  <span class="sy">since:</span> <span class="n">2018</span>  <span class="c-comment"># <span data-years>8</span> years in production</span></span>
-<span class="ln">  <span class="m">domain</span>    <span class="sy">:healthcare</span>, <span class="sy">:fhir</span>, <span class="sy">:billing</span></span>
-<span class="ln">  <span class="m">stack</span>     <span class="sy">%i[</span>ruby rails postgresql sidekiq redis<span class="sy">]</span></span>
-<span class="ln"></span>
-<span class="ln">  <span class="k">def</span> <span class="f">hire!</span> = <span class="t">Contact</span>.<span class="f">deliver</span>(<span class="s">"{{ p.email }}"</span>)</span>
-<span class="ln"><span class="k">end</span></span></code></pre>
-        </figure>
-      </section>
-
-      <!-- ================= EXPERIENCE ================= -->
-      <section class="section" id="experience" data-file="log/career.log" data-icon="log">
-        <header class="section__head reveal">
-          <p class="section__path">log/<b>career.log</b></p>
-          <h2 class="section__title">Experience</h2>
-          <p class="section__cmd"><span class="prompt">$</span> git log --graph --decorate <span class="muted">--since=2014</span></p>
-        </header>
-
-        <div class="gitlog" id="gitlog">
-          <svg class="gitlog__graph" aria-hidden="true"><path class="gl-path gl-path--main"/><path class="gl-path gl-path--branch"/><path class="gl-path gl-path--main gl-path--ghost"/><path class="gl-path gl-path--branch gl-path--ghost"/></svg>
-          <ol class="gitlog__list">
-          {%- for c in r.git_log -%}
-            {%- if c.ref -%}
-              {%- assign job = r.experience | where: "id", c.ref | first -%}
-              <li class="commit commit--job reveal{% if forloop.first %} is-open{% endif %}" data-lane="{{ c.lane }}" data-id="{{ job.id }}"{% if c.merge %} data-merge{% endif %}{% if c.branch %} data-branch{% endif %}>
-                <span class="commit__dot" aria-hidden="true"></span>
-                <button class="commit__head" type="button" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
-                  <span class="commit__hash">{{ job.hash }}</span>
-                  {%- if c.tags %}<span class="commit__refs">({{ c.tags | replace: "->", "→" }})</span>{% endif %}
-                  <span class="commit__msg"><span class="commit__type">{% if c.merge %}merge{% else %}feat{% endif %}(career):</span> <b>{{ job.role }}</b> <span class="at">@</span> <span class="co">{{ job.company }}</span></span>
-                  <span class="commit__meta">{{ job.period }}</span>
-                </button>
-                <div class="commit__body">
-                  <div class="diff">
-                    <p class="diff__file">diff --git a/career/{{ job.id }}.rb b/career/{{ job.id }}.rb</p>
-                    <p class="diff__hunk">@@ {{ job.period }} @@ {{ job.location }}</p>
-                    {%- for b in job.bullets %}
-                    <p class="diff__add" data-text="{{ b | downcase | escape }}">{{ b }}</p>
-                    {%- endfor %}
-                  </div>
-                </div>
-              </li>
-            {%- else -%}
-              <li class="commit commit--edu reveal" data-lane="{{ c.lane }}" data-id="{{ c.edu }}"{% if c.root %} data-root{% endif %}>
-                <span class="commit__dot" aria-hidden="true"></span>
-                <div class="commit__head commit__head--static">
-                  <span class="commit__hash">{{ c.hash }}</span>
-                  <span class="commit__msg"><span class="commit__type commit__type--chore">{% if c.root %}root{% else %}learn{% endif %}:</span> {{ c.msg | remove: "init: " }}</span>
-                  <span class="commit__meta">{{ c.when }}</span>
-                </div>
-              </li>
-            {%- endif -%}
-          {%- endfor -%}
-          </ol>
-        </div>
-      </section>
-
-      <!-- ================= SKILLS ================= -->
-      <section class="section" id="skills" data-file="Gemfile" data-icon="gem">
-        <header class="section__head reveal">
-          <p class="section__path"><b>Gemfile</b></p>
-          <h2 class="section__title">Skills</h2>
-          <p class="section__cmd"><span class="prompt">$</span> bundle exec skills <span class="muted"># hover a gem to trace it through the career log</span></p>
-        </header>
-
-        <div class="gemfile reveal">
-          <div class="code-card">
-            <div class="code-card__bar"><span class="dots"><i></i><i></i><i></i></span>Gemfile
-              <button class="code-card__run" type="button" data-bundle>▶ bundle install</button>
-            </div>
-<pre class="code code--numbered"><code><span class="ln"><span class="m">source</span> <span class="s">"https://georgesamo.github.io"</span></span>
-<span class="ln"><span class="m">ruby</span> <span class="s">"3.3"</span></span>
-<span class="ln"></span>
-{%- for g in r.skills %}
-<span class="ln"><span class="c-comment"># {{ g.title }}</span></span>
-<span class="ln"><span class="m">group</span> <span class="sy">:{{ g.group }}</span> <span class="k">do</span></span>
-{%- for s in g.gems %}
-<span class="ln">  <span class="m">gem</span> <span class="s gem" tabindex="0" data-skill="{{ s | downcase | escape }}">"{{ s }}"</span></span>
-{%- endfor %}
-<span class="ln"><span class="k">end</span></span>
-{%- unless forloop.last %}
-<span class="ln"></span>
-{%- endunless %}
-{%- endfor %}</code></pre>
-            <pre class="bundle-out" data-bundle-out hidden></pre>
+        <aside class="maker reveal" aria-label="About the creator">
+          <p class="maker__kicker"><span class="c-comment"># made by</span></p>
+          <div class="maker__who">
+            <span class="maker__avatar" aria-hidden="true">S</span>
+            <div><b class="maker__name">Samuka</b><span class="maker__role">{{ p.role }}</span><span class="maker__loc">{{ p.location }}</span></div>
           </div>
-          <aside class="gem-trace" data-trace aria-live="polite">
-            <p class="gem-trace__title">gem trace</p>
-            <p class="gem-trace__empty" data-trace-body>Hover or focus a gem to see where it shows up in the career log.</p>
-          </aside>
-        </div>
-      </section>
-
-      <!-- ================= EDUCATION ================= -->
-      <section class="section" id="education" data-file="db/schema.rb" data-icon="rb">
-        <header class="section__head reveal">
-          <p class="section__path">db/<b>migrate</b></p>
-          <h2 class="section__title">Education &amp; Training</h2>
-          <p class="section__cmd"><span class="prompt">$</span> bin/rails db:migrate</p>
-        </header>
-        <div class="migrations" data-migrations>
-          {%- assign edu = r.education | sort: "version" -%}
-          {%- for e in edu %}
-          <article class="migration reveal">
-            <p class="migration__start">== {{ e.version }} {{ e.klass }}: migrating <span class="eq"></span></p>
-            <h3 class="migration__title">{{ e.title }}</h3>
-            <p class="migration__line">-- create_table(<span class="sy">:{{ e.id }}</span>, <span class="sy">school:</span> <span class="s">"{{ e.school }}"</span>)</p>
-            <p class="migration__line migration__line--sub">-&gt; {{ e.period }} · {{ e.level }}</p>
-            <p class="migration__summary">{{ e.summary }}</p>
-            <p class="migration__done">== {{ e.version }} {{ e.klass }}: migrated ({{ e.duration }}) <span class="eq"></span></p>
-          </article>
-          {%- endfor %}
-        </div>
-      </section>
-
-      <!-- ================= LANGUAGES ================= -->
-      <section class="section" id="languages" data-file="config/locales/languages.yml" data-icon="yml">
-        <header class="section__head reveal">
-          <p class="section__path">config/locales/<b>languages.yml</b></p>
-          <h2 class="section__title">Language Skills</h2>
-          <p class="section__cmd"><span class="prompt">$</span> cat config/locales/languages.yml <span class="muted"># CEFR levels</span></p>
-        </header>
-        <div class="langs reveal">
-          <div class="langs__native">
-            <p class="langs__key">mother_tongue:</p>
-            <p class="langs__val"><span class="ka" lang="ka">ქართული</span> <span class="muted">· Georgian</span></p>
+          <p class="maker__text">I build reliable Rails backends for healthcare: bookings, billing, insurance and HL7 FHIR integrations. This arcade is my playground.</p>
+          <div class="maker__actions">
+            <a class="btn btn--primary" href="{{ '/samuka/' | relative_url }}">view profile →</a>
+            <a class="btn" href="{{ '/samuka/#contact' | relative_url }}">hire me</a>
+            <a class="btn" href="{{ '/assets/samuka-resume.pdf' | relative_url }}" download="Samuka - Giorgi Samukashvili - Resume.pdf">résumé ↓</a>
           </div>
-          <div class="table-wrap">
-            <table class="langs__table">
-              <thead>
-                <tr><th scope="col">language</th>{% for l in r.languages.levels %}<th scope="col">{{ l | replace: "_", " " }}</th>{% endfor %}</tr>
-              </thead>
-              <tbody>
-                {%- for o in r.languages.other %}
-                <tr><th scope="row">{{ o.name }}</th>{% for l in r.languages.levels %}<td><span class="lvl">{{ o[l] }}</span></td>{% endfor %}</tr>
-                {%- endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        </aside>
       </section>
 
-      <!-- ================= PROJECTS ================= -->
-      <section class="section" id="projects" data-file="app/repos" data-icon="log">
+      <!-- ================= GAMES ================= -->
+      <section class="section" id="games" data-file="arcade/games/" data-icon="log">
         <header class="section__head reveal">
-          <p class="section__path">app/<b>repos</b></p>
-          <h2 class="section__title">Projects</h2>
-          <p class="section__cmd"><span class="prompt">$</span> gh repo list georgesamo <span class="muted"># live from the GitHub API</span></p>
-        </header>
-        <div class="projects" data-projects>
-          <p class="projects__loading muted"># fetching repos from github.com/georgesamo</p>
-        </div>
-      </section>
-
-      <!-- ================= ARCADE ================= -->
-      <section class="section" id="arcade" data-file="bin/arcade" data-icon="log">
-        <header class="section__head reveal">
-          <p class="section__path">bin/<b>arcade</b></p>
-          <h2 class="section__title">Arcade</h2>
-          <p class="section__cmd"><span class="prompt">$</span> bin/arcade --list <span class="muted"># two small games about the stack I work with every day</span></p>
+          <p class="section__path">arcade/<b>games/</b></p>
+          <h2 class="section__title">Games</h2>
+          <p class="section__cmd"><span class="prompt">$</span> bin/arcade --list <span class="muted"># built around the stack I work with every day</span></p>
         </header>
         <div class="arcade-cards">
           <article class="arcade-card reveal">
@@ -281,7 +85,22 @@ title: Samuka · Senior Ruby on Rails Engineer
             </div>
           </article>
         </div>
-        <div class="lb reveal" data-leaderboard aria-live="polite"></div>
+      </section>
+
+      <!-- ================= BOARDS + LIVE ================= -->
+      <section class="section" id="boards" data-file="arcade/leaderboards.yml" data-icon="yml">
+        <header class="section__head reveal">
+          <p class="section__path">arcade/<b>leaderboards.yml</b></p>
+          <h2 class="section__title">Top players</h2>
+          <p class="section__cmd"><span class="prompt">$</span> rails leaderboard:show <span class="muted"># <a href="{{ '/leaderboards/' | relative_url }}">all boards →</a></span></p>
+        </header>
+        <div class="hub-grid">
+          <div class="lb reveal" data-leaderboard aria-live="polite"></div>
+          <div class="hub-side reveal">
+            <div class="hub-card" data-hub-players><p class="hub-card__title">online now</p><p class="muted">connecting…</p></div>
+            <a class="hub-card hub-card--event" href="{{ '/events/' | relative_url }}" data-hub-eventcard><p class="hub-card__title">this week</p><p class="muted">loading the weekly challenge…</p></a>
+          </div>
+        </div>
       </section>
 
       <!-- ================= WALL ================= -->
@@ -293,77 +112,3 @@ title: Samuka · Senior Ruby on Rails Engineer
         </header>
         <div class="wall reveal" data-wall><p class="muted">loading…</p></div>
       </section>
-
-      <!-- ================= CONTACT ================= -->
-      <section class="section" id="contact" data-file="config/routes.rb" data-icon="rb">
-        <header class="section__head reveal">
-          <p class="section__path">config/<b>routes.rb</b></p>
-          <h2 class="section__title">Contact</h2>
-          <p class="section__cmd"><span class="c-comment">post</span> <span class="s">"/contact"</span>, <span class="sy">to:</span> <span class="s">"samuka#inbox"</span></p>
-        </header>
-
-        <div class="contact reveal">
-          <form class="request" id="contact-form" novalidate>
-            <p class="request__line"><span class="verb">POST</span> /contact <span class="muted">HTTP/1.1</span></p>
-            <p class="request__line"><span class="hdr">Host:</span> georgesamo.github.io</p>
-            <p class="request__line"><span class="hdr">Content-Type:</span> application/json</p>
-            <p class="request__line">&nbsp;</p>
-            <p class="request__line">{</p>
-            <label class="request__field"><span class="key">"name"</span>: <input name="name" autocomplete="name" required maxlength="120" placeholder='"Your name"'>,</label>
-            <label class="request__field"><span class="key">"email"</span>: <input name="email" type="email" autocomplete="email" required maxlength="160" placeholder='"you@company.com"'>,</label>
-            <label class="request__field request__field--area"><span class="key">"message"</span>: <textarea name="message" required rows="4" maxlength="4000" placeholder='"Hi Samuka, ..."'></textarea></label>
-            <input class="hp" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true">
-            <p class="request__line">}</p>
-            <div class="request__actions">
-              <button class="btn btn--primary" type="submit"><span class="btn__prompt">⏎</span> send request</button>
-              <span class="muted request__alt">or <a href="mailto:{{ p.email }}">{{ p.email }}</a></span>
-            </div>
-            <pre class="response" data-response hidden></pre>
-          </form>
-
-          <div class="contact__side">
-            <p class="contact__kv"><span class="key">location</span> {{ p.location }}</p>
-            <p class="contact__kv"><span class="key">github</span> <a href="{{ p.github }}" rel="me noopener" target="_blank">@{{ p.github_user }}</a></p>
-            <p class="contact__kv"><span class="key">email</span> <a href="mailto:{{ p.email }}">{{ p.email }}</a></p>
-            <p class="contact__kv"><span class="key">resume</span> <a href="{{ '/assets/samuka-resume.pdf' | relative_url }}" download="Samuka - Giorgi Samukashvili - Resume.pdf">samuka-resume.pdf</a></p>
-            <p class="contact__easter muted">psst… open the terminal and try <code>sudo hire samuka</code></p>
-          </div>
-        </div>
-      </section>
-
-      <footer class="foot">
-        <p><span class="c-comment"># built with Jekyll, vanilla JS and a lot of</span> <span class="ruby-word">♦</span> <span class="c-comment">· © <span data-year>2026</span> Giorgi “Samuka” Samukashvili</span></p>
-      </footer>
-    </main>
-  </div>
-</div>
-
-<!-- ================= status bar ================= -->
-<div class="status" aria-hidden="true">
-  <span class="status__item status__item--accent">⎇ main</span>
-  <span class="status__item">✓ 0 problems</span>
-  <span class="status__item status__hide-sm" data-status-file>app/models/samuka.rb</span>
-  <span class="status__spacer"></span>
-  <span class="status__item" data-status-pos>Ln 1, Col 1</span>
-  <span class="status__item status__hide-sm">UTF-8</span>
-  <span class="status__item status__hide-sm">Ruby 3.3</span>
-  <button class="status__item status__btn" type="button" data-open-terminal tabindex="-1">&gt;_ Ctrl K</button>
-</div>
-
-<!-- ================= terminal ================= -->
-<div class="term" id="term" hidden>
-  <div class="term__backdrop" data-close-terminal></div>
-  <div class="term__win" role="dialog" aria-modal="true" aria-label="Interactive terminal">
-    <div class="term__bar">
-      <span class="dots"><i data-close-terminal></i><i></i><i></i></span>
-      <span class="term__title">visitor@samuka: ~</span>
-      <button class="term__x" type="button" data-close-terminal aria-label="Close terminal">esc</button>
-    </div>
-    <div class="term__out" id="term-out" aria-live="polite"></div>
-    <form class="term__in" id="term-form" autocomplete="off">
-      <label class="term__ps1" for="term-input" id="term-ps1"><span class="u">visitor@samuka</span>:<span class="d">~</span>$</label>
-      <input id="term-input" spellcheck="false" autocapitalize="off" autocomplete="off">
-    </form>
-  </div>
-</div>
-<canvas class="rain" id="rain" aria-hidden="true"></canvas>
