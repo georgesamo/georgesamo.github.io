@@ -20,7 +20,7 @@
   describe("suite · catalog", function () {
     it("lists a locked sixth track in every theme", function () {
       L().catalog().forEach(function (th) {
-        expect(th.songs).toHaveLength(6);
+        expect(th.songs).toHaveLength(10);
         var s = th.songs[5];
         expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(300);
       });
@@ -50,6 +50,51 @@
     });
     it("keeps the patch bay's story order: theme → chase → standoff → lowest → epilogue", function () {
       expect(P()._order).toEqual([0, 1, 3, 2, 4]);
+    });
+  });
+
+  describe("bonus tracks", function () {
+    function secs(si) { return L().catalog()[0].songs[si].secs; }
+    it("adds four locked bonus tracks, one per arcade game, in every theme", function () {
+      L().catalog().forEach(function (th) {
+        var b = th.songs.slice(6);
+        expect(b.map(function (s) { return s.game; })).toEqual(["sidekiq", "gems", "schema", "pitwall"]);
+        b.forEach(function (s, i) { expect(s.bonus).toBe(true); expect(s.locked).toBe(true); expect(s.no).toBe(7 + i); expect(s.outro >= 2).toBe(true); });
+      });
+    });
+    it("runs to the asked lengths: techno 3-4 min, gems 5, guitars 3, the race 4", function () {
+      expect(secs(6) >= 180 && secs(6) <= 240).toBe(true);
+      expect(Math.abs(secs(7) - 300) <= 10).toBe(true);
+      expect(Math.abs(secs(8) - 180) <= 6).toBe(true);
+      expect(Math.abs(secs(9) - 240) <= 6).toBe(true);
+    });
+    it("unlocks a bonus track in every theme when a run of its game ends", function () {
+      var got = null, h = function (e) { if (e.detail.type === "bonus") got = e.detail; };
+      window.addEventListener("samuka:suite", h);
+      window.dispatchEvent(new CustomEvent("samuka:game", { detail: { game: "schema", name: "start" } }));
+      expect(L().bonus.open("schema")).toBe(false);
+      window.dispatchEvent(new CustomEvent("samuka:game", { detail: { game: "schema", name: "over", score: 300 } }));
+      window.removeEventListener("samuka:suite", h);
+      expect(L().bonus.open("schema")).toBe(true);
+      expect(got.si).toBe(8);
+      L().catalog().forEach(function (th) { expect(th.songs[8].locked).toBe(false); expect(th.songs[6].locked).toBe(true); });
+      expect(L().bonus.unlock("schema")).toBe(false);
+      document.querySelectorAll(".ach-toast").forEach(function (el) { el.remove(); });
+    });
+    it("keeps the main rotation to the five songs, even with everything unlocked", function () {
+      set({ open: { phthalo: 1 }, bonus: { sidekiq: 1, gems: 1, schema: 1, pitwall: 1 } });
+      var O = L().order;
+      expect([0, 1, 2, 3, 4].map(function (si) { return O.next("phthalo", si); })).toEqual([1, 2, 3, 4, 0]);
+      expect(O.prev("phthalo", 0)).toBe(4);
+      expect(O.next("phthalo", 5)).toBe(0);
+    });
+    it("plays picked bonus tracks on through the unlocked ones, then home to Ring Zero", function () {
+      set({ bonus: { sidekiq: 1, schema: 1 } });
+      var O = L().order;
+      expect(O.next("knight", 6)).toBe(8);
+      expect(O.next("knight", 8)).toBe(0);
+      expect(O.prev("knight", 8)).toBe(6);
+      expect(O.prev("knight", 6)).toBe(4);
     });
   });
 
