@@ -240,7 +240,24 @@
     if (!enabled) { applyRole("guest"); state.ready = true; emit(); return; }
     // implicit flow: the email link works in any browser/device, not only the one that asked for it
     client = window.supabase.createClient(cfg.url, cfg.anon_key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "implicit" } });
-    client.auth.getSession().then(function (r) { onSession(r.data && r.data.session); });
+    client.auth.getSession().then(function (r) {
+      onSession(r.data && r.data.session).then(function () {
+        // a used / expired email link comes back as #error_description=...: explain it instead of failing silently
+        var h = new URLSearchParams(location.hash.replace(/^#/, ""));
+        var err = h.get("error_description");
+        if (err && !state.user) {
+          history.replaceState(null, "", location.pathname + location.search);
+          open();
+          var body = modal.querySelector("[data-acct-body] form");
+          if (body) {
+            var p = document.createElement("p");
+            p.className = "acct__notice";
+            p.innerHTML = '<span class="err">✗ ' + esc(err) + "</span>. Links work once and expire after an hour, so send yourself a fresh one.";
+            body.before(p);
+          }
+        }
+      });
+    });
     client.auth.onAuthStateChange(function (event, session) {
       if (event === "INITIAL_SESSION") return;
       // run outside the auth callback (supabase-js recommends not awaiting inside it)
