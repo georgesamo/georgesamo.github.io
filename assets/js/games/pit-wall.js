@@ -34,7 +34,7 @@
   // ten original circuits: laps, base lap, crash risk, how hard to pass, pit-lane loss, tyre wear, rain chance, safety-car chance
   var TRACKS = [
     { name: "Phthalo Ring", tag: "balanced classic", laps: 20, base: 90, risk: 1, pass: 0.6, pit: 21, wear: 1, rain: 0.35, sc: 0.45,
-      d: "M70,212 C48,212 36,196 44,176 L86,92 C96,70 122,62 144,76 L196,112 C212,123 232,120 242,104 L270,58 C282,38 312,34 330,50 L366,84 C382,100 378,124 358,134 L268,176 C250,186 250,204 266,212 L314,226 C334,232 330,250 308,250 L92,250 C72,250 60,232 70,212 Z" },
+      d: "M70,212 C76,200 36,196 44,176 L86,92 C96,70 122,62 144,76 L196,112 C212,123 232,120 242,104 L270,58 C282,38 312,34 330,50 L366,84 C382,100 378,124 358,134 L268,176 C250,186 250,204 266,212 L314,226 C334,232 330,250 308,250 L92,250 C72,250 60,232 70,212 Z" },
     { name: "Neon Harbour Speedway", tag: "flat out, easy passing", laps: 22, base: 78, risk: 0.7, pass: 0.35, pit: 19, wear: 0.85, rain: 0.3, sc: 0.35,
       d: "M80,140 C80,70 150,50 210,50 C290,50 360,70 360,140 C360,210 290,240 210,240 C176,240 166,220 146,226 C110,236 80,210 80,140 Z" },
     { name: "Old Town Street Circuit", tag: "walls everywhere", laps: 18, base: 96, risk: 1.9, pass: 1.0, pit: 24, wear: 0.8, rain: 0.35, sc: 0.7,
@@ -79,7 +79,8 @@
         '<div class="pw">' +
           '<div class="pw__main" data-arena>' +
             '<svg class="pw__track" viewBox="20 20 380 250" aria-label="Circuit map"><path class="pw__kerb" data-kerb/><path class="pw__road" data-road/><path class="pw__pitlane" data-pitlane/><path class="pw__line" data-path/>' +
-              '<line class="pw__start" data-start/><g data-cars></g></svg>' +
+              '<line class="pw__start" data-start/></svg>' +
+            '<div class="pw__cars" data-cars aria-hidden="true"></div>' +
             '<div class="pw__rain" aria-hidden="true"></div>' +
             '<div class="pw__wx" data-wx></div><p class="pw__trackname" data-trackname></p>' +
           '</div>' +
@@ -399,54 +400,69 @@
         else if (ahead && me.lap % 3 === 0) radio("P" + (p + 1) + ". Gap to " + ahead.code + " " + Math.max(0, me.lapStart - ahead.lapStart).toFixed(1) + " s." + (me.ers && me.lapStart - ahead.lapStart < 1.2 ? " ERS is available." : ""));
       }
 
-      /* ---------- rendering: exact positions from the plan; only the side offsets are eased ---------- */
-      var dots = {}, scDot = null;
+      /* ---------- rendering: exact positions from the plan; only the side offsets are eased ----------
+       * The track SVG is static. Each car is its own small compositor layer above it, moved with a CSS
+       * transform, so a frame repaints nothing: the GPU just moves 10-12 tiny layers. The overlay uses
+       * the SVG's viewBox units (380x250 from 20,20) and is scaled to the SVG's rendered width. */
+      var dots = {}, scDot = null, pairs = {}, VB_X = 20, VB_Y = 20, VB_W = 380;
+      function fitCars() { var w = path.ownerSVGElement.getBoundingClientRect().width; if (w) carsG.style.transform = "scale(" + (w / VB_W) + ")"; }
+      var fitObs = window.ResizeObserver ? new ResizeObserver(fitCars) : null;
+      if (fitObs) fitObs.observe(path.ownerSVGElement); else window.addEventListener("resize", fitCars);
       function carShape(c) {
-        var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-        g.setAttribute("class", "pw__car" + (c.i === 0 ? " pw__car--me" : ""));
-        g.innerHTML = '<g class="pw__body"><path d="M7,0 L-5,-4.2 L-3,0 L-5,4.2 Z" fill="' + c.color + '"/></g>' + (c.i === 0 ? '<text y="-9" text-anchor="middle">YOU</text>' : "");
+        var g = document.createElement("div");
+        g.className = "pw__car" + (c.i === 0 ? " pw__car--me" : "");
+        g.innerHTML = '<svg viewBox="-18 -18 36 36" width="36" height="36"><path d="M7,0 L-5,-4.2 L-3,0 L-5,4.2 Z" fill="' + c.color + '"/></svg>';
         carsG.appendChild(g);
-        return { g: g, body: g.firstChild, lat: 0, tx: "", rx: "" };
+        var tag = null;
+        if (c.i === 0) { tag = document.createElement("div"); tag.className = "pw__tag"; tag.innerHTML = "<b>YOU</b>"; carsG.appendChild(tag); }
+        return { g: g, tag: tag, lat: 0, lv: 0, side: c.i % 2 ? 1 : -1, tf: "" };
       }
-      function displayS(c) {
-        if (c.out) return spaceAt(c.outU);
-        if (c.finished) return spaceAt(Math.min(0.3, (simT - c.finishT) / (BASE * 1.8)));   // cool-down lap, no pile-up on the line
+      function trackU(c) {   // where the car is in lap-time fraction (before the distance mapping)
+        if (c.out) return c.outU;
+        if (c.finished) return Math.min(0.3, (simT - c.finishT) / (BASE * 1.8));   // cool-down lap, no pile-up on the line
         var u = progress(c);
-        return spaceAt(c.lap === 0 ? c.gridU + (1 - c.gridU) * u : u);
+        return c.lap === 0 ? c.gridU + (1 - c.gridU) * u : u;
       }
       function drawCars(dt) {
         if (!GX) return;
-        var o = order(), ease = 1 - Math.exp(-dt * 7), list = [];
-        cars.forEach(function (c) { var v = dots[c.code] || (dots[c.code] = carShape(c)); v.s = displayS(c); v.c = c; list.push(v); });
-        // cars side by side: give close pairs their own line
-        var run = list.filter(function (v) { return !v.c.out && !v.c.finished; }).sort(function (a, b) { return a.s - b.s; });
-        run.forEach(function (v) { v.lane = 0; });
-        for (var k = 1; k < run.length; k++) {
-          var gap = run[k].s - run[k - 1].s;
-          if (gap < 0.007) { var a = run[k - 1], b = run[k]; if (!a.lane) a.lane = o.indexOf(a.c) % 2 ? 3.2 : -3.2; b.lane = -a.lane; }
+        var o = order(), list = [];
+        cars.forEach(function (c) { var v = dots[c.code] || (dots[c.code] = carShape(c)); v.u = ((trackU(c) % 1) + 1) % 1; v.s = spaceAt(v.u); v.c = c; v.lane = 0; list.push(v); });
+        // cars side by side: pair them by the *time* gap, not the distance gap, so a pack that bunches up
+        // through a slow corner doesn't split into lanes on the way in and merge on the way out; a pair
+        // forms under 0.6% of a lap and holds until 0.9% (no flicker), and each car keeps its own side.
+        var run = list.filter(function (v) { return !v.c.out && !v.c.finished; }).sort(function (a, b) { return a.u - b.u; }), now = {};
+        for (var k = 1; k <= run.length && run.length > 1; k++) {   // k = length closes the loop across the line
+          var a = run[k % run.length], b = run[k - 1], key = a.c.code + b.c.code;   // a is just ahead of b
+          if (((a.u - b.u) % 1 + 1) % 1 < (pairs[key] ? 0.009 : 0.006)) {
+            now[key] = 1;
+            if (!a.lane) a.lane = a.side * 3.2;
+            b.lane = -a.lane;
+          }
         }
+        pairs = now;
+        var w = Math.min(dt, 0.05), om = 9;
         list.forEach(function (v) {
           var c = v.c, u = progress(c);
           var inPit = !c.out && !c.finished && ((c.pitLossNow && u < PIT_U + 0.03) || (c.pitNext && u > 0.975));
-          var target = c.out ? 12 : inPit ? 11 : c.finished ? 0 : v.lane || 0;
-          v.lat += (target - v.lat) * ease;
+          var target = c.out ? 12 : inPit ? 11 : c.finished ? 0 : v.lane;
+          if (v.lane) v.side = v.lane > 0 ? 1 : -1;
+          // critically damped spring: the car eases across with no kick at the start or end
+          v.lv += (om * om * (target - v.lat) - 2 * om * v.lv) * w; v.lat += v.lv * w;
           var p = posAt(v.s), h = p.h, deg = h * 180 / Math.PI;
           if (c.spinT != null) { var sp = (simT - c.spinT) / c.spinD; if (sp < 1) deg += 540 * (1 - Math.pow(1 - sp, 3)); else c.spinT = null; }
-          var x = p.x - Math.sin(h) * v.lat, y = p.y + Math.cos(h) * v.lat;
-          var tx = "translate(" + x.toFixed(2) + "," + y.toFixed(2) + ")", rx = "rotate(" + deg.toFixed(1) + ")";
-          if (tx !== v.tx) { v.g.setAttribute("transform", tx); v.tx = tx; }
-          if (rx !== v.rx) { v.body.setAttribute("transform", rx); v.rx = rx; }
+          var x = p.x - Math.sin(h) * v.lat - VB_X, y = p.y + Math.cos(h) * v.lat - VB_Y;
+          var tf = "translate3d(" + x.toFixed(2) + "px," + y.toFixed(2) + "px,0) rotate(" + deg.toFixed(2) + "deg)";
+          if (tf !== v.tf) { v.g.style.transform = tf; v.tf = tf; if (v.tag) v.tag.style.transform = "translate3d(" + x.toFixed(2) + "px," + y.toFixed(2) + "px,0)"; }
           var pitNow = c.pitLossNow && u <= PIT_U + 1e-6 && simT - c.lapStart > 0.05;
           if (v.pit !== !!pitNow) { v.pit = !!pitNow; v.g.classList.toggle("is-pit", v.pit); }
           if (v.out !== !!c.out) { v.out = !!c.out; v.g.classList.toggle("is-out", v.out); }
         });
-        if (me && dots[me.code] && carsG.lastChild !== dots[me.code].g) carsG.appendChild(dots[me.code].g);
         // safety car leads the pack
         var lead = o[0];
         if (sc && lead && !lead.finished && !lead.out) {
-          if (!scDot) { scDot = document.createElementNS("http://www.w3.org/2000/svg", "g"); scDot.setAttribute("class", "pw__sccar"); scDot.innerHTML = '<rect x="-6" y="-3.5" width="12" height="7" rx="2"/><text y="-7" text-anchor="middle">SC</text>'; carsG.appendChild(scDot); }
+          if (!scDot) { scDot = document.createElement("div"); scDot.className = "pw__sccar"; scDot.innerHTML = '<svg viewBox="-8 -6 16 12" width="16" height="12"><rect x="-6" y="-3.5" width="12" height="7" rx="2"/></svg><b>SC</b>'; carsG.appendChild(scDot); }
           var q = posAt(dots[lead.code].s + 0.014);
-          scDot.setAttribute("transform", "translate(" + q.x.toFixed(2) + "," + q.y.toFixed(2) + ")");
+          scDot.style.transform = "translate3d(" + (q.x - VB_X).toFixed(2) + "px," + (q.y - VB_Y).toFixed(2) + "px,0)";
           scDot.style.display = "";
         } else if (scDot) scDot.style.display = "none";
       }
@@ -621,7 +637,7 @@
         return '<div class="pw__seg" role="radiogroup" aria-label="Race distance"><span class="pw__lbl">distance</span>' +
           ["sprint", "full"].map(function (l) { return '<button type="button" data-pw-len="' + l + '" aria-pressed="' + (session.length === l) + '">' + (l === "sprint" ? "sprint · ~50%" : "full") + "</button>"; }).join("") + "</div>";
       }
-      function clearCars() { Object.keys(dots).forEach(function (k) { dots[k].g.remove(); }); dots = {}; if (scDot) { scDot.remove(); scDot = null; } tower.innerHTML = ""; rows = {}; rowH = 0; tower.style.height = ""; }
+      function clearCars() { Object.keys(dots).forEach(function (k) { dots[k].g.remove(); if (dots[k].tag) dots[k].tag.remove(); }); dots = {}; pairs = {}; if (scDot) { scDot.remove(); scDot = null; } tower.innerHTML = ""; rows = {}; rowH = 0; tower.style.height = ""; }
       function menu() {
         alive = false; cancelAnimationFrame(raf); season = null; session.kind = "quick";
         clearCars();
@@ -723,6 +739,7 @@
         destroy: function () {
           if (race && alive) race.over(0, 10, true);
           alive = false; cancelAnimationFrame(raf); stage.removeEventListener("click", onClick);
+          if (fitObs) fitObs.disconnect(); else window.removeEventListener("resize", fitCars);
         }
       };
     }

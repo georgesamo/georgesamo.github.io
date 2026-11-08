@@ -67,12 +67,19 @@
 :root[data-theme="light"] .pw__road { stroke: #8c949c; }
 .pw__line { fill: none; stroke: var(--muted); stroke-width: 1; stroke-dasharray: 4 6; opacity: 0.6; }
 .pw__start { stroke: var(--text); stroke-width: 3; stroke-dasharray: 2 2; }
-.pw__car path { stroke: rgba(0, 0, 0, 0.6); stroke-width: 0.8; transition: opacity 0.3s; }
+/* cars: one small compositor layer each over the static track (moved by transform, never repainted) */
+.pw__cars { position: absolute; left: 0; top: 0; width: 380px; height: 250px; overflow: hidden; transform-origin: 0 0; pointer-events: none; }
+.pw__car, .pw__tag, .pw__sccar { position: absolute; left: 0; top: 0; will-change: transform; }
+.pw__car { width: 36px; height: 36px; margin: -18px 0 0 -18px; transition: opacity 0.3s; }
+.pw__car svg, .pw__sccar svg { display: block; overflow: visible; }
+.pw__car path { stroke: rgba(0, 0, 0, 0.6); stroke-width: 0.8; }
+.pw__car--me { z-index: 2; }
 .pw__car--me path { stroke: #fff; stroke-width: 1.2; filter: drop-shadow(0 0 5px #f4c95d); }
-.pw__car--me .pw__body { transform-box: fill-box; }
-.pw__car.is-out path { opacity: 0.25; }
-.pw__car text { font: 700 9px var(--mono); fill: var(--text); }
-.pw__car.is-pit path { opacity: 0.3; }
+.pw__tag { z-index: 3; }
+.pw__tag b, .pw__sccar b { position: absolute; left: 0; transform: translateX(-50%); font: 700 9px/1 var(--mono); color: var(--text); white-space: nowrap; }
+.pw__tag b { bottom: 7px; }
+.pw__car.is-out { opacity: 0.25; }
+.pw__car.is-pit { opacity: 0.3; }
 .pw__main.is-shake { animation: pwShake 0.45s; }
 @keyframes pwShake { 20% { transform: translate(-5px, 2px); } 40% { transform: translate(5px, -2px); } 60% { transform: translate(-3px, 1px); } 80% { transform: translate(2px, 0); } }
 .pw__trackname { position: absolute; left: 10px; bottom: 6px; margin: 0; font: 11px var(--mono); color: var(--muted); pointer-events: none; }
@@ -88,11 +95,12 @@
 .pw__tower:empty { min-height: 40px; }
 @media (prefers-reduced-motion: reduce) { .pw__tower li { transition: none; } }
 .pw__pitlane { fill: none; stroke: var(--muted); stroke-width: 4; stroke-linecap: round; opacity: 0.35; }
-.pw__car { will-change: transform; }
 .pw__sccar rect { fill: #f2c14e; stroke: #1b1404; stroke-width: 0.8; }
-.pw__sccar text { font: 700 7px var(--mono); fill: #f2c14e; }
+.pw__sccar { z-index: 4; width: 16px; height: 12px; margin: -6px 0 0 -8px; }
+.pw__sccar b { left: 8px; bottom: 11px; font-size: 7px; color: #f2c14e; }
 .pw__rain { position: absolute; inset: 0; border-radius: 14px; pointer-events: none; opacity: 0; transition: opacity 1.2s; overflow: hidden; }
-.pw__rain::before { content: ""; position: absolute; inset: -40px 0 0 0; background: repeating-linear-gradient(105deg, transparent 0 9px, rgba(120, 170, 255, 0.16) 9px 10px); animation: pwRain 0.5s linear infinite; }
+.pw__rain::before { content: ""; position: absolute; inset: -40px 0 0 0; background: repeating-linear-gradient(105deg, transparent 0 9px, rgba(120, 170, 255, 0.16) 9px 10px); animation: pwRain 0.5s linear infinite paused; }
+.pw__main[data-weather="damp"] .pw__rain::before, .pw__main[data-weather="wet"] .pw__rain::before { animation-play-state: running; }
 .pw__main[data-weather="damp"] .pw__rain { opacity: 0.55; background: rgba(74, 163, 240, 0.05); }
 .pw__main[data-weather="wet"] .pw__rain { opacity: 1; background: rgba(74, 163, 240, 0.1); }
 @keyframes pwRain { to { transform: translate3d(-11px, 40px, 0); } }

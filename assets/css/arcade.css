@@ -46,7 +46,9 @@
 /* ---------- the window ---------- */
 .arcade { position: fixed; inset: 0; z-index: 130; display: grid; place-items: center; padding: 16px; }
 .arcade[hidden] { display: none; }
-.arcade__backdrop { position: absolute; inset: 0; background: rgba(3, 8, 5, 0.6); backdrop-filter: blur(6px); animation: fade 0.25s both; }
+/* a plain dim, no backdrop-filter: a full-screen blur is re-run by the compositor on every frame a game animates
+   above it, which is what made Pit Wall stutter on laptops (5.7 → 45 fps with software raster) */
+.arcade__backdrop { position: absolute; inset: 0; background: rgba(3, 8, 5, 0.78); animation: fade 0.25s both; }
 .arcade__win {
   position: relative; display: flex; flex-direction: column; width: min(1000px, 100%); height: min(88vh, 740px);
   border: 1px solid var(--line-strong); border-radius: 16px; overflow: hidden; background: var(--bg);
