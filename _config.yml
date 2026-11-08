@@ -32,8 +32,8 @@ contact_endpoint: "https://formsubmit.co/ajax/giorgisamo@gmail.com"
 # disable sign-in (the arcade then stays open to everyone).
 # NEVER put the service_role / secret key here.
 supabase:
-  url: ""
-  anon_key: ""
+  url: "https://qgxboopayhgppckvwmhr.supabase.co"
+  anon_key: "sb_publishable_vTZs4VUSNq84BlFf6A6-aQ_1FZE1n-F"
   github: false        # show "Sign in with GitHub" (needs the GitHub provider enabled)
 
 plugins:
