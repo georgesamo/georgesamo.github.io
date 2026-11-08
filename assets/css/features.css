@@ -112,7 +112,10 @@
 .tree__nav .tree__tag { margin-left: auto; }
 
 .tree__me[hidden] { display: none; }
-.tree__me { padding: 8px 8px 0; border-top: 1px solid var(--line); }
+.tree__me { min-height: 53px; padding: 8px; border-bottom: 1px solid var(--line); }   /* fixed spot under the header, no layout jump */
+.tree__who--wait { cursor: default; }
+.tree__who--wait .acct__avatar { background: var(--bg-hover); box-shadow: none; }
+.tree__who--wait .tree__who-name { width: 90px; border-radius: 4px; background: var(--bg-hover); }
 .tree__who { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text-2); font: 13px var(--mono); text-align: left; text-decoration: none; cursor: pointer; transition: background 0.2s, color 0.2s; }
 .tree__who:hover, .tree__who.is-here { background: var(--bg-hover); color: var(--text); text-decoration: none; }
 .tree__who .acct__avatar { width: 24px; height: 24px; font-size: 12px; flex: none; }

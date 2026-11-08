@@ -36,6 +36,8 @@ layout: default
       <a class="tree__home" href="{{ '/' | relative_url }}">samuka</a>
       <span class="tree__branch">⎇ main</span>
     </div>
+    {%- comment -%} you: always this spot, same height from first paint (me.js fills it) {%- endcomment %}
+    <div class="tree__me" data-me-tree></div>
     <nav class="tree__nav">
       {%- comment -%} folders collapse (state in <html data-tree-closed>, set before paint in default.html) {%- endcomment %}
       <button type="button" class="tree__dir" data-tree-dir="arcade" aria-expanded="true">arcade</button>
@@ -69,7 +71,6 @@ layout: default
         <a href="{{ '/soundtrack/' | relative_url }}" target="_blank" rel="noopener" title="Opens in a new tab"{% if tab == "soundtrack" %} class="is-here"{% endif %}><i class="fi fi--log"></i>soundtrack.wav ↗</a>
       </div>
     </nav>
-    <div class="tree__me" data-me-tree hidden></div>
     <div class="tree__foot">
       <button class="tree__icon" data-open-palette type="button" title="Go to… (Ctrl P)" aria-label="Go to (Ctrl P)">⌕</button>
       <button class="tree__icon" data-open-terminal type="button" title="Terminal (Ctrl K)" aria-label="Open terminal (Ctrl K)">&gt;_</button>

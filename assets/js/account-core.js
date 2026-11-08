@@ -355,9 +355,20 @@
   }
 
   /* ---------- sidebar "me" folder and phone sheet header ---------- */
-  // one compact row at the bottom of the sidebar (everything else is in the avatar menu)
-  // c: { enabled, signedIn, name, ach, here: "card"|"" }
+  // one compact row, always at the top of the sidebar (everything else is in the avatar menu)
+  // c: { enabled, ready, signedIn, name, ach, here: "card"|"", cached: {name,n,total}|null }
+  // Until the session is known (ready false) it shows the last known you, or a quiet placeholder of
+  // the same size, never "sign in", so the row doesn't flicker or jump on every page load.
   function treeHtml(c) {
+    if (c.ready === false) {
+      var k = c.cached;
+      if (k && k.name) {
+        return '<a class="tree__who" href="' + esc(cardHref(k.name)) + '" title="Your player card">' +
+          '<span class="acct__avatar" aria-hidden="true">' + esc(initial(k.name)) + '</span><span class="tree__who-name">' + esc(k.name) + "</span>" +
+          (k.total ? '<small title="badges">' + (Number(k.n) || 0) + "/" + Number(k.total) + "</small>" : "") + "</a>";
+      }
+      return '<span class="tree__who tree__who--wait" aria-hidden="true"><span class="acct__avatar"></span><span class="tree__who-name">&nbsp;</span></span>';
+    }
     if (!c.enabled) return "";
     if (!c.signedIn) {
       return '<button type="button" class="tree__who tree__who--in" data-me-act="signin"><span class="acct__avatar" aria-hidden="true">?</span><span class="tree__who-name">sign in</span><small>save scores</small></button>';

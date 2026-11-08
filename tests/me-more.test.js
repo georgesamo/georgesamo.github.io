@@ -180,6 +180,49 @@
     });
   });
 
+  describe("me.js: the sidebar row stays put", function () {
+    afterEach(function () { try { localStorage.removeItem("samuka-me"); } catch (e) {} });
+    function notReady() { window.SamukaAuth.ready = function () { return false; }; }
+    it("remembers you once signed in, and forgets you after signing out", function () {
+      mount('<div data-me-tree></div>');
+      M.paintTree();
+      expect(JSON.parse(localStorage.getItem("samuka-me"))).toEqual({ name: "neo", n: 0, total: 1 });
+      fake({ user: false });
+      M.paintTree();
+      expect(localStorage.getItem("samuka-me")).toBe(null);
+    });
+    it("while the session loads, draws the remembered you instead of 'sign in'", function () {
+      localStorage.setItem("samuka-me", JSON.stringify({ name: "trinity", n: 3, total: 9 }));
+      fake({ user: false }); notReady();
+      var root = mount('<div data-me-tree></div>');
+      M.paintTree();
+      expect(root.querySelector(".tree__who-name").textContent).toBe("trinity");
+      expect(root.querySelector('[data-me-act="signin"]')).toBe(null);
+      expect(localStorage.getItem("samuka-me")).toBeTruthy();   // not wiped by the early paint
+    });
+    it("with nothing remembered, shows a placeholder until the session is known", function () {
+      fake({ user: false }); notReady();
+      var root = mount('<div data-me-tree></div>');
+      M.paintTree();
+      expect(root.querySelector(".tree__who--wait")).toBeTruthy();
+      expect(root.querySelector("[data-me-tree]").hidden).toBe(false);
+    });
+    it("the phone sheet waits for the session instead of flashing 'sign in'", function () {
+      fake({ user: false }); notReady();
+      var root = mount('<div data-me-sheet hidden></div>');
+      M.paintSheet();
+      expect(root.querySelector("[data-me-sheet]").hidden).toBe(true);
+      expect(root.querySelector('[data-me-act="signin"]')).toBe(null);
+    });
+    it("ignores a broken remembered value", function () {
+      localStorage.setItem("samuka-me", "{not json");
+      fake({ user: false }); notReady();
+      var root = mount('<div data-me-tree></div>');
+      M.paintTree();
+      expect(root.querySelector(".tree__who--wait")).toBeTruthy();
+    });
+  });
+
   describe("hub.js: foldable sidebar folders", function () {
     var root = document.documentElement, before;
     beforeEach(function () { before = root.dataset.treeClosed; root.dataset.treeClosed = ""; });

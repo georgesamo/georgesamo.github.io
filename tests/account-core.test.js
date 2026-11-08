@@ -253,6 +253,25 @@
       expect(row.querySelector("small").textContent).toBe("5/30");
       expect(t.querySelector(".is-here")).toBe(null);
     });
+    it("before the session is known: shows the last known you, never 'sign in'", function () {
+      var t = dom(C.treeHtml({ ready: false, enabled: true, signedIn: false, cached: { name: "neo", n: 4, total: 30 } }));
+      expect(t.querySelector("a.tree__who").getAttribute("href")).toBe("/u/?n=neo");
+      expect(t.querySelector(".tree__who-name").textContent).toBe("neo");
+      expect(t.querySelector("small").textContent).toBe("4/30");
+      expect(t.querySelector('[data-me-act="signin"]')).toBe(null);
+    });
+    it("before the session is known, with nothing cached: a same-size placeholder", function () {
+      var t = dom(C.treeHtml({ ready: false, enabled: true, signedIn: false, cached: null }));
+      expect(t.querySelector(".tree__who--wait")).toBeTruthy();
+      expect(t.querySelector(".tree__who--wait .acct__avatar")).toBeTruthy();
+      expect(t.querySelector('[data-me-act="signin"]')).toBe(null);
+      expect(t.querySelector("a")).toBe(null);
+    });
+    it("escapes a cached name too", function () {
+      var t = dom(C.treeHtml({ ready: false, cached: { name: "<b>x</b>" } }));
+      expect(t.querySelector("b")).toBe(null);
+      expect(t.querySelector(".tree__who-name").textContent).toBe("<b>x</b>");
+    });
     it("escapes the name in the sidebar row", function () {
       var t = dom(C.treeHtml({ enabled: true, signedIn: true, name: "<i>x</i>" }));
       expect(t.querySelector("i")).toBe(null);

@@ -19,10 +19,23 @@
     var a = A(), on = signedIn();
     var name = on ? a.publicName() : "guest", streak = C.streakOf(myCard());
     return {
-      enabled: !!(a && a.enabled), signedIn: on, name: name, role: a ? a.role() : "guest", ach: ach(),
+      enabled: !!(a && a.enabled), ready: authReady(), signedIn: on, name: name, role: a ? a.role() : "guest", ach: ach(),
       here: on && C.isMyCard(location.pathname, location.search, name) ? "card" : "",
-      streak: streak ? streak.current : 0
+      streak: streak ? streak.current : 0, cached: readMe()
     };
+  }
+  // the session is known once auth.js has booted (fakes in tests have no ready(): treat as known)
+  function authReady() { var a = A(); return !a || typeof a.ready !== "function" || !!a.ready(); }
+
+  // last known you, so the sidebar row can be drawn at first paint on the next page load
+  var ME_KEY = "samuka-me";
+  function readMe() { try { var v = JSON.parse(localStorage.getItem(ME_KEY) || "null"); return v && v.name ? v : null; } catch (e) { return null; } }
+  function rememberMe(c) {
+    try {
+      if (c.ready === false) return;
+      if (c.signedIn) localStorage.setItem(ME_KEY, JSON.stringify({ name: c.name, n: c.ach.n, total: c.ach.total }));
+      else localStorage.removeItem(ME_KEY);
+    } catch (e) {}
   }
 
   /* ---------- actions ---------- */
@@ -174,11 +187,14 @@
 
   /* ---------- sidebar folder and phone sheet ---------- */
   function paintTree() {
-    var html = C.treeHtml(ctx());
+    var c = ctx(), html = C.treeHtml(c);
+    rememberMe(c);
     document.querySelectorAll("[data-me-tree]").forEach(function (el) { el.innerHTML = html; el.hidden = !html; });
   }
   function paintSheet() {
-    var html = C.sheetHtml(ctx());
+    var c = ctx();
+    if (c.ready === false) return;   // don't flash "sign in" before the session is known
+    var html = C.sheetHtml(c);
     document.querySelectorAll("[data-me-sheet]").forEach(function (el) { el.innerHTML = html; el.hidden = !html; });
   }
 
