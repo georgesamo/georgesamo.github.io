@@ -48,6 +48,18 @@ jobs:
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install build tools (esbuild, Playwright with the runner's Chrome)
+        run: npm install --no-save --no-package-lock --no-audit --no-fund esbuild@0.24.0 playwright@1.49.1
+      - name: Optimize (minify JS/CSS, content-hash asset links)
+        run: node scripts/optimize.mjs _site
+      - name: Smoke-test the optimized site
+        run: |
+          (cd _site && python3 ../tests/serve.py 4200 > /tmp/site.log 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4200/ > /dev/null && break; sleep 0.5; done
+          node tests/smoke.mjs http://127.0.0.1:4200
       - uses: actions/upload-pages-artifact@v3
 
   deploy:

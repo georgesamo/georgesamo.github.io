@@ -269,7 +269,9 @@
     paths[0].style.strokeDashoffset = lens[0] * (1 - p);
     if (lens[1]) paths[1].style.strokeDashoffset = lens[1] * (1 - p);
   }
-  window.addEventListener("resize", buildGraph);
+  // rebuilding measures every commit; do it once the window stops resizing, not on every event
+  var graphTimer = 0;
+  window.addEventListener("resize", function () { clearTimeout(graphTimer); graphTimer = setTimeout(buildGraph, 150); });
   function initGitlog() {
     gitlog = $("#gitlog"); paths = gitlog ? $$("path", gitlog) : []; lens = [0, 0];
     if (gitRO) { gitRO.disconnect(); gitRO = null; }

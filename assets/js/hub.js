@@ -72,6 +72,8 @@
   window.addEventListener("samuka:achievement", paintStats);
   window.addEventListener("samuka:presence", paintStats);
   window.addEventListener("samuka:page", function () { teamLinks(); paintStats(); });
-  setInterval(paintStats, 5000);
+  // live stats refresh every 5 s, but never in a background tab (and once more when it comes back)
+  setInterval(function () { if (!document.hidden) paintStats(); }, 5000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) paintStats(); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { teamLinks(); paintStats(); }); else { teamLinks(); paintStats(); }
 })();

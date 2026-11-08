@@ -19,17 +19,28 @@
   var BAT = '<svg viewBox="0 0 34 17" aria-hidden="true"><path d="M0 10C4 4 8 3 12 6c1-3 3-4 4-2l1-3 1 3c1-2 3-1 4 2 4-3 8-2 12 4-4-2-7-1-9 2-2-2-5-1-6 2l-2 2-2-2c-1-3-4-4-6-2-2-3-5-4-9-2z"/></svg>';
   // bat symbol (own design, in the spirit of a gritty 2020s noir): angular, sharp ears,
   // long hooked wing tips, crimson, with a distressed texture from an SVG noise filter
-  // each copy gets its own filter id: shared ids make browsers apply the first copy's geometry to all
-  var gritN = 0;
-  function SIGIL_SVG() {
-    var id = "gk-grit-" + (++gritN);
-    return '<svg viewBox="0 0 120 56" aria-hidden="true">' +
-      '<defs><filter id="' + id + '" x="0" y="0" width="1" height="1" primitiveUnits="objectBoundingBox">' +
-      '<feTurbulence type="fractalNoise" baseFrequency="0.09 0.2" numOctaves="2" seed="' + gritN + '" result="n"/>' +
+  // Performance: the noise texture and the glow are baked into a small SVG *image* (data URL),
+  // built once per colour mode and grit variant and cached. Inline SVG filters were re-run for
+  // every one of the 16 sigils on every frame of their zoom animation; an <img> is rasterised once
+  // and then only moved by the compositor.
+  var SIGIL_PATH = "M1 31 L22 17 L39 15 L49 19 L52 10 L54.5 1 L57 13 L63 13 L65.5 1 L68 10 L71 19 L81 15 L98 17 L119 31 L103 27.5 L94 41 L86 30.5 L75 32 L67 45 L60 55 L53 45 L45 32 L34 30.5 L26 41 L17 27.5 Z";
+  var SIGIL_INK = { dark: { bat: "#e5383b", glow: "rgba(229,56,59,0.7)" }, light: { bat: "#a4161a", glow: "rgba(164,22,26,0.25)" } };   // = --k-bat / --k-glow in themes.css
+  var SIGIL_VARIANTS = 3, sigilCache = {};
+  function sigilSrc(m, variant) {
+    var key = m + ":" + variant;
+    if (sigilCache[key]) return sigilCache[key];
+    var ink = SIGIL_INK[m] || SIGIL_INK.dark;
+    // viewBox padded by 16 units so the glow isn't clipped; the bat itself is 120 x 56
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-16 -16 152 88">' +
+      '<defs><filter id="grit" x="0" y="0" width="1" height="1" primitiveUnits="objectBoundingBox">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.09 0.2" numOctaves="2" seed="' + (variant + 1) + '" result="n"/>' +
       '<feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2 1.65" result="m"/>' +
-      '<feComposite in="SourceGraphic" in2="m" operator="in"/></filter></defs>' +
-      '<path class="sg-bat" filter="url(#' + id + ')" d="M1 31 L22 17 L39 15 L49 19 L52 10 L54.5 1 L57 13 L63 13 L65.5 1 L68 10 L71 19 L81 15 L98 17 L119 31 L103 27.5 L94 41 L86 30.5 L75 32 L67 45 L60 55 L53 45 L45 32 L34 30.5 L26 41 L17 27.5 Z"/></svg>';
+      '<feComposite in="SourceGraphic" in2="m" operator="in"/></filter>' +
+      '<filter id="glow" x="-0.3" y="-0.6" width="1.6" height="2.2"><feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="' + ink.glow + '"/></filter></defs>' +
+      '<g filter="url(#glow)"><path filter="url(#grit)" fill="' + ink.bat + '" d="' + SIGIL_PATH + '"/></g></svg>';
+    return (sigilCache[key] = "data:image/svg+xml," + encodeURIComponent(svg));
   }
+  function SIGIL_IMG(m, variant) { return '<img alt="" decoding="async" draggable="false" src="' + sigilSrc(m, variant) + '">'; }
   var BUNNY_MINI = '<svg viewBox="0 0 26 30" aria-hidden="true"><ellipse cx="8.5" cy="8" rx="3.2" ry="8"/><ellipse cx="17.5" cy="8" rx="3.2" ry="8"/><circle cx="13" cy="20" r="9"/></svg>';
   // bunny mascot (own design): lavender-white, pink inner ears, happy closed eyes
   var MASCOT = '<svg viewBox="0 0 140 176" aria-hidden="true">' +
@@ -51,18 +62,19 @@
     return busy || document.hidden || !!document.querySelector(".arcade:not([hidden]), .term:not([hidden]), .acct:not([hidden]), .boot.is-on");
   }
 
-  function knightScene() {
+  function knightScene(m) {
+    m = m || mode();
     var html = '<div class="gk-clouds"></div>', i, cols = 5, rows = 3;
     // cascade of bat symbols on a loose grid, each appears once, in sequence
     for (i = 0; i < cols * rows; i++) {
       var c = i % cols, r = Math.floor(i / cols);
       var x = (c + 0.5) / cols * 100 + rand(-6, 6), y = (r + 0.5) / rows * 62 + 6 + rand(-5, 5);
       var order = (c + r * 2 + ((Math.random() * 3) | 0)) * 0.035;
-      html += '<span class="gk-sigil" style="--x:' + x.toFixed(1) + "%;--y:" + y.toFixed(1) + "%;--s:" + rand(0.55, 1.15).toFixed(2) + ";--r:" + rand(-14, 14).toFixed(0) + "deg;--d:" + order.toFixed(3) + 's">' + SIGIL_SVG() + "</span>";
+      html += '<span class="gk-sigil" style="--x:' + x.toFixed(1) + "%;--y:" + y.toFixed(1) + "%;--s:" + rand(0.55, 1.15).toFixed(2) + ";--r:" + rand(-14, 14).toFixed(0) + "deg;--d:" + order.toFixed(3) + 's">' + SIGIL_IMG(m, i % SIGIL_VARIANTS) + "</span>";
     }
     for (i = 0; i < 7; i++) html += '<span class="gk-bat" style="--x:' + rand(0, 90).toFixed(1) + "%;--y:" + rand(10, 80).toFixed(1) + "%;--s:" + rand(0.5, 1.3).toFixed(2) + ";--d:" + rand(0.3, 0.7).toFixed(2) + 's">' + BAT + "</span>";
     // searchlight: beam from below, bat projected into the clouds
-    html += '<div class="gk-beam"></div><div class="gk-signal">' + SIGIL_SVG() + "</div>";
+    html += '<div class="gk-beam"></div><div class="gk-signal">' + SIGIL_IMG(m, 0) + "</div>";
     html += '<span class="glx__line">' + pick(KNIGHT_LINES) + "</span>";
     return html;
   }
@@ -94,10 +106,16 @@
     el.className = "glx glx--" + kind + " glx--" + mode();
     el.setAttribute("aria-hidden", "true");
     el.innerHTML = kind === "knight" ? knightScene() : goldenScene();
-    // 1) the page itself tears for ~140 ms
-    document.documentElement.classList.add("glx-shift", "glx-shift--" + kind);
+    // 1) the page itself tears for ~140 ms: the app shifts (transform/clip only) under a thin
+    //    colour-split overlay, instead of running drop-shadow filters over the whole page
+    var tear = document.createElement("div");
+    tear.className = "glx-tear glx-tear--" + kind;
+    tear.setAttribute("aria-hidden", "true");
+    document.body.appendChild(tear);
+    document.documentElement.classList.add("glx-shift");
     setTimeout(function () {
-      document.documentElement.classList.remove("glx-shift", "glx-shift--knight", "glx-shift--golden");
+      document.documentElement.classList.remove("glx-shift");
+      tear.remove();
       // 2) the scene
       document.body.appendChild(el);
       // 3) while the scene covers the screen, the site switches to the glitched style (saved to the account)
@@ -143,5 +161,5 @@
     if (wants !== on) { on = wants; schedule(true); scheduleFly(); }
   });
 
-  window.SamukaGlitch = { fire: fire, flyby: flyby, delays: DELAYS };
+  window.SamukaGlitch = { fire: fire, flyby: flyby, delays: DELAYS, _scene: function (kind, m) { return kind === "knight" ? knightScene(m) : goldenScene(); }, _sigilSrc: sigilSrc };
 })();

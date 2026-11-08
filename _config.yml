@@ -54,5 +54,8 @@ exclude:
   - scripts
   - supabase
   - tests
+  - node_modules     # CI installs build tools; a custom exclude list replaces Jekyll's defaults
+  - package.json
+  - package-lock.json
 
 markdown: kramdown
