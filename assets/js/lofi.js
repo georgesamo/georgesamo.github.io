@@ -106,18 +106,18 @@
     return g;
   }
 
-  /* ---------- styles: chill cyberpunk (night-city synth, half-time beat, rain) ----------
-   * Every skin shares one engine: wide detuned saw pads through a slowly sweeping
-   * filter, a sub bass that ducks under the kick (sidechain pump), a soft gated
-   * synth arp into a dotted-eighth delay, half-time drums and rain on the window.
-   * Skins change the key, tempo, brightness and a signature voice.
+  /* ---------- styles: chill cyberpunk synth (no noise, no static) ----------
+   * Only tonal sounds: a deep bass that ducks under a soft kick (sidechain pump),
+   * wide detuned saw pads through a slowly sweeping filter, a gated synth arp into
+   * a dotted-eighth delay, and a slow gliding lead melody. Skins change the key,
+   * tempo, brightness and timbre.
    */
   function cyber(cfg) {
     var beat = 60 / cfg.bpm;
     return {
       delay: [beat * 0.75, cfg.fb || 0.42, cfg.delayTone || 2600],
       init: function (o) {
-        var b = light() ? 1.25 : 1, i;
+        var b = light() ? 1.2 : 1, i;
         o.dur = beat / 4;
         // sidechain: pads + bass go through a gain that dips on every kick
         var duck = ctx.createGain(); duck.gain.value = 1; duck.connect(o.bus);
@@ -127,12 +127,14 @@
           duck.gain.setTargetAtTime(1, t + 0.02, beat * 0.28);
         }
         var padLp = filt("lowpass", cfg.padCut * b, 0.9); padLp.connect(duck);
-        lfo(o, 1 / (beat * 16), cfg.padCut * 0.55 * b, padLp.frequency);   // one sweep every 4 bars
+        lfo(o, 1 / (beat * 16), cfg.padCut * 0.5 * b, padLp.frequency);   // one sweep every 4 bars
         var arpLp = filt("lowpass", cfg.arpCut * b, 3); arpLp.connect(o.bus);
         lfo(o, 1 / (beat * 8), cfg.arpCut * 0.4 * b, arpLp.frequency);
-        var bassLp = filt("lowpass", 260, 0.7); bassLp.connect(duck);
-        var rain = cfg.rain ? loopNoise(o, [filt("bandpass", 1300, 0.45), filt("lowpass", 6500, 0.5)], cfg.rain) : null;
-        if (cfg.hum) loopNoise(o, [filt("bandpass", 120, 8)], cfg.hum);   // old monitor hum
+        var subLp = filt("lowpass", 180, 0.7); subLp.connect(duck);
+        var bassLp = filt("lowpass", cfg.bassCut || 420, 4); bassLp.connect(duck);   // warm, slightly resonant
+        lfo(o, 1 / (beat * 4), 120, bassLp.frequency);
+        var leadLp = filt("lowpass", (cfg.leadCut || 2200) * b, 1); leadLp.connect(o.bus);
+        var vib = lfo(o, 5, 9, null);   // gentle vibrato for the lead
         // optional constant drone (Dark Knight)
         var drones = [];
         if (cfg.drone) {
@@ -144,6 +146,28 @@
           });
         }
         var arpPat = cfg.arpPat || [0, 2, 1, 3, 2, 4, 1, 3];
+        // lead: a short motif per 2 bars, built from the scale and nudged toward chord tones
+        var motif = [], lastNote = cfg.scale[2];
+        function newMotif() {
+          motif = [];
+          var steps = [0, 6, 8, 14, 16, 22, 24, 28];   // 16th-steps within 2 bars where notes may start
+          var idx = cfg.scale.indexOf(lastNote); if (idx < 0) idx = 2;
+          steps.forEach(function (st) {
+            if (!chance(cfg.leadDensity || 0.55)) return;
+            idx = Math.max(0, Math.min(cfg.scale.length - 1, idx + pick([-2, -1, -1, 0, 1, 1, 2])));
+            motif.push({ st: st, n: cfg.scale[idx], len: pick([2, 3, 4, 6]) });
+          });
+          if (motif.length) lastNote = motif[motif.length - 1].n;
+        }
+        function lead(n, t, len) {
+          var d = o.dur * len * 1.1;
+          var a = voice(o, cfg.leadWave || "triangle", mtof(n), t, 0.06, d, cfg.leadVol || 0.05, leadLp, 0.5);
+          var c = voice(o, "sawtooth", mtof(n), t, 0.08, d, (cfg.leadVol || 0.05) * 0.25, leadLp, 0.5, 7);
+          [a, c].forEach(function (osc) {
+            vib.connect(osc.detune);
+            osc.onended = function () { try { vib.disconnect(osc.detune); } catch (e) {} };
+          });
+        }
         o.play = function (t, s) {
           var st = s % 16, bar = Math.floor(s / 16), ch = cfg.prog[bar % cfg.prog.length], j;
           var sw = st % 2 === 1 ? o.dur * (cfg.swing || 0.12) : 0;   // light shuffle
@@ -154,54 +178,47 @@
               voice(o, "sawtooth", mtof(ch[j]), t, beat * 1.4, beat * 5.5, cfg.padVol / ch.length, padLp, 0.18, 9);
             }
             if (cfg.drone) drones.forEach(function (d) { d.osc.frequency.setTargetAtTime(mtof(ch[0] + d.off), t, beat); });
-            if (rain && bar % 2 === 0) rain.gain.setTargetAtTime(cfg.rain * rnd(0.6, 1.3), t, 2);
+            if (bar % 2 === 0) newMotif();
           }
-          // sub bass: root on 1, pickup before 3, octave blip sometimes
+          // bass: deep sine sub + warm filtered saw, root on 1, pickups, octave walk
           var root = ch[0] - 12;
-          if (st === 0 || st === 7 || (st === 10 && chance(0.6))) {
-            voice(o, "sine", mtof(root), t + sw, 0.01, beat * (st === 0 ? 1.6 : 0.8), 0.24, bassLp, 0);
-            voice(o, "triangle", mtof(root), t + sw, 0.01, beat * 0.6, 0.06, bassLp, 0);
+          var hit = st === 0 ? [root, 1.7] : st === 6 ? [root, 0.5] : st === 10 && chance(0.7) ? [root + (chance(0.3) ? 7 : 0), 0.9] : st === 14 && chance(0.4) ? [root + 12, 0.35] : null;
+          if (hit) {
+            voice(o, "sine", mtof(hit[0]), t + sw, 0.008, beat * hit[1], 0.3, subLp, 0);
+            voice(o, "sawtooth", mtof(hit[0]), t + sw, 0.01, beat * hit[1] * 0.8, 0.08, bassLp, 0.05);
+            voice(o, "sawtooth", mtof(hit[0]), t + sw, 0.01, beat * hit[1] * 0.8, 0.05, bassLp, 0, 12);
           }
-          if (st === 14 && chance(0.35)) voice(o, "sine", mtof(root + 12), t + sw, 0.01, beat * 0.4, 0.12, bassLp, 0);
-          // half-time drums: kick on 1 (+ ghost), snare on 3
-          if (st === 0 || (st === 11 && chance(0.45))) { kick(o, t, st ? 0.22 : 0.34, 95, 40, 0.45); pump(t, 0.3); }
-          if (st === 8) {
-            noise(o, t, "bandpass", 1900, 0.9, 0.09, 0.22, 0.28, 0.003);
-            voice(o, "triangle", 190, t, 0.002, 0.09, 0.07, null, 0.1);
-          }
-          if (st % 2 === 0 && chance(0.9)) noise(o, t + sw, "highpass", 7500, 0.7, st % 4 ? 0.01 : 0.017, 0.035);
-          if (st === 14 && chance(0.25)) noise(o, t + sw, "highpass", 6000, 0.7, 0.014, 0.22);
+          // soft kick on 1 (+ ghost) drives the pump; no snares or hats
+          if (st === 0 || (st === 11 && chance(0.4))) { kick(o, t, st ? 0.2 : 0.3, 90, 40, 0.42); pump(t, 0.32); }
           // gated arp: chord tones an octave up, wandering pattern
-          if (chance(cfg.arpDensity || 0.72)) {
+          if (chance(cfg.arpDensity || 0.7)) {
             var n = ch[arpPat[(st + bar * 3) % arpPat.length] % ch.length] + 12 + (cfg.arpUp && st >= 8 && chance(0.25) ? 12 : 0);
-            voice(o, cfg.arpWave || "square", mtof(n), t + sw, 0.004, o.dur * 1.4, cfg.arpVol || 0.026, arpLp, 0.45, rnd(-6, 6));
+            voice(o, cfg.arpWave || "square", mtof(n), t + sw, 0.004, o.dur * 1.4, cfg.arpVol || 0.024, arpLp, 0.45, rnd(-6, 6));
           }
-          // signature voice: sparse glassy bell into the delay
-          if (st % 4 === 0 && chance(cfg.bell || 0.08)) {
-            var m = pick(cfg.bellNotes || ch) + 24;
-            voice(o, "sine", mtof(m), t, 0.004, beat * 3, 0.045, null, 0.7);
-            voice(o, "triangle", mtof(m + 7), t, 0.004, beat * 1.2, 0.012, null, 0.6);
-          }
+          // lead melody
+          var pos = (bar % 2) * 16 + st;
+          motif.forEach(function (m) { if (m.st === pos) lead(m.n, t + sw, m.len); });
         };
       }
     };
   }
 
   STYLES = {
-    // Phthalo: neon-noir in D minor
+    // Phthalo: neon-noir night drive, D dorian
     phthalo: cyber({ bpm: 84, prog: [[50, 57, 60, 64, 65], [46, 53, 57, 60, 62], [53, 57, 60, 64], [45, 52, 55, 60, 64]],
-      padCut: 1100, padVol: 0.07, arpCut: 1900, arpVol: 0.024, rain: 0.035, bell: 0.07 }),
-    // Dark Knight: the original — drone + heavy rain, darker, slower, A minor
+      scale: [62, 64, 65, 67, 69, 72, 74, 76], padCut: 1100, padVol: 0.065, arpCut: 1900, arpVol: 0.022, leadVol: 0.05 }),
+    // Dark Knight: the original mood — low drone, slow and dark, A minor
     knight: cyber({ bpm: 78, prog: [[45, 52, 57, 60, 64], [41, 48, 53, 57, 60], [43, 50, 55, 59, 62], [40, 47, 52, 55, 59]],
-      padCut: 700, padVol: 0.06, arpCut: 1300, arpVol: 0.022, arpWave: "sawtooth", rain: 0.06, drone: 0.05, bell: 0.1,
-      bellNotes: [57, 60, 62, 64, 67], fb: 0.5, delayTone: 2000 }),
-    // Golden: dreamy synth-pop haze, F lydian-ish, brighter
+      scale: [57, 60, 62, 64, 67, 69, 72, 74], padCut: 700, padVol: 0.055, arpCut: 1300, arpVol: 0.02, arpWave: "sawtooth",
+      drone: 0.045, leadCut: 1500, leadWave: "sine", leadVol: 0.06, bassCut: 360, fb: 0.5, delayTone: 2000 }),
+    // Golden: dreamy synth-pop haze, F lydian, brighter
     golden: cyber({ bpm: 90, prog: [[53, 57, 60, 64], [55, 59, 62, 66], [52, 55, 59, 62], [57, 60, 64, 67]],
-      padCut: 1700, padVol: 0.065, arpCut: 3000, arpVol: 0.024, arpWave: "triangle", arpUp: true, rain: 0.015, bell: 0.16, swing: 0.08 }),
-    // CRT: retro terminal — pulse arp, monitor hum, C minor
+      scale: [65, 67, 69, 71, 72, 74, 76, 77], padCut: 1700, padVol: 0.06, arpCut: 3000, arpVol: 0.022, arpWave: "triangle", arpUp: true,
+      leadCut: 3000, leadVol: 0.045, leadDensity: 0.65, swing: 0.08 }),
+    // CRT: retro terminal synth, pulse arp, C minor
     crt: cyber({ bpm: 92, prog: [[48, 55, 60, 63], [44, 51, 56, 60], [46, 53, 58, 62], [43, 50, 55, 58]],
-      padCut: 900, padVol: 0.05, arpCut: 2400, arpVol: 0.03, arpWave: "pulse", arpDensity: 0.85, rain: 0.02, hum: 0.02, bell: 0.05,
-      arpPat: [0, 1, 2, 3, 2, 1, 3, 0] })
+      scale: [60, 63, 65, 67, 70, 72, 75, 77], padCut: 900, padVol: 0.05, arpCut: 2400, arpVol: 0.028, arpWave: "pulse", arpDensity: 0.8,
+      leadWave: "square", leadCut: 1800, leadVol: 0.035, arpPat: [0, 1, 2, 3, 2, 1, 3, 0] })
   };
 
   /* ---------- instances (one per style, crossfaded) ---------- */
