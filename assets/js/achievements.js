@@ -34,7 +34,11 @@
     { key: "sudo", icon: "🔐", title: "Not in the sudoers file", how: "Try sudo in the terminal", secret: true },
     { key: "vim", icon: "⌨", title: ":q!", how: "Get stuck in vim", secret: true },
     { key: "rails_c", icon: "💻", title: "irb(main):001>", how: "Open the rails console", secret: true },
-    { key: "konami", icon: "🎮", title: "↑↑↓↓←→←→BA", how: "Enter the old code", secret: true }
+    { key: "konami", icon: "🎮", title: "↑↑↓↓←→←→BA", how: "Enter the old code", secret: true },
+    { key: "suite_phthalo", icon: "🎛", title: "Root Access", how: "Patch Phthalo's secret suite together", secret: true },
+    { key: "suite_knight", icon: "🎛", title: "The Long Night", how: "Patch Dark Knight's secret suite together", secret: true },
+    { key: "suite_golden", icon: "🎛", title: "Alchemy", how: "Patch Golden's secret suite together", secret: true },
+    { key: "conductor", icon: "🎼", title: "Conductor", how: "Unlock the secret suite in all three themes", secret: true }
   ];
   var BY = {}; LIST.forEach(function (a) { BY[a.key] = a; });
   var got = {}, uid = null, queue = [], showing = false;
@@ -86,6 +90,7 @@
       if (!r.error && r.data) { r.data.forEach(function (row) { got[row.key] = 1; }); saveCache(); }
     }
     unlock("hello_world");
+    suites();
     var h = new Date().getHours(); if (h < 5) unlock("night_owl");
   }
 
@@ -124,6 +129,14 @@
     }
   });
   window.addEventListener("samuka:lofi", function (e) { if (e.detail && e.detail.on) unlock("lofi"); });
+  // the secret suites (assets/js/patchbay.js); also catches up suites unlocked before signing in
+  function suites() {
+    var L = window.SamukaLofi, S = L && L.suite; if (!S || !uid) return;
+    var th = S.themes(), n = 0;
+    th.forEach(function (t) { if (S.open(t.theme)) { n++; unlock("suite_" + t.theme); } });
+    if (n === th.length) unlock("conductor");
+  }
+  window.addEventListener("samuka:suite", function (e) { if (e.detail && e.detail.type === "unlocked") suites(); });
   // a glitch is "witnessed" when its overlay appears
   new MutationObserver(function (ms) {
     if (!uid || got.glitch) return;

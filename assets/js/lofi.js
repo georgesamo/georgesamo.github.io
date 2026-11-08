@@ -8,7 +8,9 @@
  *   5 the epilogue   calm, A=432 tuning, soft 2.5 Hz binaural drone, strings, brass at the end (60 bpm)
  * Palettes: Phthalo (E minor, cold analog) · Dark Knight (D minor, heavier, choir, low brass) ·
  *           Golden (G minor, glassy bells, shimmer). The secret CRT skin uses Phthalo.
- * On the site the current theme's five songs play in order; switching theme crossfades to the same song.
+ * Track 6 (secret, per theme) is the suite: all five songs stitched into one journey. It joins the rotation
+ *   once unlocked in the Patch Bay (assets/js/patchbay.js), which wakes after you've heard all five songs.
+ * On the site the current theme's songs play in order; switching theme crossfades to the same song.
  * SamukaLofi.preview(theme, n) loops one track (used by the /soundtrack/ listening page).
  */
 (function () {
@@ -21,12 +23,12 @@
 
   var THEMES = {
     phthalo: { name: "Phthalo", tr: 0, bpm: 1, drive: 2.2, bassDrive: 1.6, kickLow: 44, strBright: 2400, pianoLp: 3200, arp: "saw", lead: "saw", lead2: "pulse", choir: 0, shimmer: 0, verb: 0.55, brass: 1,
-      titles: ["Ring Zero", "Something in the Wires", "Alone at 3 AM", "Two Cursors, One Shell", "Green Dawn"] },
+      titles: ["Ring Zero", "Something in the Wires", "Alone at 3 AM", "Two Cursors, One Shell", "Green Dawn", "Root Access"] },
     knight: { name: "Dark Knight", tr: -2, bpm: 0.97, drive: 3.4, bassDrive: 2.6, kickLow: 38, strBright: 1700, pianoLp: 1900, arp: "grit", lead: "grit", lead2: "saw", choir: 1, shimmer: 0, verb: 0.75, brass: 1.3,
-      titles: ["Crimson Protocol", "Footsteps Behind You", "What Is Left of Me", "Blade Against Blade", "After the Rain"] },
+      titles: ["Crimson Protocol", "Footsteps Behind You", "What Is Left of Me", "Blade Against Blade", "After the Rain", "The Long Night"] },
     golden: { name: "Golden", tr: 3, bpm: 1.02, drive: 1.6, bassDrive: 1.3, kickLow: 48, strBright: 3300, pianoLp: 5200, arp: "bell", lead: "glass", lead2: "pulse", choir: 0, shimmer: 1, verb: 0.8, brass: 0.8,
-      titles: ["Golden Hour Uplink", "Gilded Nightmare", "Violet Rain", "Mirror Match", "Lullaby in Gold"] }
-  };
+      titles: ["Golden Hour Uplink", "Gilded Nightmare", "Violet Rain", "Mirror Match", "Lullaby in Gold", "Alchemy"] }
+  };   // titles[5] is the secret suite (track 6), unlocked per theme in the Patch Bay
   function themeId() { var s = document.documentElement.dataset.skin; return THEMES[s] ? s : "phthalo"; }
   function quiet(p) { if (p && p.catch) p.catch(function () {}); }
 
@@ -475,16 +477,79 @@
         if (last) strings(o, t, [r + 24], len, 0.03, { a: 2, r: 6, bright: 1.2 });
       }
       if (sec.piano && (st === 0 || st === 6 || st === 10)) piano(o, t, [r + 12, r + 19, t3 + 12][st === 0 ? 0 : st === 6 ? 1 : 2], sec.piano, 3);
-      if (sec.mel != null && !last) melodyAt(EC.mel, bar % 8, st).forEach(function (n) { strings(o, t, [n[2] + sec.mel], n[3] * six, sec.mv, { a: 0.6, r: 1.4, bright: 1.05 }); });
+      // the suite's finale: the horns remember the Ring Zero hook at half speed (E minor and G major share every note)
+      var quote = o.mv && o.mv.finale && bar >= 40 && !last;
+      if (quote && st % 2 === 0) {
+        var pos = ((bar - 40) * 16 + st) / 2;
+        RZ.lead.forEach(function (n) { if (n[0] === pos && n[0] < 64) brass(o, t, [n[1] - 12], n[2] * six * 2, 0.07, { a: 0.25 }); });
+      }
+      if (sec.mel != null && !last && !quote) melodyAt(EC.mel, bar % 8, st).forEach(function (n) { strings(o, t, [n[2] + sec.mel], n[3] * six, sec.mv, { a: 0.6, r: 1.4, bright: 1.05 }); });
     }
   };
 
   var SONGS = [SONG_THEME, SONG_HORROR, SONG_LOWEST, SONG_STANDOFF, SONG_EPILOGUE];
 
+  /* ======================= track 6 · the suite (secret) =======================
+   * All five songs as one ~9½ minute journey: overture → chase → the standoff at full speed → the fall → home,
+   * where the horns play the Ring Zero hook. Each movement keeps its own tempo; risers and an impact glue them. */
+  var SUITE = [
+    { si: 0, segs: [[0, 32]], name: "I · overture" },                         // ends on its own break riser
+    { si: 1, segs: [[0, 40], [48, 56]], out: "riser", name: "II · the chase" },
+    { si: 3, segs: [[8, 88]], name: "III · the standoff" },
+    { si: 2, segs: [[8, 40]], in: "impact", name: "IV · the fall" },
+    { si: 4, segs: [[0, 48]], finale: 1, name: "V · home" }
+  ];
+  var SUITE_MOOD = "the suite · all five songs, one journey";
+  function segBars(m) { return m.segs.reduce(function (a, s) { return a + s[1] - s[0]; }, 0); }
+  var SUITE_BARS = SUITE.reduce(function (a, m) { return a + segBars(m); }, 0);
+  function suiteSecs(P) { return Math.round(SUITE.reduce(function (a, m) { return a + segBars(m) * 240 / (SONGS[m.si].bpm * P.bpm); }, 0)); }
+  function impact(o, t) {   // standoff → the fall: one huge hit, then the floor drops away
+    kick(o, t, 1.2); tom(o, t, 62, 1); stab(o, t, [52, 55, 59, 64], 1.3);
+    strings(o, t, [28, 40, 47], o.six * 24, 0.07, { a: 0.01, r: 4, bright: 0.7 });
+  }
+  function glue(o, t, st, bar) {
+    if (st !== 0) return;
+    var mv = o.mv, segs = mv.segs, lastSeg = o.suite.seg === segs.length - 1;
+    if (mv.out === "riser" && lastSeg && bar === segs[segs.length - 1][1] - 2) riser(o, t, o.six * 32, 0.13);
+    if (mv.in === "impact" && o.suite.seg === 0 && bar === segs[0][0] && !o.hit) { o.hit = 1; impact(o, t); }
+  }
+
+  /* ---------- the suite's lock: which songs you've heard, which suites you've opened (per theme) ---------- */
+  var SKEY = "samuka-suite";
+  function sload() { try { return JSON.parse(localStorage.getItem(SKEY)) || {}; } catch (e) { return {}; } }
+  function ssave(d) { try { localStorage.setItem(SKEY, JSON.stringify(d)); } catch (e) {} }
+  function sEmit(d) { try { window.dispatchEvent(new CustomEvent("samuka:suite", { detail: d })); } catch (e) {} }
+  function suiteOpen(th) {
+    var d = sload(); if (d.open && d.open[th]) return true;
+    var A = window.SamukaAch; return !!(A && A.has && A.has("suite_" + th));   // unlocked on another device
+  }
+  function heardMask(th) { var d = sload(); return (d.heard && d.heard[th]) || 0; }
+  function heardCount(th) { var h = heardMask(th), n = 0; for (var i = 0; i < 5; i++) if (h & (1 << i)) n++; return n; }
+  function markHeard(th, si) {
+    var d = sload(); d.heard = d.heard || {};
+    var h = d.heard[th] || 0; if (h & (1 << si)) return;
+    d.heard[th] = h | (1 << si); ssave(d);
+    var n = heardCount(th);
+    sEmit({ type: "heard", theme: th, count: n });
+    if (n === 5 && !suiteOpen(th)) sEmit({ type: "ready", theme: th });
+  }
+  function unlockSuite(th) {
+    if (!THEMES[th]) return false;
+    var d = sload(); d.open = d.open || {}; var was = !!d.open[th];
+    d.open[th] = 1; ssave(d);
+    if (!was) sEmit({ type: "unlocked", theme: th, title: THEMES[th].titles[5] });
+    if (cur) nowPlaying();
+    return !was;
+  }
+  function nextIdx(th, si) { return si < 4 ? si + 1 : si === 4 && suiteOpen(th) ? 5 : 0; }
+
   /* ---------- engine ---------- */
-  function create(theme, si, fade, loop) {
-    var P = THEMES[theme], song = SONGS[si], bpm = song.bpm * P.bpm, six = 60 / bpm / 4, t = ctx.currentTime;
+  // si 0–4 are the songs; si 5 is the suite, where sp = { mi: movement, seg: segment, s: step } says where to start
+  function create(theme, si, fade, loop, sp) {
+    var mv = si === 5 ? SUITE[(sp && sp.mi) || 0] : null;
+    var P = THEMES[theme], song = SONGS[mv ? mv.si : si], bpm = song.bpm * P.bpm, six = 60 / bpm / 4, t = ctx.currentTime;
     var o = { P: P, song: song, theme: theme, si: si, s: 0, six: six, dur: six, next: t + 0.08, nodes: [], loop: !!loop, ref: song.ref || 440, bpm: Math.round(bpm), cut: 800 };
+    if (mv) { o.mv = mv; o.suite = { mi: (sp && sp.mi) || 0, seg: (sp && sp.seg) || 0 }; o.s = sp && sp.s != null ? sp.s : mv.segs[o.suite.seg][0] * 16; }
     o.bus = gain(0.0001); o.bus.gain.linearRampToValueAtTime(1, t + fade); o.bus.connect(master);
     var verb = ctx.createConvolver(); verb.buffer = verbBuf;
     o.verb = gain(1); var vOut = gain(P.verb); o.verb.connect(verb); verb.connect(vOut); vOut.connect(o.bus);
@@ -495,7 +560,7 @@
     o.vib = osc("sine", 5.2, t, t + 36000); o.vibG = gain(8); o.vib.connect(o.vibG); o.nodes.push(o.vib);
     o.bassLp = filt("lowpass", 400, 5); var bsh = shaper(P.bassDrive), bout = gain(0.9); o.bassLp.connect(bsh); bsh.connect(bout); bout.connect(o.duck);
     song.init(o, t);
-    o.play = function (tt, s) { song.play(o, tt, s % 16, Math.floor(s / 16)); };
+    o.play = function (tt, s) { var st = s % 16, bar = Math.floor(s / 16); if (o.mv) glue(o, tt, st, bar); song.play(o, tt, st, bar); };
     return o;
   }
   function kill(o) {
@@ -510,20 +575,34 @@
     g.cancelScheduledValues(t); g.setValueAtTime(Math.max(0.0001, g.value), t); g.linearRampToValueAtTime(0.0001, t + fade);
     setTimeout(function () { kill(o); }, fade * 1000 + 400);
   }
-  function switchTo(theme, si, fade, loop) {
+  function switchTo(theme, si, fade, loop, sp) {
     if (cur) retire(cur, fade);
-    cur = create(theme, si, fade, loop);
+    cur = create(theme, si, fade, loop, sp);
     nowPlaying();
+  }
+  // suite bookkeeping at a segment's end: jump to the next segment, the next movement, or out of the suite
+  function suiteEdge() {
+    var o = cur, sp = o.suite, segs = o.mv.segs;
+    if (o.s < segs[sp.seg][1] * 16) return false;
+    if (sp.seg + 1 < segs.length) { sp.seg++; o.s = segs[sp.seg][0] * 16; return false; }
+    var mi = sp.mi + 1;
+    if (mi < SUITE.length) switchTo(o.theme, 5, SUITE[mi].in === "impact" ? 0.25 : 1.5, o.loop, { mi: mi, seg: 0 });
+    else if (o.loop) switchTo(o.theme, 5, 4, true, { mi: 0, seg: 0 });
+    else switchTo(o.theme, 0, 4, false);
+    cur.next = Math.max(cur.next, o.next);
+    return true;
   }
   function tick() {
     if (!ctx || !cur) return;
     var now = ctx.currentTime, horizon = now + (document.hidden ? 3 : LOOK);   // hidden tabs get timers less often
     if (cur.next < now - 0.25) cur.next = now + 0.02;
     while (cur && cur.next < horizon) {
-      if (cur.s >= cur.song.bars * 16) {
+      if (cur.suite) { if (suiteEdge()) continue; }
+      else if (cur.s >= cur.song.bars * 16) {
         if (cur.loop) cur.s = 0;
-        else { var o = cur; switchTo(o.theme, (o.si + 1) % SONGS.length, 4, false); cur.next = Math.max(cur.next, o.next); continue; }
+        else { var o = cur; switchTo(o.theme, nextIdx(o.theme, o.si), 4, false); cur.next = Math.max(cur.next, o.next); continue; }
       }
+      if (!cur.suite && cur.s === 64) markHeard(cur.theme, cur.si);   // four bars in counts as "heard"
       cur.play(cur.next, cur.s); cur.s++; cur.next += cur.dur;
     }
   }
@@ -533,13 +612,32 @@
 
   function info() {
     if (!cur) return null;
-    return { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: cur.si + 1, bpm: cur.bpm, bar: Math.floor(cur.s / 16) % cur.song.bars, bars: cur.song.bars, style: cur.song.mood, loop: cur.loop };
+    var base = { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: cur.si + 1, of: suiteOpen(cur.theme) ? 6 : 5, bpm: cur.bpm, loop: cur.loop };
+    if (!cur.suite) { base.bar = Math.floor(cur.s / 16) % cur.song.bars; base.bars = cur.song.bars; base.style = cur.song.mood; return base; }
+    var sp = cur.suite, done = 0, i;
+    for (i = 0; i < sp.mi; i++) done += segBars(SUITE[i]);
+    for (i = 0; i < sp.seg; i++) done += cur.mv.segs[i][1] - cur.mv.segs[i][0];
+    done += Math.floor(cur.s / 16) - cur.mv.segs[sp.seg][0];
+    base.bar = Math.max(0, Math.min(SUITE_BARS - 1, done)); base.bars = SUITE_BARS; base.style = SUITE_MOOD + " · " + cur.mv.name; base.movement = sp.mi + 1;
+    return base;
+  }
+  function suiteSeek(b) {
+    b = Math.max(0, Math.min(SUITE_BARS - 1, b | 0));
+    for (var mi = 0; mi < SUITE.length; mi++) for (var sg = 0; sg < SUITE[mi].segs.length; sg++) {
+      var seg = SUITE[mi].segs[sg], len = seg[1] - seg[0];
+      if (b < len) {
+        if (mi === cur.suite.mi) { cur.suite.seg = sg; cur.s = (seg[0] + b) * 16; }
+        else switchTo(cur.theme, 5, 0.6, cur.loop, { mi: mi, seg: sg, s: (seg[0] + b) * 16 });
+        return;
+      }
+      b -= len;
+    }
   }
   function emit() { try { window.dispatchEvent(new CustomEvent("samuka:lofi", { detail: { on: on, track: on && cur ? info().name : null, info: on ? info() : null } })); } catch (e) {} }
   function nowPlaying() {
     var i = info(); if (!i) return;
     if (btn) btn.title = "♪ " + i.name + " · " + i.themeName + " · " + i.bpm + " bpm (synthesized live)";
-    if (nextBtn) nextBtn.title = "Next: " + cur.P.titles[(cur.si + 1) % 5];
+    if (nextBtn) nextBtn.title = "Next: " + cur.P.titles[nextIdx(cur.theme, cur.si)];
     var ms = navigator.mediaSession;
     try { if (ms && window.MediaMetadata) ms.metadata = new MediaMetadata({ title: i.name, artist: "Samuka's Arcade", album: i.themeName + " soundtrack · synthesized live" }); } catch (e) {}
     emit();
@@ -578,18 +676,34 @@
       quiet(ctx.suspend());
     }, 900);
   }
-  function next() { if (!on) return start(); pinned = null; switchTo(cur.theme, (cur.si + 1) % SONGS.length, 2, false); }
+  function next() { if (!on) return start(); pinned = null; switchTo(cur.theme, nextIdx(cur.theme, cur.si), 2, false); }
   function preview(theme, si) { pinned = { theme: THEMES[theme] ? theme : "phthalo", si: si }; start(pinned.theme, si, true); }
+  function bpmRange(P) {
+    var b = SONGS.map(function (s) { return Math.round(s.bpm * P.bpm); });
+    return Math.min.apply(null, b) + "–" + Math.max.apply(null, b);
+  }
 
   window.SamukaLofi = {
     toggle: function () { if (on) stop(); else start(); },
     start: function () { start(); }, stop: stop, isOn: function () { return on; }, next: next, preview: preview,
-    seek: function (bar) { if (cur) cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; },
+    // play a track in the normal rotation (it carries on to the next one when it ends)
+    play: function (theme, si) { pinned = null; start(THEMES[theme] ? theme : themeId(), si | 0, false); },
+    seek: function (bar) { if (!cur) return; if (cur.suite) suiteSeek(bar); else cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; },
     track: function () { return on ? info() : null; },
     analyser: function () { return on ? analyser : null; },
+    theme: themeId,
+    suite: {
+      open: suiteOpen, unlock: unlockSuite, heard: heardCount, heardMask: heardMask,
+      title: function (th) { return THEMES[th] ? THEMES[th].titles[5] : null; },
+      themes: function () { return Object.keys(THEMES).map(function (k) { return { theme: k, name: THEMES[k].name, titles: THEMES[k].titles.slice(0, 5), suite: THEMES[k].titles[5], tr: THEMES[k].tr }; }); },
+      movements: SUITE.map(function (m) { return { si: m.si, name: m.name }; })
+    },
     catalog: function () {
       return Object.keys(THEMES).map(function (k) {
-        return { theme: k, name: THEMES[k].name, songs: SONGS.map(function (s, i) { return { no: i + 1, title: THEMES[k].titles[i], mood: s.mood, bpm: Math.round(s.bpm * THEMES[k].bpm), bars: s.bars, secs: Math.round(s.bars * 4 * 60 / (s.bpm * THEMES[k].bpm)) }; }) };
+        var P = THEMES[k];
+        var songs = SONGS.map(function (s, i) { return { no: i + 1, title: P.titles[i], mood: s.mood, bpm: Math.round(s.bpm * P.bpm), bars: s.bars, secs: Math.round(s.bars * 4 * 60 / (s.bpm * P.bpm)) }; });
+        songs.push({ no: 6, title: P.titles[5], mood: SUITE_MOOD, bpm: bpmRange(P), bars: SUITE_BARS, secs: suiteSecs(P), suite: true, locked: !suiteOpen(k), heard: heardCount(k) });
+        return { theme: k, name: P.name, songs: songs };
       });
     }
   };
@@ -597,7 +711,10 @@
   // theme change: same song, new palette (unless a track is pinned on the listening page)
   window.addEventListener("samuka:theme", function () {
     if (!on || !ctx || !cur || pinned) return;
-    var th = themeId(); if (th !== cur.theme) switchTo(th, cur.si, 2, false);
+    var th = themeId(); if (th === cur.theme) return;
+    if (!cur.suite) switchTo(th, cur.si, 2, false);
+    else if (suiteOpen(th)) switchTo(th, 5, 2, false, { mi: cur.suite.mi, seg: cur.suite.seg, s: cur.s });
+    else switchTo(th, cur.mv.si, 2, false);   // that theme's suite is still locked: drop into the same song there
   });
   document.addEventListener("visibilitychange", function () {
     if (!on || !ctx) return;

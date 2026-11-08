@@ -12,7 +12,7 @@ sitemap: false
         <header class="section__head">
           <p class="section__path">team/<b>soundtrack.wav</b></p>
           <h2 class="section__title">Soundtrack</h2>
-          <p class="section__cmd"><span class="prompt">$</span> bin/music --list <span class="muted"># all 15 tracks live here; on the site each theme plays only its own five</span></p>
+          <p class="section__cmd"><span class="prompt">$</span> bin/music --list <span class="muted"># all 15 tracks live here; on the site each theme plays only its own five (and a sixth, if you find it)</span></p>
         </header>
         <div data-st-gate><p class="muted">checking your badge…</p></div>
         <div data-st-room hidden>
@@ -35,6 +35,10 @@ sitemap: false
         .st__title { font: 600 13.5px var(--mono); color: var(--text); }
         .st__meta { display: block; font: 11.5px var(--mono); color: var(--muted); }
         .st__now { margin: 0 0 16px; padding: 10px 14px; border-radius: 12px; border: 1px dashed var(--line-strong); font: 13px var(--mono); }
+        .st__row.is-locked { background: repeating-linear-gradient(135deg, var(--bg-soft) 0 8px, transparent 8px 16px); border: 1px dashed var(--line-strong); }
+        .st__row.is-locked .st__title { color: var(--muted); }
+        .st__row.is-suite { border: 1px solid var(--line-strong); }
+        .st__tag { margin-left: 6px; padding: 1px 6px; border-radius: 99px; border: 1px solid var(--line-strong); font: 10px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); vertical-align: 1px; }
         .st__bar { display: block; height: 4px; margin-top: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
         .st__bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform 0.3s linear; }
       </style>
@@ -67,13 +71,19 @@ sitemap: false
           if (!L || !L.catalog) { root.innerHTML = '<p class="muted">Audio isn\'t available in this browser.</p>'; return; }
           function fmt(s) { return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
           var mine = { samuka: "knight", nino: "golden" }[A.role()];
+          function list() {
           root.innerHTML = L.catalog().map(function (th) {
             var plays = th.theme === "phthalo" ? "plays for everyone" : th.theme === "knight" ? "plays on Samuka's theme" : "plays on Nino's theme";
             return '<div class="st__theme st__theme--' + th.theme + (th.theme === mine ? " is-mine" : "") + '"><h3>' + th.name + ' <small>' + plays + '</small></h3><ol class="st__list">' + th.songs.map(function (s) {
-              return '<li class="st__row" data-st="' + th.theme + ':' + (s.no - 1) + '"><button class="st__play" type="button" aria-label="Play ' + s.title + '">▶</button>' +
-                '<span><span class="st__title">' + s.no + '. ' + s.title + '</span><span class="st__meta">' + s.mood + ' · ' + s.bpm + ' bpm · ' + fmt(s.secs) + '</span></span></li>';
+              if (s.locked) return '<li class="st__row is-locked"><button class="st__play" type="button" data-pb-theme="' + th.theme + '" aria-label="Open the patch bay">🔒</button>' +
+                '<span><span class="st__title">6. ??? <span class="st__tag">secret</span></span><span class="st__meta">' + (s.heard < 5 ? "heard " + s.heard + "/5 · the patch bay wakes when you've heard all five" : "the patch bay is warm · press 🔒 to patch it together") + '</span></span></li>';
+              return '<li class="st__row' + (s.suite ? " is-suite" : "") + '" data-st="' + th.theme + ':' + (s.no - 1) + '"><button class="st__play" type="button" aria-label="Play ' + s.title + '">▶</button>' +
+                '<span><span class="st__title">' + s.no + '. ' + s.title + (s.suite ? ' <span class="st__tag">suite</span>' : "") + '</span><span class="st__meta">' + s.mood + ' · ' + s.bpm + ' bpm · ' + fmt(s.secs) + '</span></span></li>';
             }).join("") + "</ol></div>";
           }).join("");
+          }
+          list();
+          window.addEventListener("samuka:suite", function () { if (document.body.contains(root)) { list(); paint(); } });
           function paint() {
             var t = L.track();
             root.querySelectorAll("[data-st]").forEach(function (row) {
@@ -83,6 +93,8 @@ sitemap: false
             now.innerHTML = t ? "♪ <b>" + t.name + "</b> · " + t.themeName + " · " + t.style + " · bar " + (t.bar + 1) + "/" + t.bars + '<span class="st__bar"><i style="transform:scaleX(' + ((t.bar + 1) / t.bars).toFixed(3) + ')"></i></span>' : '<span class="muted">Press ▶ on any track. Each one loops here so you can listen properly.</span>';
           }
           root.addEventListener("click", function (e) {
+            var lock = e.target.closest("[data-pb-theme]");
+            if (lock) { if (window.SamukaPatchBay) window.SamukaPatchBay.open(lock.getAttribute("data-pb-theme")); return; }
             var row = e.target.closest("[data-st]"); if (!row) return;
             var p = row.getAttribute("data-st").split(":"), t = L.track();
             if (t && t.theme === p[0] && t.no - 1 === +p[1]) L.stop(); else L.preview(p[0], +p[1]);
