@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>account fixture</title>
+</head>
+<body>
+  <!-- the pieces of the page shell that the account features attach to -->
+  <button type="button" class="acct-btn" data-account hidden>sign in</button>
+  <nav class="tree__nav"><div class="tree__me" data-me-tree hidden></div></nav>
+  <div class="msheet__me" data-me-sheet hidden></div>
+
+  <script>
+    // stand-in for app.js's theme API (only what the account window uses)
+    (function () {
+      var mode = "dark", skin = "phthalo", unlocked = ["phthalo"];
+      window.Samuka = {
+        mode: function () { return mode; },
+        skin: function () { return skin; },
+        availableSkins: function () {
+          var r = document.documentElement.dataset.role;
+          return unlocked.concat(r === "samuka" ? ["knight"] : r === "nino" ? ["golden"] : []);
+        },
+        setMode: function (m) { mode = m; window.dispatchEvent(new CustomEvent("samuka:theme", { detail: { changed: "mode", mode: m } })); },
+        setSkin: function (s, o) { skin = s; window.dispatchEvent(new CustomEvent("samuka:theme", { detail: { user: !!(o && o.user), changed: "skin", skin: s } })); },
+        _unlock: function (s) { unlocked.push(s); }
+      };
+      window.SITE = { supabase: {} };
+    })();
+  </script>
+  <script src="../../assets/js/account-core.js" defer></script>
+  <script src="../../assets/js/auth.js" defer></script>
+  <script src="../../assets/js/achievements.js" defer></script>
+  <script src="../../assets/js/board.js" defer></script>
+  <script src="../../assets/js/admin.js" defer></script>
+  <script src="../../assets/js/me.js" defer></script>
+  <script>
+    // a module that registers without a tab lands on "settings" (runs after the deferred scripts)
+    document.addEventListener("DOMContentLoaded", function () {
+      window.SamukaAuth.extend(function (s) { return s.user ? '<p data-fixture-extra>fixture extra</p>' : ""; });
+    });
+  </script>
+</body>
+</html>

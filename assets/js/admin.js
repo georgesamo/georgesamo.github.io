@@ -176,7 +176,7 @@
     var a = A();
     if (a && a.extend) a.extend(function (state) {
       return state.role === "samuka" ? '<button class="btn acct__tool" type="button" data-open-admin>🛠 admin</button>' : "";
-    });
+    }, { tab: "team" });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.SamukaAdmin = { open: open };

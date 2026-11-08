@@ -137,7 +137,7 @@
     if (A && A.extend) A.extend(function (state) {
       if (!state.user) return "";
       return '<label class="acct__toggle"><input type="checkbox" data-cursors' + (cursorsOn() ? " checked" : "") + "><span>Show live cursors of other visitors</span></label>";
-    });
+    }, { tab: "settings" });
     document.addEventListener("change", function (e) {
       if (e.target.matches && e.target.matches("[data-cursors]")) setCursors(e.target.checked);
     });

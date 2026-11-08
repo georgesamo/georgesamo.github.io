@@ -173,6 +173,7 @@
       ["goto &lt;section&gt;", "scroll the page (experience, skills, ...)"],
       ["play [sidekiq|gems|schema|pitwall]", "minigames (sign-in)"],
       ["login / logout / id", "optional account, unlocks the arcade"],
+      ["me / settings [tab]", "your account at a glance · open a settings tab"],
       ["theme [light|dark]", "switch colors"],
       ["leaderboard [game] [week|daily]", "top scores"],
       ["daily / race", "daily Gem Match · live 1v1 Sidekiq Rush"],
@@ -275,6 +276,22 @@
       var A = window.SamukaAuth;
       if (!A || !A.user()) return "not signed in.";
       A.signOut(); return '<span class="ok">signed out.</span> see you around.';
+    },
+    me: function () {
+      var A = window.SamukaAuth, C = window.SamukaAccountCore, M = window.SamukaMe;
+      if (!A || !A.user() || !C || !M) return 'not signed in · <span class="b">login</span> to get a player card, saved scores and badges';
+      var c = M.ctx();
+      return '<span class="hl">' + esc(c.name) + '</span> <span class="dim">· ' + esc(C.roleLabel(c.role)) + "</span>\n" +
+        "  badges   " + c.ach.n + "/" + c.ach.total + '  <span class="dim">→ achievements</span>\n' +
+        '  card     <span class="b">card</span>  <span class="dim">→ ' + esc(C.cardHref(c.name)) + "</span>\n" +
+        '  ranks    <span class="b">leaderboard</span>  <span class="dim">→ /leaderboards/#me</span>\n' +
+        '  settings <span class="b">settings [profile|appearance|settings|badges]</span>';
+    },
+    settings: function (a) {
+      var A = window.SamukaAuth, C = window.SamukaAccountCore;
+      if (!A || !A.enabled) return '<span class="dim">accounts are not switched on yet.</span>';
+      var tab = C && C.tabOf(a[0]) ? a[0] : "profile";
+      close(); setTimeout(function () { A.open({ tab: tab }); }, 60); return A.user() ? "opening " + esc(tab) + "…" : "opening sessions#new…";
     },
     id: function () {
       var A = window.SamukaAuth, role = A ? A.role() : "guest";

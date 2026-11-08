@@ -125,7 +125,7 @@
     var a = A();
     if (a && a.extend) a.extend(function (state) {
       return state.role === "samuka" || state.role === "nino" ? '<button class="btn acct__tool" type="button" data-open-board>📋 our board</button>' : "";
-    });
+    }, { tab: "team" });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.SamukaBoard = { open: open, close: close };

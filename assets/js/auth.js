@@ -15,8 +15,8 @@
     sget: function (k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
     sset: function (k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
   };
-  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
-  var ROLE_LABEL = { guest: "guest", user: "user", samuka: "samuka · owner", nino: "nino · PM" };
+  var C = window.SamukaAccountCore;   // markup + rules for the account window (account-core.js)
+  var esc = C.esc;
 
   /* local-only test session: http://127.0.0.1:4000/?as=samuka (never on the live site) */
   var mockRole = null;
@@ -32,7 +32,7 @@
   var enabled = !!(mockRole || (cfg.url && cfg.anon_key && window.supabase && window.supabase.createClient));
   var state = { user: null, profile: null, role: "guest", ready: false };
   var providers = { github: !!cfg.github }; // refreshed from Supabase at boot, so enabling a provider needs no deploy
-  var saveTimer = 0, modal = null, notice = "", extras = [];
+  var saveTimer = 0, modal = null, notice = "", extras = [], tab = "profile";
 
   /* ---------- state ---------- */
   function applyRole(role) {
@@ -126,10 +126,8 @@
   }
 
   /* ---------- buttons on the page ---------- */
-  function initial() {
-    var n = (state.profile && state.profile.display_name) || (state.user && state.user.email) || "?";
-    return n.charAt(0).toUpperCase();
-  }
+  function displayName() { return (state.profile && state.profile.display_name) || (state.user && state.user.email) || ""; }
+  function initial() { return C.initial(displayName()); }
   window.addEventListener("samuka:page", function () { paintButtons(); });
   function paintButtons() {
     document.querySelectorAll("[data-account]").forEach(function (b) {
@@ -139,7 +137,8 @@
       b.innerHTML = state.user
         ? '<span class="acct__avatar">' + esc(initial()) + '</span><span class="acct__role">' + esc(state.role) + "</span>"
         : '<span class="acct__in">sign in</span>';
-      b.setAttribute("aria-label", state.user ? "Account (" + state.role + ")" : "Sign in");
+      b.setAttribute("aria-label", state.user ? "Your account menu (" + state.role + ")" : "Sign in");
+      if (state.user) b.setAttribute("aria-haspopup", "menu"); else { b.removeAttribute("aria-haspopup"); b.removeAttribute("aria-expanded"); }
     });
     // arcade: locked for guests when accounts are on
     var locked = enabled && !state.user;
@@ -152,73 +151,92 @@
     });
   }
 
-  /* ---------- account window ---------- */
+  /* ---------- account window (tabs: profile · appearance · settings · badges · team) ---------- */
+  var lastFocus = null;
   function build() {
     modal = document.createElement("div");
     modal.className = "acct";
     modal.hidden = true;
     modal.innerHTML = '<div class="acct__backdrop" data-acct-close></div><div class="acct__win" role="dialog" aria-modal="true" aria-labelledby="acct-title">' +
-      '<div class="acct__bar"><span class="dots"><i data-acct-close></i><i></i><i></i></span><span class="acct__title" id="acct-title">app/controllers/sessions_controller.rb</span><button class="acct__x" type="button" data-acct-close aria-label="Close">esc</button></div>' +
+      '<div class="acct__bar"><span class="dots"><i data-acct-close></i><i></i><i></i></span><span class="acct__title" id="acct-title">Your account</span><button class="acct__x" type="button" data-acct-close aria-label="Close">esc</button></div>' +
       '<div class="acct__body" data-acct-body></div></div>';
     document.body.appendChild(modal);
     modal.addEventListener("click", onModalClick);
     modal.addEventListener("submit", onSubmit);
     modal.addEventListener("change", onChange);
+    modal.addEventListener("keydown", onTabKey);
   }
-  function themeOptions() {
+  function setTitle(text, file) {
+    modal.querySelector(".acct__title").innerHTML = esc(text) + (file ? ' <small class="acct__file">' + esc(file) + "</small>" : "");
+  }
+  function appearance() {
     var S = window.Samuka; if (!S) return "";
-    var names = { phthalo: "Phthalo", knight: "Dark Knight", golden: "Golden", crt: "CRT" };
-    var notes = { phthalo: "green & gold · everyone", knight: "samuka only · black & crimson", golden: "nino only · purple & gold", crt: "secret · phosphor terminal" };
-    var skin = S.skin(), mode = S.mode();
-    var modes = '<div class="acct__modes" role="radiogroup" aria-label="mode">' + ["dark", "light"].map(function (m) {
-      return '<label class="acct__mode' + (m === mode ? " is-on" : "") + '"><input type="radio" name="mode" value="' + m + '"' + (m === mode ? " checked" : "") + '><span>' + (m === "dark" ? "☾ dark" : "☀ light") + "</span></label>";
-    }).join("") + "</div>";
-    return modes + S.availableSkins().map(function (t) {
-      return '<label class="acct__theme acct__theme--' + t + (t === skin ? " is-on" : "") + '"><input type="radio" name="skin" value="' + t + '"' + (t === skin ? " checked" : "") + '>' +
-        '<span class="acct__swatch" aria-hidden="true"><i></i><i></i></span><span><b>' + names[t] + "</b><small>" + notes[t] + "</small></span></label>";
-    }).join("");
+    var skins = S.availableSkins();
+    return C.appearanceHtml({ mode: S.mode(), skin: S.skin(), skins: skins, secretLeft: skins.indexOf("crt") < 0 });
+  }
+  function panels(extra) {
+    var A = window.SamukaAch, p = state.profile || {};
+    var core = {
+      profile: C.profileHtml({
+        name: displayName() || "friend", publicName: window.SamukaAuth.publicName(), email: state.user.email, role: state.role,
+        nickname: p.nickname, ach: A ? C.achCount(A.list, A.has) : { n: 0, total: 0 }, card: undefined
+      }),
+      appearance: appearance(),
+      settings: C.settingsHtml({ glitches: !!p.glitches })
+    };
+    var out = {};
+    C.TABS.forEach(function (t) { out[t.key] = (core[t.key] || "") + (extra[t.key] || ""); });
+    return out;
   }
   function renderModal() {
     var body = modal.querySelector("[data-acct-body]");
     if (!state.user) {
-      body.innerHTML =
-        '<p class="acct__kicker">$ bin/rails devise:sessions:new</p>' +
-        "<h3>Sign in</h3>" +
-        '<p>Totally optional. Signing in unlocks the <b>arcade</b> and remembers your theme.</p>' +
-        (notice ? '<p class="acct__notice">' + notice + "</p>" : "") +
-        '<form class="acct__form" data-acct-email novalidate><label for="acct-email">email</label>' +
-        '<div class="acct__row"><input id="acct-email" type="email" name="email" autocomplete="email" required placeholder="you@company.com">' +
-        '<button class="btn btn--primary" type="submit">send magic link</button></div></form>' +
-        (providers.github ? '<div class="acct__or"><span>or</span></div><button class="btn acct__gh" type="button" data-acct-github><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> Sign in with GitHub</button>' : "") +
-        '<p class="acct__fine">No password needed: we email you a one-time link. Stored: your email, role and theme choice (Supabase, EU). To delete your account, email <a href="mailto:giorgisamo@gmail.com">giorgisamo@gmail.com</a>.</p>';
+      setTitle("Sign in", "app/controllers/sessions_controller.rb");
+      body.innerHTML = C.guestHtml({ notice: notice, github: providers.github });
       setTimeout(function () { var i = body.querySelector("input"); if (i) i.focus(); }, 30);
       return;
     }
-    var special = state.role === "samuka" || state.role === "nino";
-    body.innerHTML =
-      '<p class="acct__kicker">$ current_user.inspect</p>' +
-      '<div class="acct__who"><span class="acct__avatar acct__avatar--lg">' + esc(initial()) + "</span><div><h3>" + esc((state.profile && state.profile.display_name) || "friend") + '</h3><p class="muted">' + esc(state.user.email || "") + ' · <span class="acct__badge acct__badge--' + state.role + '">' + esc(ROLE_LABEL[state.role] || state.role) + "</span></p></div></div>" +
-      '<fieldset class="acct__themes"><legend>theme</legend>' + themeOptions() + "</fieldset>" +
-      '<label class="acct__nick"><span>public nickname <small class="muted">· shown on leaderboards, the wall and live cursors</small></span>' +
-        '<input name="nickname" maxlength="24" autocomplete="nickname" placeholder="anonymous dev" value="' + esc(state.profile.nickname || "") + '"></label>' +
-      '<label class="acct__toggle"><input type="checkbox" name="glitches"' + (state.profile.glitches ? " checked" : "") + '><span>Occasional glitch easter eggs</span></label>' +
-        '<button class="btn acct__preview" type="button" data-acct-glitch>⚡ preview glitch</button>' +
-      extras.map(function (fn) { try { return fn(state) || ""; } catch (e) { return ""; } }).join("") +
-      '<div class="acct__actions"><button class="btn" type="button" data-acct-out>sign out</button>' + (mockRole ? '<span class="muted">local test session</span>' : "") + "</div>";
+    var extra = C.collectExtras(extras, state), visible = C.visibleTabs(extra);
+    tab = C.pickTab(tab, visible);
+    var t = C.tabOf(tab);
+    setTitle("Your account · " + t.label, "app/me/" + t.file);
+    body.innerHTML = C.tabsHtml(visible, tab) +
+      '<div class="acct__panel" role="tabpanel" id="acct-panel" aria-labelledby="acct-tab-' + tab + '" tabindex="0">' + panels(extra)[tab] + "</div>" +
+      C.footerHtml({ mock: !!mockRole });
+    if (tab === "profile" && window.SamukaMe) window.SamukaMe.fillStats(body);
   }
+  function showTab(key, focus) {
+    tab = key;
+    renderModal();
+    if (focus) { var b = modal.querySelector('[data-acct-tab="' + tab + '"]'); if (b) b.focus(); }
+  }
+  function onTabKey(e) {
+    var cur = e.target.closest && e.target.closest("[data-acct-tab]"); if (!cur) return;
+    var list = Array.prototype.slice.call(modal.querySelectorAll("[data-acct-tab]"));
+    var i = C.nextIndex(list.indexOf(cur), list.length, e.key, true);
+    if (i > -1) { e.preventDefault(); showTab(list[i].getAttribute("data-acct-tab"), true); }
+  }
+  // opts: { tab: "profile"|"appearance"|"settings"|"badges"|"team", reason: "arcade" }
   function open(opts) {
+    opts = opts || {};
     if (!enabled) return false;
     if (!modal) build();
-    notice = opts && opts.reason === "arcade" ? "🔒 The arcade is for signed-in visitors. It's free and takes a few seconds." : "";
+    var wasOpen = !modal.hidden;
+    if (!wasOpen) lastFocus = document.activeElement;
+    notice = opts.reason === "arcade" ? "🔒 The arcade is for signed-in visitors. It's free and takes a few seconds." : "";
+    tab = opts.tab || (wasOpen ? tab : "profile");
     renderModal();
     modal.hidden = false;
     document.documentElement.style.overflow = "hidden";
+    if (state.user) { var b = modal.querySelector('[data-acct-tab="' + tab + '"]'); if (b) b.focus({ preventScroll: true }); }
     return true;
   }
   function close() {
     if (!modal || modal.hidden) return;
     modal.hidden = true;
     document.documentElement.style.overflow = "";
+    if (lastFocus && lastFocus.isConnected && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+    lastFocus = null;
   }
   async function onSubmit(e) {
     if (!e.target.matches("[data-acct-email]")) return;
@@ -240,17 +258,20 @@
     if (e.target.name === "mode" && S) S.setMode(e.target.value, { user: true });
     if (e.target.name === "glitches") savePrefs({ glitches: e.target.checked });
     if (e.target.name === "nickname") {
-      var v = e.target.value.trim().replace(/[^A-Za-z0-9 ._\-]/g, "").slice(0, 24);
+      var v = C.cleanNickname(e.target.value);
       e.target.value = v;
       if (v.length === 1) return;
       savePrefs({ nickname: v || null });
     }
   }
-  function isSpecial() { return state.role === "samuka" || state.role === "nino"; }
+  function isSpecial() { return C.isTeam(state.role); }
   function onModalClick(e) {
     if (e.target.closest("[data-acct-close]")) return close();
+    var t = e.target.closest("[data-acct-tab]");
+    if (t) return showTab(t.getAttribute("data-acct-tab"), true);
     if (e.target.closest("[data-acct-github]")) return signInGitHub();
     if (e.target.closest("[data-acct-out]")) { signOut(); return close(); }
+    if (e.target.closest("a[href]:not([href^='mailto:'])")) return close();   // nav.js follows the link
     if (e.target.closest("[data-acct-glitch]")) {
       close();
       setTimeout(function () {
@@ -259,9 +280,12 @@
       }, 250);
     }
   }
+  // the avatar button: signed in → quick menu (me.js), signed out → sign-in window
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-account]");
-    if (b) { e.preventDefault(); open(); }
+    if (!b) return;
+    e.preventDefault();
+    if (state.user && window.SamukaMe) window.SamukaMe.menu.toggle(b); else open();
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && modal && !modal.hidden) { e.stopPropagation(); close(); } }, true);
 
@@ -275,8 +299,11 @@
     open: open, close: close, signOut: signOut, savePrefs: savePrefs,
     client: function () { return client; },
     mock: function () { return mockRole; },
-    // other modules add sections to the account window: fn(state) -> html
-    extend: function (fn) { extras.push(fn); if (modal && !modal.hidden) renderModal(); },
+    // other modules add sections to the account window: fn(state) -> html, shown on opts.tab
+    // ("settings" by default; "badges" and "team" tabs only appear once something fills them)
+    extend: function (fn, opts) { extras.push({ fn: fn, tab: (opts && opts.tab) || "settings" }); if (modal && !modal.hidden) renderModal(); },
+    tab: function () { return tab; },
+    isOpen: function () { return !!(modal && !modal.hidden); },
     refresh: function () { if (modal && !modal.hidden) renderModal(); },
     publicName: function () {
       var p = state.profile; if (!state.user) return "guest";

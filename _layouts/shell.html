@@ -37,6 +37,7 @@ layout: default
       <span class="tree__branch">⎇ main</span>
     </div>
     <nav class="tree__nav">
+      <div class="tree__me" data-me-tree hidden></div>
       <p class="tree__dir">▾ arcade</p>
       <a href="{{ '/' | relative_url }}"{% if on_lobby %} data-nav="lobby"{% endif %}{% if tab == "lobby" %} class="is-here"{% endif %}><i class="fi fi--rb"></i>lobby.rb</a>
       <a href="{{ '/games/' | relative_url }}"{% if tab == "games" %} class="is-here"{% endif %}><i class="fi fi--log"></i>games/</a>
@@ -118,9 +119,10 @@ layout: default
 <div class="msheet" id="msheet" hidden>
   <div class="msheet__backdrop" data-mnav-close></div>
   <div class="msheet__card" role="dialog" aria-label="More">
+    <div class="msheet__me" data-me-sheet hidden></div>
     <a href="{{ '/blog/' | relative_url }}"><i class="fi fi--pr"></i>pull requests <small>blog</small></a>
     <a href="{{ '/#wall' | relative_url }}"><i class="fi fi--log"></i>visitors.log <small>commit wall</small></a>
-    <a href="{{ '/u/' | relative_url }}"><i class="fi fi--rb"></i>player card</a>
+    <a href="{{ '/u/' | relative_url }}"><i class="fi fi--rb"></i>player cards <small>find a player</small></a>
     <a href="{{ '/nino/' | relative_url }}" data-team-only hidden><i class="fi fi--md"></i>ninos-corner.md</a>
     <a href="{{ '/soundtrack/' | relative_url }}" data-team-only hidden target="_blank" rel="noopener"><i class="fi fi--log"></i>soundtrack.wav ↗ <small>new tab</small></a>
     <button type="button" data-open-terminal><span>&gt;_</span> terminal</button>

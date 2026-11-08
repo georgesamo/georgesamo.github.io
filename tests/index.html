@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Samuka · tests</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #f6f7f5; --text: #17201a; --ok: #1d7a46; --bad: #b3261e; --muted: #667; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0b120e; --text: #e4efe8; --ok: #3ad08f; --bad: #ff6b6b; --muted: #8a9; } }
+    body { margin: 0; padding: 16px; background: var(--bg); color: var(--text); font: 13px/1.5 ui-monospace, Menlo, Consolas, monospace; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    h2 { font-size: 13px; margin: 18px 0 4px; color: var(--muted); }
+    #summary { font-weight: 700; } .pass { color: var(--ok); } .fail { color: var(--bad); } .skip { color: var(--muted); }
+    #sandbox { position: absolute; left: -9999px; top: 0; width: 600px; }
+    iframe.fixture { position: absolute; left: -9999px; width: 800px; height: 600px; }
+  </style>
+</head>
+<body>
+  <h1>Samuka · account &amp; "me" navigation tests</h1>
+  <p>Run with <code>python -m http.server 4100 --bind 127.0.0.1</code> from the repo root and open
+    <code>http://127.0.0.1:4100/tests/</code>. From <code>file://</code> the integration tests are skipped.</p>
+  <p id="summary">running…</p>
+  <div id="report"></div>
+  <div id="sandbox" aria-hidden="true"></div>
+
+  <script src="runner.js"></script>
+  <script src="../assets/js/account-core.js"></script>
+  <script src="../assets/js/me.js"></script>
+  <script src="account-core.test.js"></script>
+  <script src="me.test.js"></script>
+  <script src="auth.test.js"></script>
+  <script>T.run();</script>
+</body>
+</html>

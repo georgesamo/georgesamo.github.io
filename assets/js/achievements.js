@@ -148,8 +148,8 @@
     A.extend(function (state) {
       if (!state.user) return "";
       var r = render(true);
-      return '<details class="acct__ach"><summary>achievements <b>' + r.count + "/" + r.total + "</b></summary>" + r.html + "</details>";
-    });
+      return '<p class="acct__lead"><b>' + r.count + "/" + r.total + "</b> unlocked · secret ones show as ??? until you find them</p>" + r.html;
+    }, { tab: "badges" });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addToAccount); else addToAccount();
 
