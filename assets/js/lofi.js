@@ -1,4 +1,4 @@
-/* Generated chill cyberpunk lo-fi, Web Audio only (no audio files). Style follows the site skin. */
+/* Generated techno playlist, Web Audio only (no audio files). Each skin has ~10 fixed songs; style follows the skin. */
 (function () {
   "use strict";
 
@@ -9,9 +9,16 @@
   var STYLES;
 
   function mtof(m) { return 440 * Math.pow(2, (m - 69) / 12); }
-  function rnd(a, b) { return a + Math.random() * (b - a); }
-  function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-  function chance(p) { return Math.random() < p; }
+  var RNG = Math.random;   // swapped for a song's own seeded generator while it composes/plays
+  function rnd(a, b) { return a + RNG() * (b - a); }
+  function pick(arr) { return arr[Math.floor(RNG() * arr.length)]; }
+  function chance(p) { return RNG() < p; }
+  function seeded(str) {
+    var h = 1779033703 ^ str.length;
+    for (var i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+    var a = h >>> 0;
+    return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
   function quiet(p) { if (p && p.catch) p.catch(function () {}); }
   function skinName(s) { return STYLES[s] ? s : "phthalo"; }
   function skin() { return skinName(document.documentElement.dataset.skin); }
@@ -205,6 +212,15 @@
     // industrial: harder and faster, distorted rolling bass, acid line, dark stabs
     industrial: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0, bassVol: 0.8, bpmAbs: [130, 136], lead: [0.2, 0.3], drums: "techno", piano: 0, pad: "darkstab", dist: true, acid: true, swing: 0, arpMul: 0.9 },
     // minimal: stripped back and hypnotic
+    // ---- song styles (the current playlist) ----
+    // hacker techno: tense 16th sequences, data blips, rolling bass, heavy kick + clap
+    hack: { grooves: [11, 12], supersaw: 0, stabs: 0, leadEarly: 0.4, bassVol: 0.75, bpmAbs: [122, 128], lead: [0.25, 0.4], drums: "hack", piano: 0, pad: "darkstab", arp16: true, blips: true, swing: 0, arpMul: 0.85 },
+    // intense: hard/industrial, distorted rumble bass, acid 16ths, ride, tom fills
+    intense: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0, bassVol: 0.85, bpmAbs: [132, 140], lead: [0.2, 0.3], drums: "intense", piano: 0, pad: "darkstab", dist: true, acid: true, arp16: true, swing: 0, arpMul: 0.8 },
+    // melodic techno: emotional pluck arps, big pads, a lead melody
+    melodictech: { grooves: [11, 4], supersaw: 0.7, stabs: 0, leadEarly: 1, bassVol: 0.7, bpmAbs: [120, 124], lead: [0.5, 0.65], drums: "melodic", piano: 0, pad: "saw", arp16: true, swing: 0, arpMul: 0.9 },
+    // retro hacker: pulse-wave sequences and blips over hard techno drums
+    retro: { grooves: [12, 11], supersaw: 0, stabs: 0, leadEarly: 0.5, bassVol: 0.7, bpmAbs: [124, 130], lead: [0.3, 0.45], drums: "hack", piano: 0, pad: "darkstab", arp16: true, blips: true, chipArp: true, swing: 0, arpMul: 0.8 },
     // cold, tense thriller score: steady pulse bass, cold arp, slow pads, heartbeat kick, lonely piano
     robot: { grooves: [12], supersaw: 0, stabs: 0, leadEarly: 0.35, bassVol: 0.55, bpmAbs: [96, 108], lead: [0.25, 0.4], drums: "robot", piano: 0.6, pad: "tri", swing: 0, arpMul: 1.1 },
     minimal: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0.2, bassVol: 0.7, bpmAbs: [123, 127], lead: [0.25, 0.35], drums: "techno", piano: 0, pad: "darkstab", acid: true, swing: 0.03, arpMul: 0.6 }
@@ -222,6 +238,42 @@
       words: [["8-bit", "Phosphor", "Cathode", "Pixel", "Scanline", "Terminal", "Bitwise", "Raster", "Amber", "Floppy", "Modem", "Sprite", "Vector", "Sector", "Overflow", "Null"], ["Boot", "Loop", "Dreams", "Prompt", "Cursor", "Kernel", "Daemon", "Cache", "Uplink", "Checksum", "Level 2", "High Score", "Interrupt", "Handshake", "Buffer", "Sector", "Firewall", "Breach", "Netrun"]] }
   };
   STYLES = MOODS;
+  var SONGS = {
+    phthalo: [
+      ["root@phthalo", "hack", 124, 45, "minor"], ["Zero Day", "hack", 126, 47, "minor"], ["Handshake", "hack", 122, 50, "dorian"],
+      ["Packet Loss", "hack", 125, 48, "minor"], ["Rootkit", "hack", 127, 45, "minor"], ["Cold Boot", "hack", 123, 52, "minor"],
+      ["Brute Force", "hack", 128, 46, "minor"], ["Daemon Mode", "hack", 124, 49, "dorian"], ["Buffer Overflow", "hack", 126, 50, "minor"],
+      ["Exit Code 0", "hack", 122, 47, "minor"]
+    ],
+    knight: [
+      ["Rooftop Pursuit", "intense", 136, 45, "minor"], ["Iron Signal", "intense", 134, 46, "minor"], ["Night Protocol", "intense", 138, 48, "minor"],
+      ["Crimson Breach", "intense", 140, 45, "minor"], ["Steel Vigil", "intense", 133, 50, "minor"], ["Searchlight", "intense", 135, 47, "minor"],
+      ["Undercity", "intense", 137, 44, "minor"], ["No Mercy Mode", "intense", 140, 46, "minor"], ["Last Patrol", "intense", 132, 49, "dorian"],
+      ["Gargoyle Drop", "intense", 136, 48, "minor"]
+    ],
+    golden: [
+      ["Lavender Code", "melodictech", 122, 50, "minor"], ["Golden Hour Deploy", "melodictech", 121, 52, "major"], ["Starlight Commit", "melodictech", 123, 48, "minor"],
+      ["Purple Pipeline", "melodictech", 120, 53, "dorian"], ["Moonlit Merge", "melodictech", 122, 47, "minor"], ["Confetti Compile", "melodictech", 124, 55, "major"],
+      ["Lilac Loop", "melodictech", 121, 50, "dorian"], ["Bloom Stack", "melodictech", 123, 52, "minor"], ["Velvet Release", "melodictech", 120, 48, "major"],
+      ["Encore Build", "melodictech", 124, 50, "minor"]
+    ],
+    crt: [
+      ["Phosphor", "retro", 126, 45, "minor"], ["Scanline Runner", "retro", 128, 48, "minor"], ["Modem Song", "retro", 124, 50, "dorian"],
+      ["Cathode Dreams", "retro", 125, 47, "minor"], ["Sector 7", "retro", 127, 45, "minor"], ["Null Pointer", "retro", 129, 46, "minor"],
+      ["High Score", "retro", 128, 52, "minor"], ["Floppy Boot", "retro", 124, 49, "dorian"], ["Raster Bars", "retro", 126, 50, "minor"],
+      ["Overflow", "retro", 130, 48, "minor"]
+    ]
+  };
+  var queues = {};
+  function nextSong(sk) {
+    var list = SONGS[sk] || SONGS.phthalo, q = queues[sk];
+    if (!q || !q.length) {
+      q = queues[sk] = list.slice();
+      for (var i = q.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), x = q[i]; q[i] = q[j]; q[j] = x; }
+      if (q[0][0] === lastName && q.length > 1) q.push(q.shift());
+    }
+    return q.shift();
+  }
   // song shapes: classic (as before), slow build, short, and a key-change lift for the last choruses
   function classic(bar) {
     if (bar < 4) return { prog: "A", pads: 1, bass: bar >= 2, kick: 0, arp: 0, lead: 0 };
@@ -260,35 +312,36 @@
     return CHORD[q].map(function (i) { return base + i; });
   }
   function makeTrack(skinId) {
-    var m = MOODS[skinName(skinId)];
-    var flName; do { flName = pick(m.flavors || ["dream"]); } while (flName === lastFlavor && m.flavors.length > 2 && chance(0.7));
-    lastFlavor = flName;
+    var sk = skinName(skinId), m = MOODS[sk], song = nextSong(sk);
+    var saved = RNG; RNG = seeded(song[0]);   // same song, same notes, every time
+    var flName = song[1]; lastFlavor = flName;
     var fl = FLAVORS[flName];
-    var mode = pick(m.modes); if (!PROGS[mode]) mode = "minor";
-    if (/^(robot|techno|industrial|minimal)$/.test(flName) && (mode === "major" || mode === "lydian")) mode = "minor";   // dark styles stay dark, even on Golden
-    var key = pick(m.keys);
+    var mode = PROGS[song[4]] ? song[4] : "minor";
+    var key = song[3];
     var pa = pick(PROGS[mode]), pb = pick(PROGS[mode]);
     for (var guard = 0; pb === pa && guard < 5; guard++) pb = pick(PROGS[mode]);
     var scale = [], sc = SCALES[mode];
     [12, 24].forEach(function (oct) { sc.forEach(function (i) { scale.push(key + oct + i); }); });
-    var name;
-    do { name = pick(m.words[0]) + " " + pick(m.words[1]); } while (name === lastName);
+    var name = song[0];
     lastName = name; trackNo++;
     var form = pick(FORMS);
-    return {
+    var cfgOut = {
       flavor: fl, flavorName: flName, form: form, liftBy: mode === "major" || mode === "lydian" ? 2 : pick([2, 3]),
       drums: fl.drums, piano: chance(fl.piano), calm: !!fl.calm, chip: !!fl.chip, pad: fl.pad || (fl.calm ? "tri" : "saw"), melody: fl.melody || "lead", arp16: !!fl.arp16, arpMul: fl.arpMul || 1,
       supersaw: chance(fl.supersaw), stabs: chance(fl.stabs), leadEarly: chance(fl.leadEarly), bassVol: fl.bassVol,
       name: name, no: trackNo, mode: mode, skin: skinName(skinId),
-      bpm: fl.bpmAbs ? irand(fl.bpmAbs[0], fl.bpmAbs[1]) : Math.max(56, irand(m.bpm[0], m.bpm[1]) + fl.bpm), dist: !!fl.dist, acid: !!fl.acid,
+      bpm: song[2], dist: !!fl.dist, acid: !!fl.acid, blips: !!fl.blips,
       progA: pa.map(function (c) { return voicing(key, c[0], c[1]); }),
       progB: pb.map(function (c) { return voicing(key, c[0], c[1]); }),
       scale: scale,
       padCut: rnd(m.pad[0], m.pad[1]), padVol: rnd(0.06, 0.076),
-      arpCut: rnd(m.arp[0], m.arp[1]), arpVol: rnd(0.026, 0.034), arpWave: fl.acid ? "sawtooth" : fl.chip ? "pulse" : pick(m.arpWaves), arpPat: pick(ARP_PATS), arpUp: !!m.arpUp, arpDensity: m.arpDensity || rnd(0.6, 0.78),
+      arpCut: rnd(m.arp[0], m.arp[1]), arpVol: rnd(0.026, 0.034), arpWave: fl.acid ? "sawtooth" : fl.chip || fl.chipArp ? "pulse" : pick(m.arpWaves), arpPat: pick(ARP_PATS), arpUp: !!m.arpUp, arpDensity: m.arpDensity || rnd(0.6, 0.78),
       groove: GROOVES[pick(fl.grooves)], leadWave: fl.chip ? pick(["square", "pulse"]) : pick(m.leadWaves), leadVol: rnd(0.062, 0.078), leadDensity: rnd(fl.lead[0], fl.lead[1]), leadCut: rnd(1400, 2200),
       swing: fl.swing != null ? fl.swing : m.swing != null ? m.swing : rnd(0.06, 0.16), drone: m.drone || 0, fb: m.fb || rnd(0.36, 0.46), tone: m.tone || rnd(2200, 3000), bassCut: m.bassCut || rnd(380, 480)
     };
+    cfgOut.rng = seeded(song[0] + "#perform");
+    RNG = saved;
+    return cfgOut;
   }
 
   function init(o, cfg) {
@@ -423,6 +476,23 @@
     function hat(t, v, long) {
       [6150, 8270].forEach(function (f) { voice(o, "square", f, t, 0.001, long ? 0.09 : 0.035, 0.006 * v, hatHp, 0); });
     }
+    // heavy techno kit
+    var rumbleLp = filt("lowpass", 140, 0.8); rumbleLp.connect(o.bus);
+    function kickHard(t, v) { kick(o, t, 0.26 * v, 160, 42, 0.36); voice(o, "square", 2400, t, 0.001, 0.012, 0.025 * v, drumBus, 0); }
+    function rumble(t) { voice(o, "sine", mtof(cfg.progA[0][0] - 24), t, 0.01, 0.22, 0.09, rumbleLp, 0.25); }
+    function clap(t, v) {
+      noise(o, t, "bandpass", 1500, 0.8, 0.08 * v, 0.12, 0.3, 0.002);
+      noise(o, t + 0.011, "bandpass", 1750, 0.8, 0.06 * v, 0.1, 0.3, 0.002);
+      noise(o, t + 0.022, "bandpass", 1300, 0.8, 0.05 * v, 0.16, 0.35, 0.002);
+      voice(o, "triangle", 190, t, 0.002, 0.07, 0.05 * v, drumBus, 0);
+    }
+    function ride(t, v) { [5200, 7300, 9100].forEach(function (f) { voice(o, "square", f, t, 0.001, 0.22, 0.0035 * v, hatHp, 0); }); noise(o, t, "highpass", 8000, 0.7, 0.012 * v, 0.18); }
+    function openHat(t, v) { noise(o, t, "highpass", 7500, 0.7, 0.022 * v, 0.09); }
+    function tom(t, n, v) {
+      var osc = ctx.createOscillator(), g = ctx.createGain(), f = mtof(n);
+      osc.type = "sine"; osc.frequency.setValueAtTime(f * 1.6, t); osc.frequency.exponentialRampToValueAtTime(f, t + 0.12);
+      env(g, t, 0.002, 0.28, 0.12 * v); osc.connect(g); g.connect(drumBus); sendTo(o, g, 0.2); osc.start(t); osc.stop(t + 0.35);
+    }
     function rim(t, v) { voice(o, "triangle", 1650, t, 0.001, 0.05, 0.03 * v, drumBus, 0.2); voice(o, "sine", 820, t, 0.001, 0.04, 0.03 * v, drumBus, 0); }
     function drums(t, st, bar, sw) {
       var d = cfg.drums;
@@ -458,6 +528,19 @@
         else if (st % 2 === 1 && chance(0.6)) hat(t, 0.35);
         if (st === 12 && bar % 2 === 1) { snare(t, 0.8); snare(t + 0.014, 0.4); }
         if ((st === 7 || st === 15) && chance(0.35)) rim(t, 0.5);
+      } else if (d === "hack") {
+        if (st % 4 === 2) openHat(t, 1); else hat(t, st % 2 ? 0.45 : 0.7);
+        if (st === 4 || st === 12) clap(t, 1);
+        if (bar % 4 === 3 && (st === 13 || st === 14 || st === 15)) tom(t, cfg.progA[0][0] + 12 - (st - 13) * 3, 0.9);
+      } else if (d === "intense") {
+        hat(t, st % 2 ? 0.5 : 0.8);
+        if (st % 4 === 2) ride(t, 1);
+        if (st === 4 || st === 12) clap(t, 1.25);
+        if (st === 2 || st === 3 || st === 10 || st === 11) rumble(t);
+        if (bar % 8 === 7 && st >= 12) tom(t, cfg.progA[0][0] + 14 - (st - 12) * 3, 1.1);
+      } else if (d === "melodic") {
+        if (st % 4 === 2) openHat(t, 0.85); else if (st % 2 === 1) hat(t, 0.35);
+        if (st === 4 || st === 12) clap(t, 0.8);
       } else if (d === "robot") {
         if (st % 4 === 2 && chance(0.7)) rim(t, 0.35);
         if (st === 12 && bar % 4 === 3) snare(t, 0.45);
@@ -475,6 +558,7 @@
         case "vapor": return st === 0 || (st === 9 && chance(0.5));
         case "chip": return st === 0 || st === 8;
         case "electro": return st % 4 === 0;
+        case "hack": case "intense": case "melodic": return st % 4 === 0;
         case "robot": return st === 0 || (st === 3 && chance(0.6));   // heartbeat
         case "techno": return st % 4 === 0;
         default: return st === 0 || (st === 11 && chance(0.4));
@@ -523,8 +607,9 @@
           voice(o, "sawtooth", mtof(root + g[0]), t + sw, 0.01, beat * g[1] * 0.8, 0.05 * bv, bassIn, 0, 12);
         }
       }
-      var fourFloor = cfg.drums === "electro" || cfg.drums === "techno";
-      if (sec.kick && kickHere(st, bar)) {
+      var fourFloor = /^(electro|techno|hack|intense|melodic)$/.test(cfg.drums);
+      if (sec.kick && kickHere(st, bar) && (cfg.drums === "hack" || cfg.drums === "intense")) { kickHard(t, cfg.drums === "intense" ? 1.1 : 1); pump(t, 0.22); }
+      else if (sec.kick && kickHere(st, bar)) {
         kick(o, t, cfg.calm ? 0.09 : fourFloor ? 0.21 : cfg.drums === "outrun" ? 0.17 : st ? 0.13 : 0.2, fourFloor ? 120 : 95, fourFloor ? 42 : 45, fourFloor ? 0.28 : 0.32);
         if (!cfg.calm) pump(t, fourFloor ? 0.22 : 0.45);
       }
@@ -546,12 +631,14 @@
         var pp = (bar % 2) * 16 + st;
         pPhrase.forEach(function (p) { if (p.st === pp && (cfg.calm || sec.lead || bar >= 8)) piano(p.n + shift, t + sw * 0.5, p.v * (cfg.calm ? 1 : 0.55), cfg.calm ? 3.2 : 2); });
       }
-      var arpChance = st % 2 ? 0 : cfg.arpDensity * sec.arp * cfg.arpMul * 0.85;   // eighths only: calm, not chattering
+      var arpChance = cfg.arp16 ? cfg.arpDensity * sec.arp * cfg.arpMul : (st % 2 ? 0 : cfg.arpDensity * sec.arp * cfg.arpMul * 0.85);
       if (sec.arp && !cfg.calm && chance(arpChance)) {
-        var n = cfg.acid ? ch[0] + [0, 12, 0, 7, 0, 12, 10, 3][(st / 2 + bar) % 8]
+        var n = cfg.acid ? ch[0] + [0, 12, 0, 7, 0, 12, 10, 3][((cfg.arp16 ? st : st >> 1) + bar) % 8]
           : ch[cfg.arpPat[(st + bar * 3) % cfg.arpPat.length] % ch.length] + 12 + ((cfg.arpUp || sec.up) && st >= 8 && chance(0.22) ? 12 : 0);
-        voice(o, cfg.arpWave, mtof(n), t + sw, 0.004, o.dur * 2.4, cfg.arpVol * 0.75, arpLp, 0.5, rnd(-4, 4));
+        voice(o, cfg.arpWave, mtof(n), t + sw, 0.004, o.dur * (cfg.arp16 ? 0.85 : 2.4), cfg.arpVol * 0.75, arpLp, 0.5, rnd(-4, 4));
       }
+      // data blips: short terminal-like beeps from the scale (hacker tracks)
+      if (cfg.blips && sec.kick && chance(0.09)) voice(o, cfg.arpWave === "pulse" ? "square" : "sine", mtof(pick(cfg.scale) + 24), t, 0.001, 0.05, 0.018, bellLp, 0.5);
       // synthwave chord stabs on the off-beats
       if (cfg.stabs && sec.kick && (st === 4 || st === 12 || (st === 14 && chance(0.3)))) {
         for (j = 1; j < ch.length; j++) voice(o, "sawtooth", mtof(ch[j] + 12), t + sw, 0.004, beat * 0.32, 0.022, stabLp, 0.35, (j % 2 ? -8 : 8));
@@ -621,7 +708,9 @@
       o = insts[i];
       if (o.next < now - 0.25) o.next = now + 0.02;
       while (o.next < horizon && o.next < o.until) {
+        RNG = o.track.rng || Math.random;
         o.play(o.next, o.s);
+        RNG = Math.random;
         o.s++;
         o.next += o.dur;
       }
