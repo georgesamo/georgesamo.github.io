@@ -14,6 +14,15 @@
 .ms .is-orders, .ms-dot.is-orders, .ms__tables .is-orders i { --c: var(--ms-orders); }
 .ms .is-invoices, .ms-dot.is-invoices, .ms__tables .is-invoices i { --c: var(--ms-invoices); }
 .ms .is-rollback { --c: var(--ms-rollback); }
+.ms .is-power, .ms-dot.is-power { --c: var(--gold); }
+.ms__board i.is-power, .ms__next i.is-power, .ms-dot.is-power { background: radial-gradient(circle at 50% 45%, #fff6 0 18%, transparent 22%), var(--gold) !important; box-shadow: 0 0 12px -2px var(--gold) !important; }
+.ms .is-power.is-redo, .ms-dot.is-power.is-redo { --gold: #3ad08f; }
+.ms .is-power.is-squash, .ms-dot.is-power.is-squash { --gold: #ff5f6b; }
+.ms__board i.is-power.is-live { animation: msPower 0.6s ease-in-out infinite alternate; }
+@keyframes msPower { to { filter: brightness(1.35); } }
+.ms__board.is-blast { animation: pwShake 0.35s; }
+.ms__mig--hold { color: var(--muted); min-height: 1.4em; }
+.ms__pad [data-k="hold"] { grid-column: 1 / -1; height: 32px; font-size: 13px; }
 .ms-dot { background: var(--c) !important; }
 .ms__board i.is-pending, .ms__next i.is-pending { background: repeating-linear-gradient(135deg, var(--c) 0 4px, color-mix(in srgb, var(--c) 30%, transparent) 4px 8px) !important; opacity: 0.85; }
 .ms__board i.is-create { outline: 2px solid var(--hl); outline-offset: -2px; }
@@ -73,7 +82,47 @@
 .pw__fc { letter-spacing: 2px; }
 .pw__tower { grid-area: tower; list-style: none; margin: 0; padding: 6px; border: 1px solid var(--line); border-radius: 14px; background: var(--code-bg); font: 12.5px var(--mono); align-self: start; }
 .pw__tower li, .pw__results li { display: grid; grid-template-columns: 22px 4px 40px 1fr 20px 22px; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; }
-.pw__tower li:nth-child(odd) { background: var(--bg-soft); }
+.pw__tower { position: relative; overflow: hidden; contain: layout paint; }
+.pw__tower li { position: absolute; left: 6px; right: 6px; top: 6px; transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); will-change: transform; }
+.pw__tower li.is-odd { background: var(--bg-soft); }
+.pw__tower:empty { min-height: 40px; }
+@media (prefers-reduced-motion: reduce) { .pw__tower li { transition: none; } }
+.pw__pitlane { fill: none; stroke: var(--muted); stroke-width: 4; stroke-linecap: round; opacity: 0.35; }
+.pw__car { will-change: transform; }
+.pw__sccar rect { fill: #f2c14e; stroke: #1b1404; stroke-width: 0.8; }
+.pw__sccar text { font: 700 7px var(--mono); fill: #f2c14e; }
+.pw__rain { position: absolute; inset: 0; border-radius: 14px; pointer-events: none; opacity: 0; transition: opacity 1.2s; overflow: hidden; }
+.pw__rain::before { content: ""; position: absolute; inset: -40px 0 0 0; background: repeating-linear-gradient(105deg, transparent 0 9px, rgba(120, 170, 255, 0.16) 9px 10px); animation: pwRain 0.5s linear infinite; }
+.pw__main[data-weather="damp"] .pw__rain { opacity: 0.55; background: rgba(74, 163, 240, 0.05); }
+.pw__main[data-weather="wet"] .pw__rain { opacity: 1; background: rgba(74, 163, 240, 0.1); }
+@keyframes pwRain { to { transform: translate3d(-11px, 40px, 0); } }
+@media (prefers-reduced-motion: reduce) { .pw__rain::before { animation: none; } }
+.pw__ers { height: 32px; padding: 0 12px; border: 1px solid #3ad08f; border-radius: 8px; background: rgba(58, 208, 143, 0.12); color: var(--text); font: 700 12px var(--mono); cursor: pointer; }
+.pw__ers:disabled { opacity: 0.4; cursor: default; border-color: var(--line-strong); background: transparent; }
+.pw__modes-menu { display: grid; gap: 8px; margin: 12px 0; }
+.pw__pick { display: grid; gap: 2px; text-align: left; padding: 12px 14px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg-soft); color: var(--text); font: 13px var(--mono); cursor: pointer; }
+.pw__pick:hover, .pw__pick:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
+.pw__pick b { font-size: 14.5px; }
+.pw__pick span { color: var(--muted); font-size: 12px; }
+.pw__seg { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin: 10px 0; }
+.pw__seg button { height: 30px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--text-2); font: 12px var(--mono); cursor: pointer; }
+.pw__seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
+.pw__circuits { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; max-height: 46vh; overflow-y: auto; margin: 10px 0; padding: 2px; }
+.pw__circuit { display: grid; gap: 2px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--bg-soft); color: var(--text); font: 11.5px var(--mono); text-align: left; cursor: pointer; }
+.pw__circuit b { font-size: 12px; line-height: 1.2; }
+.pw__circuit span { color: var(--muted); font-size: 10.5px; line-height: 1.25; }
+.pw__circuit[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.pw__thumb { width: 100%; height: 56px; }
+.pw__thumb path { fill: none; stroke: var(--text-2); stroke-width: 12; stroke-linejoin: round; }
+.pw__circuit[aria-pressed="true"] .pw__thumb path { stroke: var(--accent); }
+.pw__menu-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+.pw__calendar { list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 3px 10px; margin: 10px 0; padding: 0; text-align: left; font: 12px var(--mono); }
+.pw__calendar li { display: flex; gap: 8px; padding: 3px 6px; border-radius: 6px; color: var(--text-2); }
+.pw__calendar li span { color: var(--muted); min-width: 2.4em; }
+.pw__calendar li em { margin-left: auto; font-style: normal; color: var(--muted); }
+.pw__calendar li.is-done em { color: var(--text); font-weight: 700; }
+.pw__calendar li.is-next { background: var(--accent-soft); color: var(--text); }
+.pw__standings li b:last-of-type { color: var(--text); }
 .pw__tower li.is-me, .pw__results li.is-me { box-shadow: inset 0 0 0 1px #f4c95d; background: rgba(244, 201, 93, 0.1); }
 .pw__tower i, .pw__results i { width: 4px; height: 14px; border-radius: 2px; }
 .pw__code { font-weight: 700; color: var(--text); }

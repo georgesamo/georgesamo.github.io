@@ -1,0 +1,96 @@
+---
+layout: shell
+title: Soundtrack
+description: "The team's soundtrack room."
+permalink: /soundtrack/
+tab: soundtrack
+file: team/soundtrack.wav
+icon: log
+sitemap: false
+---
+      <section class="section" id="soundtrack" data-file="team/soundtrack.wav" data-icon="log">
+        <header class="section__head">
+          <p class="section__path">team/<b>soundtrack.wav</b></p>
+          <h2 class="section__title">Soundtrack</h2>
+          <p class="section__cmd"><span class="prompt">$</span> bin/music --list <span class="muted"># all 15 tracks live here; on the site each theme plays only its own five</span></p>
+        </header>
+        <div data-st-gate><p class="muted">checking your badge…</p></div>
+        <div data-st-room hidden>
+          <div class="st__now" data-st-now aria-live="polite"></div>
+          <div class="st" data-soundtrack></div>
+        </div>
+      </section>
+      <style>
+        .st { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .st__theme { border: 1px solid var(--line); border-radius: 14px; background: var(--bg-elev); padding: 14px; }
+        .st__theme h3 { margin: 0 0 10px; font: 600 15px var(--mono); }
+        .st__theme h3 small { display: block; margin-top: 2px; font: 400 11px var(--mono); color: var(--muted); }
+        .st__theme.is-mine { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft); }
+        .st__theme--phthalo h3 { color: #3ad08f; } .st__theme--knight h3 { color: #e5383b; } .st__theme--golden h3 { color: #c49bff; }
+        .st__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+        .st__row { display: grid; grid-template-columns: 36px 1fr; gap: 10px; align-items: center; padding: 8px; border-radius: 10px; background: var(--bg-soft); }
+        .st__row.is-on { box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+        .st__play { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-size: 14px; cursor: pointer; }
+        .st__row.is-on .st__play { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+        .st__title { font: 600 13.5px var(--mono); color: var(--text); }
+        .st__meta { display: block; font: 11.5px var(--mono); color: var(--muted); }
+        .st__now { margin: 0 0 16px; padding: 10px 14px; border-radius: 12px; border: 1px dashed var(--line-strong); font: 13px var(--mono); }
+        .st__bar { display: block; height: 4px; margin-top: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+        .st__bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform 0.3s linear; }
+      </style>
+      <script>
+        (function boot() {
+          var root = document.querySelector("[data-soundtrack]"), now = document.querySelector("[data-st-now]");
+          var gate = document.querySelector("[data-st-gate]"), room = document.querySelector("[data-st-room]");
+          var L = window.SamukaLofi, A = window.SamukaAuth;
+          if (!root) return;
+          if ((!L || !A) && document.readyState !== "complete") { window.addEventListener("load", boot, { once: true }); return; }   // site scripts load after the page body
+          // team only: Samuka and Nino (the same check as Nino's corner)
+          function team() { return !!(A && A.user && A.user() && (A.role() === "samuka" || A.role() === "nino")); }
+          var built = false;
+          function check() {
+            if (!document.body.contains(root)) return;
+            var ok = team();
+            if (!ok && A && A.ready && !A.ready()) return;   // still checking the badge
+            room.hidden = !ok; gate.hidden = ok;
+            if (!ok) {
+              if (L && L.track() && L.track().loop) L.stop();
+              gate.innerHTML = '<p class="arcade__err">403 Forbidden</p><p class="muted">The soundtrack room is just for Samuka and Nino.' + (A && A.user && !A.user() ? ' <button class="btn" type="button" data-st-signin>sign in</button>' : "") + "</p>";
+              return;
+            }
+            if (!built) build();
+          }
+          gate.addEventListener("click", function (e) { if (e.target.closest("[data-st-signin]") && A) A.open({ reason: "team" }); });
+          window.addEventListener("samuka:auth", check);
+          function build() {
+          built = true;
+          if (!L || !L.catalog) { root.innerHTML = '<p class="muted">Audio isn\'t available in this browser.</p>'; return; }
+          function fmt(s) { return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
+          var mine = { samuka: "knight", nino: "golden" }[A.role()];
+          root.innerHTML = L.catalog().map(function (th) {
+            var plays = th.theme === "phthalo" ? "plays for everyone" : th.theme === "knight" ? "plays on Samuka's theme" : "plays on Nino's theme";
+            return '<div class="st__theme st__theme--' + th.theme + (th.theme === mine ? " is-mine" : "") + '"><h3>' + th.name + ' <small>' + plays + '</small></h3><ol class="st__list">' + th.songs.map(function (s) {
+              return '<li class="st__row" data-st="' + th.theme + ':' + (s.no - 1) + '"><button class="st__play" type="button" aria-label="Play ' + s.title + '">▶</button>' +
+                '<span><span class="st__title">' + s.no + '. ' + s.title + '</span><span class="st__meta">' + s.mood + ' · ' + s.bpm + ' bpm · ' + fmt(s.secs) + '</span></span></li>';
+            }).join("") + "</ol></div>";
+          }).join("");
+          function paint() {
+            var t = L.track();
+            root.querySelectorAll("[data-st]").forEach(function (row) {
+              var onIt = !!(t && row.getAttribute("data-st") === t.theme + ":" + (t.no - 1));
+              row.classList.toggle("is-on", onIt); row.querySelector(".st__play").textContent = onIt ? "■" : "▶";
+            });
+            now.innerHTML = t ? "♪ <b>" + t.name + "</b> · " + t.themeName + " · " + t.style + " · bar " + (t.bar + 1) + "/" + t.bars + '<span class="st__bar"><i style="transform:scaleX(' + ((t.bar + 1) / t.bars).toFixed(3) + ')"></i></span>' : '<span class="muted">Press ▶ on any track. Each one loops here so you can listen properly.</span>';
+          }
+          root.addEventListener("click", function (e) {
+            var row = e.target.closest("[data-st]"); if (!row) return;
+            var p = row.getAttribute("data-st").split(":"), t = L.track();
+            if (t && t.theme === p[0] && t.no - 1 === +p[1]) L.stop(); else L.preview(p[0], +p[1]);
+            setTimeout(paint, 50);
+          });
+          paint();
+          var iv = setInterval(function () { if (!document.body.contains(root)) { clearInterval(iv); return; } paint(); }, 1000);
+          }
+          check();
+        })();
+      </script>

@@ -27,6 +27,18 @@
     modal.addEventListener("click", function (e) { if (e.target.closest("[data-arcade-close]")) close(); });
   }
 
+  /* personal bests: kept per signed-in account (a shared device doesn't mix people up) and
+   * merged with the scores saved on the server by scores.js (SamukaArcade.mergeBests) */
+  function bestKey(id) {
+    var A = window.SamukaAuth, u = A && A.user && A.user();
+    return "samuka-best-" + (u && u.id ? u.id + "-" : "") + id;
+  }
+  function getBest(id) {
+    var v = parseInt(store.get(bestKey(id)) || "0", 10) || 0;
+    return v || parseInt(store.get("samuka-best-" + id) || "0", 10) || 0;   // scores from before accounts
+  }
+  function setBest(id, v) { store.set(bestKey(id), String(v)); }
+
   // seeded random numbers (daily puzzle, live races): same seed, same game
   function seeded(seed) {
     var str = String(seed), h = 1779033703 ^ str.length;
@@ -54,17 +66,18 @@
       rng: opts.seed != null ? seeded(opts.seed) : Math.random,
       emit: function (name, data) { emit(id, name, data, opts); },
       reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      hud: function (html) { modal.querySelector("[data-hud]").innerHTML = html; },
-      foot: function (html) { modal.querySelector("[data-foot]").innerHTML = html; },
+      // only touch the DOM when the text actually changed (games call these every frame)
+      hud: function (html) { var el = modal.querySelector("[data-hud]"); if (el.__h !== html) { el.__h = html; el.innerHTML = html; } },
+      foot: function (html) { var el = modal.querySelector("[data-foot]"); if (el.__h !== html) { el.__h = html; el.innerHTML = html; } },
       best: function (score, extra) {
         var payload = { score: score }; if (extra) for (var k in extra) payload[k] = extra[k];
         emit(id, "over", payload, opts);
         if (opts.mode === "daily" || opts.mode === "race") return { best: score, isNew: false };
-        var key = "samuka-best-" + id, prev = parseInt(store.get(key) || "0", 10) || 0;
-        if (score > prev) { store.set(key, String(score)); return { best: score, isNew: true }; }
+        var prev = getBest(id);
+        if (score > prev) { setBest(id, score); return { best: score, isNew: true }; }
         return { best: prev, isNew: false };
       },
-      peekBest: function () { return parseInt(store.get("samuka-best-" + id) || "0", 10) || 0; },
+      peekBest: function () { return getBest(id); },
       overlay: function (html) {
         var o = stage.querySelector(".arcade__overlay");
         if (!o) { o = document.createElement("div"); o.className = "arcade__overlay"; stage.appendChild(o); }
@@ -113,11 +126,13 @@
   }
   function showBests() {
     document.querySelectorAll("[data-best]").forEach(function (el) {
-      var v = parseInt(store.get("samuka-best-" + el.getAttribute("data-best")) || "0", 10);
+      var v = getBest(el.getAttribute("data-best"));
       el.innerHTML = v ? "your best <b>" + v + "</b>" : "no score yet";
     });
   }
   showBests();
+  window.addEventListener("samuka:page", showBests);   // seamless navigation swaps new cards in
+  window.addEventListener("samuka:auth", showBests);
   function close() {
     if (!modal || modal.hidden) return;
     teardown();
@@ -145,6 +160,9 @@
     isOpen: function () { return !!(modal && !modal.hidden); },
     current: function () { return currentId; },
     seeded: seeded,
+    best: getBest,
+    // bests saved on the server (scores.js) never lower a local best
+    mergeBests: function (map) { Object.keys(map || {}).forEach(function (g) { if ((map[g] | 0) > getBest(g)) setBest(g, map[g] | 0); }); showBests(); },
     _debug: function () { return current && current._debug; } // used by automated playtests only
   };
 })();

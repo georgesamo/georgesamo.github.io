@@ -14,6 +14,13 @@
     mailers: ["AppointmentReminderMailer", "InvoiceMailer", "LabResultsMailer", "WelcomeMailer", "PasswordResetMailer"]
   };
   var MAX_QUEUE = 6, MAX_WORKERS = 4, BACKLOG_SAFE = 8;
+  // power-ups: a gold job shows up now and then; route it anywhere (or click it) to use it
+  var POWERS = {
+    autoscale: { icon: "⚡", label: "Autoscale", klass: "HerokuAutoscale", text: "+1 temporary worker on every queue for 12 s", dur: 12 },
+    flush: { icon: "🧹", label: "Redis FLUSH", klass: "RedisMemoryPurge", text: "frees 40% of Redis memory", dur: 0 },
+    throttle: { icon: "⏸", label: "Rate limit", klass: "RackAttackThrottle", text: "no new jobs for 6 s", dur: 6 },
+    batch: { icon: "×2", label: "Batch API", klass: "SidekiqBatchBonus", text: "double points for 12 s", dur: 12 }
+  };
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
   var rng = Math.random;
   var pick = function (a) { return a[(rng() * a.length) | 0]; };
@@ -45,7 +52,7 @@
             }).join("") +
           "</div>" +
         "</div>";
-      api.foot('<span>Route the <b>highlighted</b> job: click a lane or press <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>. Click a job to pick it instead. Wrong lane = slow &amp; no points. Every 12 jobs earns a <b>+ worker</b> token.</span>');
+      api.foot('<span>Route the <b>highlighted</b> job: click a lane or press <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>. Click a job to pick it instead. Wrong lane = slow &amp; no points. Every 12 jobs earns a <b>+ worker</b> token. <b>Gold</b> jobs are power-ups.</span>');
 
       var inboxEl = stage.querySelector("[data-inbox]");
       var memEl = stage.querySelector("[data-mem]"), memPct = stage.querySelector("[data-mem-pct]");
@@ -59,8 +66,10 @@
         var lanes = {};
         LANES.forEach(function (l) { lanes[l.id] = { queue: [], workers: [{ job: null, t: 0, el: null }] }; });
         lanes.critical.workers.push({ job: null, t: 0, el: null });
-        return { t: 0, spawnIn: 0.6, incoming: [], selected: null, lanes: lanes, score: 0, done: 0, misrouted: 0, dead: 0, retries: 0, tokens: 0, memory: 0, nextSpike: 35, history: [] };
+        return { t: 0, spawnIn: 0.6, incoming: [], selected: null, lanes: lanes, score: 0, done: 0, misrouted: 0, dead: 0, retries: 0, tokens: 0, memory: 0, nextSpike: 35, history: [],
+          nextPower: 18 + rng() * 8, active: {}, powers: 0, uiT: 0 };
       }
+      function backlog() { return S.incoming.filter(function (j) { return !j.power; }).length; }
 
       /* ---------- DOM helpers (keyed: each job keeps its element) ---------- */
       function jobEl(job) {
@@ -68,22 +77,30 @@
         var li = document.createElement("li");
         li.className = "sr__job sr__job--" + job.type;
         li.dataset.id = job.id;
+        if (job.power) {
+          var P = POWERS[job.power];
+          li.innerHTML = '<span class="sr__job-k">' + P.icon + " " + esc(P.klass) + '</span><span class="sr__job-m">power-up · ' + esc(P.text) + "</span><span class=\"sr__ttl\"><i></i></span>";
+        } else
         li.innerHTML = '<span class="sr__job-k">' + esc(job.klass) + '</span><span class="sr__job-m">' + job.type + (job.retries ? ' · retry ' + job.retries : "") + "</span>";
         job.el = li;
         return li;
       }
+      function permanent(L) { return L.workers.filter(function (w) { return !w.temp; }).length; }
       function renderWorkers(laneId) {
         var L = S.lanes[laneId], box = laneEls[laneId].workers;
         while (box.children.length < L.workers.length) {
           var w = document.createElement("div"); w.className = "sr__worker"; w.innerHTML = '<span class="sr__wjob">idle</span><span class="sr__prog"><i></i></span>'; box.appendChild(w);
         }
-        L.workers.forEach(function (wk, i) { wk.el = box.children[i]; });
+        while (box.children.length > L.workers.length) box.lastChild.remove();
+        L.workers.forEach(function (wk, i) { wk.el = box.children[i]; wk.el.classList.toggle("is-temp", !!wk.temp); wk.lbl = null; wk.pct = -1; });
       }
       function refreshLaneMeta() {
         LANES.forEach(function (l) {
           var L = S.lanes[l.id], E = laneEls[l.id];
-          E.cap.textContent = L.queue.length + "/" + MAX_QUEUE + " · " + L.workers.length + "w";
-          E.hire.disabled = !(S.tokens > 0 && L.workers.length < MAX_WORKERS);
+          var cap = L.queue.length + "/" + MAX_QUEUE + " · " + L.workers.length + "w";
+          if (E.cap.textContent !== cap) E.cap.textContent = cap;
+          var dis = !(S.tokens > 0 && permanent(L) < MAX_WORKERS);
+          if (E.hire.disabled !== dis) E.hire.disabled = dis;
           E.root.classList.toggle("is-full", L.queue.length >= MAX_QUEUE);
         });
       }
@@ -100,11 +117,35 @@
         inboxEl.appendChild(jobEl(job));
         markSelected();
       }
+      function spawnPower() {
+        var kinds = Object.keys(POWERS);
+        if (S.memory < 30) kinds = kinds.filter(function (k) { return k !== "flush"; });   // only useful when memory is up
+        var job = { id: jid(), type: "power", power: pick(kinds), ttl: 9, born: S.t };
+        job.klass = POWERS[job.power].klass;
+        S.incoming.splice(Math.min(2, S.incoming.length), 0, job);   // near the top, where it's seen
+        var el = jobEl(job), ref = inboxEl.children[Math.min(2, inboxEl.children.length)];
+        if (ref) inboxEl.insertBefore(el, ref); else inboxEl.appendChild(el);
+        el.classList.add("sr__fly");
+        markSelected();
+      }
+      function usePower(job) {
+        S.incoming.splice(S.incoming.indexOf(job), 1);
+        if (S.selected === job) S.selected = null;
+        job.el.remove();
+        var P = POWERS[job.power];
+        S.powers++; api.emit("powerup", { power: job.power });
+        if (job.power === "flush") S.memory = Math.max(0, S.memory - 40);
+        else S.active[job.power] = S.t + P.dur;
+        if (job.power === "autoscale") LANES.forEach(function (l) { S.lanes[l.id].workers.push({ job: null, t: 0, el: null, temp: true }); renderWorkers(l.id); });
+        api.toast(P.icon + " " + P.label + ": " + P.text, "ok");
+        markSelected(); refreshLaneMeta();
+      }
       function route(laneId) {
         if (!running || paused) return;
         var job = current();
         var lane = laneEls[laneId].root;
         if (!job) { bump(lane); return; }
+        if (job.power) { usePower(job); return; }
         var L = S.lanes[laneId];
         if (L.queue.length >= MAX_QUEUE) { bump(lane); api.toast("queue :" + laneId + " is full", "warn"); return; }
         S.incoming.splice(S.incoming.indexOf(job), 1);
@@ -121,7 +162,7 @@
       function bump(el) { el.classList.remove("sr__bump"); void el.offsetWidth; el.classList.add("sr__bump"); }
       function hire(laneId) {
         var L = S.lanes[laneId];
-        if (S.tokens <= 0 || L.workers.length >= MAX_WORKERS) return;
+        if (S.tokens <= 0 || permanent(L) >= MAX_WORKERS) return;
         S.tokens--; L.workers.push({ job: null, t: 0, el: null });
         renderWorkers(laneId); refreshLaneMeta();
         api.toast("+1 worker on :" + laneId, "ok");
@@ -141,7 +182,7 @@
         if (job.wrong) { S.misrouted++; }
         else {
           var lane = LANES.filter(function (l) { return l.id === laneId; })[0];
-          S.score += 10 + lane.bonus + Math.min(10, Math.floor(S.t / 20)) * 2;
+          S.score += (10 + lane.bonus + Math.min(10, Math.floor(S.t / 20)) * 2) * (S.active.batch > S.t ? 2 : 1);
         }
         if (S.done % 12 === 0) { S.tokens++; api.toast("worker token earned · " + S.tokens + " available", "ok"); }
       }
@@ -150,18 +191,32 @@
       function step(dt) {
         S.t += dt;
         // spawn rate ramps up over time
-        S.spawnIn -= dt;
+        var throttled = S.active.throttle > S.t;
+        if (!throttled) S.spawnIn -= dt;
         var interval = Math.max(0.42, 1.45 - S.t * 0.011);
         if (S.spawnIn <= 0) { spawn(); S.spawnIn = interval * (0.6 + rng() * 0.8); }
         if (S.t >= S.nextSpike) {
           S.nextSpike += 30 + rng() * 10;
-          api.toast("⚡ traffic spike: Monday-morning bookings", "warn");
-          for (var i = 0; i < 5; i++) spawn(i < 3 ? "critical" : null);
+          if (throttled) api.toast("⏸ traffic spike absorbed by the rate limit", "ok");
+          else { api.toast("⚡ traffic spike: Monday-morning bookings", "warn"); for (var i = 0; i < 5; i++) spawn(i < 3 ? "critical" : null); }
         }
+        // power-ups: one at a time, every ~25 s, gone if ignored
+        if (S.t >= S.nextPower) {
+          S.nextPower = S.t + 22 + rng() * 12;
+          if (!S.incoming.some(function (j) { return j.power; })) spawnPower();
+        }
+        S.incoming.slice().forEach(function (j) {
+          if (!j.power) return;
+          var left = j.ttl - (S.t - j.born);
+          if (left <= 0) { S.incoming.splice(S.incoming.indexOf(j), 1); if (S.selected === j) S.selected = null; j.el.remove(); markSelected(); }
+          else { var ttl = j.el.querySelector(".sr__ttl i"); if (ttl) ttl.style.transform = "scaleX(" + (left / j.ttl).toFixed(3) + ")"; }
+        });
+        var scaling = S.active.autoscale > S.t;
         // workers
         LANES.forEach(function (l) {
-          var L = S.lanes[l.id];
+          var L = S.lanes[l.id], gone = false;
           L.workers.forEach(function (wk) {
+            if (wk.temp && !scaling && !wk.job) { wk.gone = true; gone = true; return; }   // autoscale over: idle extras leave
             if (!wk.job && L.queue.length) {
               wk.job = L.queue.shift();
               wk.t = 0;
@@ -170,25 +225,32 @@
             }
             if (wk.job) { wk.t += dt; if (wk.t >= wk.dur) finish(l.id, wk); }
             if (wk.el) {
-              var label = wk.el.firstChild, bar = wk.el.lastChild.firstChild;
-              if (wk.job) { label.textContent = wk.job.klass; wk.el.classList.toggle("is-wrong", !!wk.job.wrong); bar.style.width = Math.min(100, (wk.t / wk.dur) * 100) + "%"; wk.el.classList.add("is-busy"); }
-              else { label.textContent = "idle"; bar.style.width = "0%"; wk.el.classList.remove("is-busy", "is-wrong"); }
+              var lbl = wk.job ? wk.job.klass : "idle", pct = wk.job ? Math.min(1, wk.t / wk.dur) : 0;
+              if (wk.lbl !== lbl) {
+                wk.lbl = lbl; wk.el.firstChild.textContent = lbl;
+                wk.el.classList.toggle("is-busy", !!wk.job); wk.el.classList.toggle("is-wrong", !!(wk.job && wk.job.wrong));
+              }
+              if (Math.abs(pct - wk.pct) > 0.004) { wk.pct = pct; wk.el.lastChild.firstChild.style.transform = "scaleX(" + pct.toFixed(3) + ")"; }   // compositor-only, no layout
             }
           });
+          if (gone) { L.workers = L.workers.filter(function (w) { return !w.gone; }); renderWorkers(l.id); }
         });
         // Redis memory: grows when the backlog is long
-        var backlog = S.incoming.length;
-        if (backlog > BACKLOG_SAFE) S.memory += (backlog - BACKLOG_SAFE) * 3.8 * dt;
+        var bl = backlog();
+        if (bl > BACKLOG_SAFE) S.memory += (bl - BACKLOG_SAFE) * 3.8 * dt;
         else S.memory -= 6 * dt;
         S.memory = Math.max(0, S.memory);
-        memEl.style.width = Math.min(100, S.memory) + "%";
-        memPct.textContent = Math.min(100, Math.round(S.memory)) + "%";
-        memEl.parentElement.classList.toggle("is-hot", S.memory > 60);
         if (S.memory >= 100) return over();
         if (race && S.t - raceTick > 0.5) { raceTick = S.t; race.tick(S.score, S.done, S.memory); }
-        // HUD (throughput over the last 10 s)
+        // HUD and meters ~10 times a second (no need to rebuild them every frame)
+        S.uiT += dt;
+        if (S.uiT < 0.1) return;
+        S.uiT = 0;
+        var mp = Math.min(100, Math.round(S.memory));
+        if (memPct.__v !== mp) { memPct.__v = mp; memEl.style.width = mp + "%"; memPct.textContent = mp + "%"; memEl.parentElement.classList.toggle("is-hot", S.memory > 60); }
         S.history = S.history.filter(function (x) { return S.t - x < 10; });
-        api.hud('<span>score <b>' + S.score + '</b></span><span>jobs <b>' + S.done + '</b></span><span class="hide-sm">' + (S.history.length / Math.min(10, Math.max(1, S.t))).toFixed(1) + ' jobs/s</span><span>tokens <b>' + S.tokens + "</b></span>");
+        var fx = Object.keys(S.active).filter(function (k) { return S.active[k] > S.t; }).map(function (k) { return '<span class="sr__fx">' + POWERS[k].icon + " " + Math.ceil(S.active[k] - S.t) + "s</span>"; }).join("");
+        api.hud('<span>score <b>' + S.score + '</b></span><span>jobs <b>' + S.done + '</b></span><span class="hide-sm">' + (S.history.length / Math.min(10, Math.max(1, S.t))).toFixed(1) + ' jobs/s</span><span>tokens <b>' + S.tokens + "</b></span>" + fx);
         refreshLaneMeta();
       }
       function frame(ts) {
@@ -222,7 +284,7 @@
           '<p class="arcade__err">Redis::OutOfMemoryError</p>' +
           '<p class="muted">OOM command not allowed when used memory &gt; \'maxmemory\'</p>' +
           '<dl class="arcade__stats"><dt>score</dt><dd>' + S.score + (b.isNew ? ' <span class="arcade__new">new best!</span>' : "") + "</dd>" +
-          "<dt>best</dt><dd>" + b.best + "</dd><dt>processed</dt><dd>" + S.done + "</dd><dt>misrouted</dt><dd>" + S.misrouted + "</dd><dt>retries · dead</dt><dd>" + S.retries + " · " + S.dead + "</dd><dt>uptime</dt><dd>" + Math.floor(S.t) + "s</dd></dl>" +
+          "<dt>best</dt><dd>" + b.best + "</dd><dt>processed</dt><dd>" + S.done + "</dd><dt>misrouted</dt><dd>" + S.misrouted + "</dd><dt>retries · dead</dt><dd>" + S.retries + " · " + S.dead + "</dd><dt>power-ups</dt><dd>" + S.powers + "</dd><dt>uptime</dt><dd>" + Math.floor(S.t) + "s</dd></dl>" +
           '<div class="lb-mini" data-lb-mini="sidekiq"></div>' +
           '<button class="btn btn--primary" type="button" data-sr-start>↻ bundle exec sidekiq</button>'
         );
@@ -238,6 +300,8 @@
           "<p>Jobs from the hospital system pile up in Redis. Route each one to its queue:</p>" +
           '<ul class="sr__legend"><li><i class="sr__dot sr__dot--critical"></i><b>critical</b> claims, bookings, payments</li><li><i class="sr__dot sr__dot--default"></i><b>default</b> pricing, imports, reports</li><li><i class="sr__dot sr__dot--mailers"></i><b>mailers</b> reminders, invoices, results</li></ul>' +
           "<p class=\"muted\">Let the backlog grow and Redis runs out of memory. Traffic spikes hit every ~30 s.</p>" +
+          '<p class="sr__powers"><b>Power-ups</b> drop in as <span class="sr__chip">gold jobs</span>: click one or route it anywhere before it expires. ' +
+          Object.keys(POWERS).map(function (k) { return "<span>" + POWERS[k].icon + " <b>" + POWERS[k].label + "</b> " + POWERS[k].text + "</span>"; }).join(" · ") + "</p>" +
           '<button class="btn btn--primary" type="button" data-sr-start>▶ start workers</button>'
         );
       }
@@ -250,6 +314,7 @@
         var j = e.target.closest(".sr__job");
         if (j && j.parentElement === inboxEl) {
           S.selected = S.incoming.filter(function (x) { return x.id === j.dataset.id; })[0] || null;
+          if (S.selected && S.selected.power && running && !paused) { usePower(S.selected); return; }
           markSelected(); return;
         }
         var lane = e.target.closest("[data-lane]");

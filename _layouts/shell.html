@@ -60,6 +60,7 @@ layout: default
       {%- endif %}
       <p class="tree__dir tree__dir--team" data-team-only hidden>▾ team</p>
       <a href="{{ '/nino/' | relative_url }}" data-team-only hidden{% if tab == "nino" %} class="is-here"{% endif %}><i class="fi fi--md"></i>ninos-corner.md</a>
+      <a href="{{ '/soundtrack/' | relative_url }}" data-team-only hidden target="_blank" rel="noopener" title="Opens in a new tab"{% if tab == "soundtrack" %} class="is-here"{% endif %}><i class="fi fi--log"></i>soundtrack.wav ↗</a>
     </nav>
     <a class="creator" href="{{ '/samuka/' | relative_url }}">
       <span class="creator__avatar" aria-hidden="true">S</span>
@@ -121,6 +122,7 @@ layout: default
     <a href="{{ '/#wall' | relative_url }}"><i class="fi fi--log"></i>visitors.log <small>commit wall</small></a>
     <a href="{{ '/u/' | relative_url }}"><i class="fi fi--rb"></i>player card</a>
     <a href="{{ '/nino/' | relative_url }}" data-team-only hidden><i class="fi fi--md"></i>ninos-corner.md</a>
+    <a href="{{ '/soundtrack/' | relative_url }}" data-team-only hidden target="_blank" rel="noopener"><i class="fi fi--log"></i>soundtrack.wav ↗ <small>new tab</small></a>
     <button type="button" data-open-terminal><span>&gt;_</span> terminal</button>
     <button type="button" data-toggle-theme><span class="theme-ico" aria-hidden="true"></span> <span data-theme-label>light mode</span></button>
   </div>

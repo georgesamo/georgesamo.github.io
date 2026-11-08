@@ -143,7 +143,16 @@
 .sr__worker.is-wrong { color: var(--ruby-red); }
 .sr__wjob { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sr__prog { height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; }
-.sr__prog i { display: block; height: 100%; width: 0; background: var(--c); }
+.sr__prog i { display: block; height: 100%; width: 100%; background: var(--c); transform: scaleX(0); transform-origin: left center; will-change: transform; }
+.sr__job--power { --c: var(--gold); border-color: var(--gold) !important; background: color-mix(in srgb, var(--gold) 14%, var(--bg-soft)) !important; cursor: pointer; }
+.sr__job--power .sr__job-k { color: var(--gold); font-weight: 700; }
+.sr__ttl { display: block; height: 3px; margin-top: 3px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.sr__ttl i { display: block; height: 100%; background: var(--gold); transform-origin: left center; }
+.sr__worker.is-temp { box-shadow: inset 0 0 0 1px var(--gold); }
+.sr__worker.is-temp .sr__wjob::before { content: "⚡ "; }
+.sr__fx { padding: 0 6px; border-radius: 5px; background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--text); }
+.sr__powers { font-size: 13px; color: var(--text-2); line-height: 1.55; }
+.sr__chip { padding: 0 6px; border-radius: 5px; border: 1px solid var(--gold); color: var(--gold); }
 .sr__worker.is-wrong .sr__prog i { background: var(--ruby-red); }
 .sr__queue { flex: 1; min-height: 0; overflow: hidden; border-top: 1px dashed var(--line); padding-top: 8px; }
 .sr__bump { animation: bump 0.35s var(--ease); }
@@ -157,7 +166,7 @@
 
 /* ---------- Gem Match ---------- */
 .gm { display: grid; place-items: center; height: 100%; }
-.gm__board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; width: min(100%, calc(88vh - 210px), 560px); aspect-ratio: 1; padding: 8px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-elev); touch-action: none; user-select: none; }
+.gm__board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; width: min(100%, calc(88vh - 258px), 560px); aspect-ratio: 1; padding: 8px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-elev); touch-action: none; user-select: none; }
 .gm__cell {
   --g: var(--accent);
   position: relative; display: grid; place-items: center; padding: 0; border: 0; border-radius: 9px; cursor: pointer;
@@ -276,3 +285,14 @@
   .gm__board { width: min(100%, calc(100vh - 220px)); gap: 3px; padding: 5px; }
   .gm__legend { grid-template-columns: repeat(2, 34px minmax(0, 1fr)); }
 }
+/* Gem Match boosters */
+.gm { grid-template-rows: auto auto; align-content: center; gap: 10px; }
+.gm__boost { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 8px; font: 12px var(--mono); }
+.gm__meter { position: relative; width: 110px; height: 8px; border-radius: 99px; background: var(--bg-soft); border: 1px solid var(--line); overflow: hidden; }
+.gm__meter i { position: absolute; inset: 0; background: linear-gradient(90deg, var(--accent), var(--gold)); transform: scaleX(0); transform-origin: left center; transition: transform 0.35s var(--ease); }
+.gm__charges { min-width: 1.6em; padding: 1px 6px; border-radius: 6px; background: var(--gold-soft); color: var(--gold); text-align: center; }
+.gm__boost button { height: 30px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--bg-soft); color: var(--text); font: 12px var(--mono); cursor: pointer; }
+.gm__boost button:disabled { opacity: 0.4; cursor: default; }
+.gm__boost button.is-armed { border-color: var(--gold); background: var(--gold-soft); box-shadow: 0 0 12px -3px var(--gold); }
+.gm__cell.is-target { cursor: crosshair; }
+.gm__cell.is-target:hover { box-shadow: inset 0 0 0 2px var(--gold); }

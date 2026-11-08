@@ -23,11 +23,12 @@
     { key: "big_bang", icon: "💥", title: "Big-bang migration", how: "Deploy 4 rows at once in Schema Stack" },
     { key: "pit_win", icon: "🏆", title: "Strategy masterclass", how: "Win a Pit Wall grand prix" },
     { key: "pit_rain", icon: "🌧", title: "Rain master", how: "Podium in a wet Pit Wall race" },
+    { key: "pit_champ", icon: "🥇", title: "World champion", how: "Win the Pit Wall World Championship" },
     { key: "weekly", icon: "🗓", title: "Sprint goal met", how: "Finish a weekly challenge" },
     { key: "chatty", icon: "💬", title: "Standup attended", how: "Say something in the live chat" },
     { key: "wall", icon: "📝", title: "First commit", how: "Leave a commit on the wall" },
     { key: "crowd", icon: "👥", title: "Pair programming", how: "Be here while someone else is online" },
-    { key: "lofi", icon: "♪", title: "Beats to debug to", how: "Turn on the generated lo-fi" },
+    { key: "lofi", icon: "♪", title: "Beats to debug to", how: "Turn on the site soundtrack" },
     { key: "night_owl", icon: "🦉", title: "Night owl", how: "Visit between midnight and 5 am", secret: true },
     { key: "glitch", icon: "⚡", title: "Found the glitch", how: "Witness a glitch", secret: true },
     { key: "sudo", icon: "🔐", title: "Not in the sudoers file", how: "Try sudo in the terminal", secret: true },
@@ -113,6 +114,7 @@
     }
     if (d.game === "pitwall" && d.name === "win") unlock("pit_win");
     if (d.game === "pitwall" && d.name === "rain_podium") unlock("pit_rain");
+    if (d.game === "pitwall" && d.name === "champion") unlock("pit_champ");
     if (d.game === "sidekiq") {
       if (d.name === "retry" && uid) {
         var k = "samuka-retries-" + uid, n = (parseInt(store.get(k) || "0", 10) || 0) + 1;

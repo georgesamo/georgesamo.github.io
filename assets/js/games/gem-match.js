@@ -34,8 +34,14 @@
       var board = [], cells = [], sel = -1, focusI = 0, busy = false, alive = false;
       var score = 0, moves = MOVES_RUN, best = api.peekBest(), hintTimer = 0, uid = 0, combo = 0;
 
-      stage.innerHTML = '<div class="gm"><div class="gm__board" data-board role="grid" aria-label="Gem board"></div></div>';
+      stage.innerHTML = '<div class="gm"><div class="gm__board" data-board role="grid" aria-label="Gem board"></div>' +
+        '<div class="gm__boost" data-boost><span class="gm__meter" title="Deploy meter: scoring fills it and earns booster charges"><i data-meter></i></span><b class="gm__charges" data-charges>0</b>' +
+        '<button type="button" data-boost-use="hammer" title="rails console: smash one gem (H)">🔨 smash</button>' +
+        '<button type="button" data-boost-use="shuffle" title="bundle update: reshuffle the board">🔀 shuffle</button>' +
+        '<button type="button" data-boost-use="moves" title="+2 moves">➕2 moves</button></div></div>';
       var boardEl = stage.querySelector("[data-board]");
+      // boosters: the deploy meter fills as you score; each fill = 1 charge (max 3), every fill needs a bit more
+      var charges = 0, meterAt = 0, meterNext = 1000, hammer = false, boostsUsed = 0;
       for (var i = 0; i < N * N; i++) {
         var b = document.createElement("button");
         b.type = "button"; b.className = "gm__cell"; b.dataset.i = i; b.tabIndex = i === 0 ? 0 : -1;
@@ -97,7 +103,9 @@
       }
 
       /* ---------- rendering ---------- */
+      // writes only what changed, and restarts drop/born animations with ONE reflow for the whole board
       function paint(fall, born) {
+        var anim = [];
         cells.forEach(function (el, i) {
           var g = board[i];
           var cls = "gm__cell";
@@ -107,18 +115,42 @@
             if (g.sp) cls += " sp-" + g.sp;
           }
           if (i === sel) cls += " is-sel";
-          el.className = cls;
+          if (hammer && g) cls += " is-target";
+          var drop = fall && fall[i], bn = born && born[i];
+          if (drop) el.style.setProperty("--fall", fall[i]);
+          if (drop || bn) anim.push([el, drop ? " is-drop" : "", bn ? " is-born" : ""]);
+          else if (el.className !== cls) el.className = cls;   // also clears stale nope/hint/drop classes
+          el.__cls = cls;
           var label = !g ? "empty" : g.t === COLOR ? "Bundle power-up" : TYPES[g.t].name + (g.sp === "bomb" ? " Force push" : isLine(g) ? " Pipeline" : "");
-          el.setAttribute("aria-label", label + ", row " + (R(i) + 1) + " column " + (C(i) + 1));
-          el.querySelector("em").textContent = !g ? "" : g.t === COLOR ? "✦" : TYPES[g.t].id;
-          if (fall && fall[i]) {
-            el.style.setProperty("--fall", fall[i]);
-            el.classList.remove("is-drop"); void el.offsetWidth; el.classList.add("is-drop");
-          }
-          if (born && born[i]) { el.classList.remove("is-born"); void el.offsetWidth; el.classList.add("is-born"); }
+          label += ", row " + (R(i) + 1) + " column " + (C(i) + 1);
+          if (el.__lbl !== label) { el.__lbl = label; el.setAttribute("aria-label", label); }
+          var em = !g ? "" : g.t === COLOR ? "✦" : TYPES[g.t].id;
+          if (el.__em !== em) { el.__em = em; el.querySelector("em").textContent = em; }
+        });
+        if (!anim.length) return;
+        anim.forEach(function (a) { a[0].className = a[0].__cls; });
+        void boardEl.offsetWidth;
+        anim.forEach(function (a) { a[0].className = a[0].__cls + a[1] + a[2]; });
+      }
+      function paintBoost() {
+        var span = meterNext - meterAt, pct = charges >= 3 ? 1 : Math.max(0, Math.min(1, (score - meterAt) / span));
+        stage.querySelector("[data-meter]").style.transform = "scaleX(" + pct.toFixed(3) + ")";
+        stage.querySelector("[data-charges]").textContent = charges;
+        stage.querySelectorAll("[data-boost-use]").forEach(function (b) {
+          var k = b.getAttribute("data-boost-use");
+          b.disabled = !alive || busy || !charges;
+          b.classList.toggle("is-armed", k === "hammer" && hammer);
         });
       }
+      function meterCheck() {
+        while (score >= meterNext) {
+          meterAt = meterNext; meterNext += 1000 + 500 * (boostsUsed + charges + 1);
+          if (charges < 3) { charges++; api.toast("🚀 booster charged · " + charges + " ready", "ok"); }
+        }
+        paintBoost();
+      }
       function hud() {
+        if (alive) meterCheck(); else paintBoost();
         if (race && alive) race.tick(score, MOVES_RUN - moves, 0);
         api.hud('<span>score <b>' + score + '</b></span><span>moves <b' + (moves <= 5 ? ' class="low"' : "") + ">" + moves + '</b></span><span class="hide-sm">best <b>' + Math.max(best, score) + "</b></span>");
       }
@@ -355,7 +387,42 @@
         moveLog.push({ pts: score - moveStart, power: hadPower });
         if (moves <= 0) return over();
         if (!findMove()) { api.toast("no moves left · bundle update (shuffle)", "warn"); fill(); paint(); }
-        armHint();
+        armHint(); paintBoost();
+      }
+
+      /* ---------- boosters ---------- */
+      function shuffleBoard() {
+        for (var tries = 0; tries < 80; tries++) {
+          var gs = board.slice();
+          for (var i = gs.length - 1; i > 0; i--) { var j = (rng() * (i + 1)) | 0, x = gs[i]; gs[i] = gs[j]; gs[j] = x; }
+          board = gs;
+          if (!runs().length && findMove()) return;
+        }
+        fill();
+      }
+      async function smash(i) {
+        if (busy || !alive || !board[i] || !charges) return;
+        hammer = false; charges--; boostsUsed++; busy = true; clearHint(); sel = -1;
+        api.emit("booster", { kind: "hammer" });
+        var set = {}; set[i] = true; combo = 1;
+        shock(i, 0); shake(3);
+        await clearCells(set, [], {});
+        await resolve([]);
+        busy = false;
+        if (!findMove()) { api.toast("no moves left · bundle update (shuffle)", "warn"); fill(); paint(); }
+        armHint(); paint(); paintBoost();
+      }
+      function useBoost(kind) {
+        if (busy || !alive || !charges) return;
+        if (kind === "hammer") { hammer = !hammer; sel = -1; paint(); paintBoost(); if (hammer) api.toast("🔨 pick a gem to smash · click 🔨 again to cancel", "ok"); return; }
+        charges--; boostsUsed++; hammer = false; clearHint();
+        api.emit("booster", { kind: kind });
+        if (kind === "shuffle") {
+          shuffleBoard();
+          var all = {}; for (var i = 0; i < N * N; i++) all[i] = true;
+          paint(null, all); api.toast("🔀 bundle update · board reshuffled", "ok");
+        } else if (kind === "moves") { moves += 2; api.toast("➕ two more moves", "ok"); }
+        hud(); armHint();
       }
 
       /* ---------- hints ---------- */
@@ -374,6 +441,7 @@
       }
       function start() {
         score = 0; moves = MOVES_RUN; sel = -1; alive = true; busy = false; moveLog = [];
+        charges = 0; meterAt = 0; meterNext = 1000; hammer = false; boostsUsed = 0;
         if (daily || race) rng = window.SamukaArcade.seeded(api.opts.seed); // everyone gets the same board
         fill(); paint(); hud(); api.clearOverlay(); armHint();
         cells[focusI].focus();
@@ -411,7 +479,7 @@
             legendGem("gm--rd sp-bomb", "<b>Force push</b> · L/T shape · blasts 3×3", "rd") +
             legendGem("gm--cb", "<b>Bundle</b> · match 5 · swap to clear a whole kind", "✦") +
           "</div>" +
-          '<p class="muted">Swap two power-ups together for a combo. New ones occasionally drop in on their own.</p>' +
+          '<p class="muted">Swap two power-ups together for a combo. New ones occasionally drop in on their own. Scoring fills the <b>deploy meter</b>: each charge buys a booster (🔨 smash a gem, 🔀 shuffle, ➕2 moves).</p>' +
           '<button class="btn btn--primary" type="button" data-gm-start>▶ bundle exec play</button>'
         );
       }
@@ -435,6 +503,7 @@
       function onPointerUp() { setTimeout(function () { down = null; }, 0); }
       function choose(i) {
         if (busy || !alive) return;
+        if (hammer) { smash(i); return; }
         if (sel === -1) { sel = i; paint(); return; }
         if (sel === i) { sel = -1; paint(); return; }
         if (adjacent(sel, i)) trySwap(sel, i);
@@ -442,6 +511,7 @@
       }
       function onClick(e) {
         if (e.target.closest("[data-gm-start]")) { start(); return; }
+        var bt = e.target.closest("[data-boost-use]"); if (bt) { useBoost(bt.getAttribute("data-boost-use")); return; }
         var cell = e.target.closest(".gm__cell"); if (!cell || cell.classList.contains("gm__cell--static")) return;
         if (down && down.swiped) return;
         focusI = +cell.dataset.i;
@@ -457,6 +527,7 @@
 
       return {
         key: function (e) {
+          if (alive && (e.key === "h" || e.key === "H")) { e.preventDefault(); useBoost("hammer"); return; }
           if (!alive || !boardEl.contains(document.activeElement)) return;
           var r = R(focusI), c = C(focusI), to = -1;
           if (e.key === "ArrowLeft" && c > 0) to = focusI - 1;

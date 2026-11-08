@@ -34,11 +34,50 @@
     }
     var row = { game: d.game, mode: d.mode === "daily" || d.mode === "race" ? d.mode : "free", score: Math.max(0, Math.min(200000, d.score | 0)) };
     if (row.mode === "daily") row.day = today();
-    c.from("scores").insert(row).then(function (r) {
-      if (r.error) console.warn("[scores]", r.error.message);
-      afterSave(d.game, row.mode === "daily" ? "daily" : null);
-    });
+    if (!row.score && row.mode === "free") return;   // a zero never beats anything; don't spend the hourly quota on it
+    insert(c, row).then(function () { afterSave(d.game, row.mode === "daily" ? "daily" : null); });
   });
+
+  /* a failed save (offline, token refresh, a missing SQL update) is kept and retried later,
+   * so a good score is never silently lost */
+  var PENDING = "samuka-scores-pending";
+  function pendingList() { try { return JSON.parse(store.get(PENDING) || "[]"); } catch (e) { return []; } }
+  function setPending(list) { store.set(PENDING, JSON.stringify(list.slice(-30))); }
+  function insert(c, row) {
+    return c.from("scores").insert(row).then(function (r) {
+      if (!r.error) return true;
+      console.warn("[scores] not saved yet:", r.error.message, r.error.code === "23514" ? "(run supabase/games.sql so this game is allowed)" : "");
+      // dailies are only valid on their own day; everything else can be retried
+      if (row.mode !== "daily") { var u = user(), list = pendingList(); list.push({ uid: u && u.id, row: row, t: Date.now() }); setPending(list); }
+      return false;
+    }, function () { var u = user(), list = pendingList(); if (row.mode !== "daily") { list.push({ uid: u && u.id, row: row, t: Date.now() }); setPending(list); } return false; });
+  }
+  var flushing = false;
+  async function flushPending() {
+    var c = db(), u = user();
+    if (!c || !u || flushing) return;
+    var list = pendingList(), keep = [], sent = 0;
+    if (!list.length) return;
+    flushing = true;
+    for (var k = 0; k < list.length; k++) {
+      var p = list[k];
+      if (p.uid !== u.id || Date.now() - p.t > 30 * 864e5) { if (p.uid !== u.id && Date.now() - p.t < 30 * 864e5) keep.push(p); continue; }
+      var r = await c.from("scores").insert(p.row);
+      if (r.error) keep.push(p); else sent++;
+    }
+    setPending(keep); flushing = false;
+    if (sent) { cache = {}; loadAll(); syncBests(); }
+  }
+  // your best per game from the server, so "your best" is right on every device
+  async function syncBests() {
+    var c = db(), u = user(), Ar = window.SamukaArcade;
+    if (!c || !u || !Ar || !Ar.mergeBests) return;
+    var map = {};
+    var r = await c.from("scores").select("game, score").eq("user_id", u.id).neq("mode", "daily").order("score", { ascending: false }).limit(500);
+    if (r.error) return;
+    (r.data || []).forEach(function (s) { if (!map[s.game] || s.score > map[s.game]) map[s.game] = s.score; });
+    Ar.mergeBests(map);
+  }
   function afterSave(game, period) {
     cache = {};
     fillMinis(game, period);
@@ -200,7 +239,8 @@
     var d = e.detail || {};
     if (d.name === "over" && d.mode === "free") setTimeout(function () { fillMinis(d.game, "all"); }, 30);
   });
-  window.addEventListener("samuka:auth", function () { cache = {}; loadAll(); });
+  window.addEventListener("samuka:auth", function () { cache = {}; loadAll(); if (user()) { syncBests(); flushPending(); } });
+  window.addEventListener("online", flushPending);
 
   function boot() {
     panels = Array.prototype.map.call(document.querySelectorAll("[data-leaderboard]"), function (el) {
