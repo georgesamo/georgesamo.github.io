@@ -17,9 +17,19 @@
 
   /* ---------- original artwork ---------- */
   var BAT = '<svg viewBox="0 0 34 17" aria-hidden="true"><path d="M0 10C4 4 8 3 12 6c1-3 3-4 4-2l1-3 1 3c1-2 3-1 4 2 4-3 8-2 12 4-4-2-7-1-9 2-2-2-5-1-6 2l-2 2-2-2c-1-3-4-4-6-2-2-3-5-4-9-2z"/></svg>';
-  // bat symbol: a disc with a sharp-winged bat cut into it (own design)
-  var SIGIL = '<svg viewBox="0 0 100 60" aria-hidden="true"><ellipse class="sg-disc" cx="50" cy="30" rx="48" ry="28"/>' +
-    '<path class="sg-bat" d="M8 30c8-9 18-12 27-7 1-5 5-8 9-6l3-7 3 6 3-6 3 7c4-2 8 1 9 6 9-5 19-2 27 7-7-3-14-2-19 3-3-4-9-4-12 1l-5 6-4 7-4-7-5-6c-3-5-9-5-12-1-5-5-12-6-19-3z"/></svg>';
+  // bat symbol (own design, in the spirit of a gritty 2020s noir): angular, sharp ears,
+  // long hooked wing tips, crimson, with a distressed texture from an SVG noise filter
+  // each copy gets its own filter id: shared ids make browsers apply the first copy's geometry to all
+  var gritN = 0;
+  function SIGIL_SVG() {
+    var id = "gk-grit-" + (++gritN);
+    return '<svg viewBox="0 0 120 56" aria-hidden="true">' +
+      '<defs><filter id="' + id + '" x="0" y="0" width="1" height="1" primitiveUnits="objectBoundingBox">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.09 0.2" numOctaves="2" seed="' + gritN + '" result="n"/>' +
+      '<feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2 1.65" result="m"/>' +
+      '<feComposite in="SourceGraphic" in2="m" operator="in"/></filter></defs>' +
+      '<path class="sg-bat" filter="url(#' + id + ')" d="M1 31 L22 17 L39 15 L49 19 L52 10 L54.5 1 L57 13 L63 13 L65.5 1 L68 10 L71 19 L81 15 L98 17 L119 31 L103 27.5 L94 41 L86 30.5 L75 32 L67 45 L60 55 L53 45 L45 32 L34 30.5 L26 41 L17 27.5 Z"/></svg>';
+  }
   var BUNNY_MINI = '<svg viewBox="0 0 26 30" aria-hidden="true"><ellipse cx="8.5" cy="8" rx="3.2" ry="8"/><ellipse cx="17.5" cy="8" rx="3.2" ry="8"/><circle cx="13" cy="20" r="9"/></svg>';
   // bunny mascot (own design): lavender-white, pink inner ears, happy closed eyes
   var MASCOT = '<svg viewBox="0 0 140 176" aria-hidden="true">' +
@@ -48,11 +58,11 @@
       var c = i % cols, r = Math.floor(i / cols);
       var x = (c + 0.5) / cols * 100 + rand(-6, 6), y = (r + 0.5) / rows * 62 + 6 + rand(-5, 5);
       var order = (c + r * 2 + ((Math.random() * 3) | 0)) * 0.035;
-      html += '<span class="gk-sigil" style="--x:' + x.toFixed(1) + "%;--y:" + y.toFixed(1) + "%;--s:" + rand(0.55, 1.15).toFixed(2) + ";--r:" + rand(-14, 14).toFixed(0) + "deg;--d:" + order.toFixed(3) + 's">' + SIGIL + "</span>";
+      html += '<span class="gk-sigil" style="--x:' + x.toFixed(1) + "%;--y:" + y.toFixed(1) + "%;--s:" + rand(0.55, 1.15).toFixed(2) + ";--r:" + rand(-14, 14).toFixed(0) + "deg;--d:" + order.toFixed(3) + 's">' + SIGIL_SVG() + "</span>";
     }
     for (i = 0; i < 7; i++) html += '<span class="gk-bat" style="--x:' + rand(0, 90).toFixed(1) + "%;--y:" + rand(10, 80).toFixed(1) + "%;--s:" + rand(0.5, 1.3).toFixed(2) + ";--d:" + rand(0.3, 0.7).toFixed(2) + 's">' + BAT + "</span>";
     // searchlight: beam from below, bat projected into the clouds
-    html += '<div class="gk-beam"></div><div class="gk-signal">' + SIGIL + "</div>";
+    html += '<div class="gk-beam"></div><div class="gk-signal">' + SIGIL_SVG() + "</div>";
     html += '<span class="glx__line">' + pick(KNIGHT_LINES) + "</span>";
     return html;
   }
