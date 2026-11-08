@@ -22,7 +22,7 @@
       L().catalog().forEach(function (th) {
         expect(th.songs).toHaveLength(6);
         var s = th.songs[5];
-        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(240);
+        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(242);
       });
     });
     it("is the longest track: about nine and a half minutes", function () {
@@ -30,6 +30,20 @@
       expect(s[5].secs).toBeGreaterThan(540);
       expect(s[5].secs).toBeGreaterThan(Math.max.apply(null, s.slice(0, 5).map(function (x) { return x.secs; })));
       expect(s[5].bpm).toBe("60–172");
+    });
+    it("gives every song an outro that counts towards its length", function () {
+      L().catalog().forEach(function (th) { th.songs.slice(0, 5).forEach(function (s) { expect(s.outro >= 2).toBe(true); }); });
+    });
+    it("marks where each suite movement starts, in order", function () {
+      var m = L().suite.marks("golden");
+      expect(m).toHaveLength(5);
+      expect(m[0].at).toBe(0);
+      expect(m.every(function (x, i) { return !i || x.at > m[i - 1].at; })).toBe(true);
+      expect(m[4].name).toBe("V · home");
+    });
+    it("exposes player controls", function () {
+      ["pause", "resume", "prev", "next", "seekTime", "skip", "setLoop", "volume"].forEach(function (k) { expect(typeof L()[k]).toBe("function"); });
+      expect(L().isPaused()).toBe(false);
     });
     it("names each theme's suite", function () {
       expect(L().catalog().map(function (t) { return t.songs[5].title; })).toEqual(["Root Access", "The Long Night", "Alchemy"]);

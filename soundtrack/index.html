@@ -16,7 +16,39 @@ sitemap: false
         </header>
         <div data-st-gate><p class="muted">checking your badge…</p></div>
         <div data-st-room hidden>
-          <div class="st__now" data-st-now aria-live="polite"></div>
+          <div class="stp" data-stp>
+            <canvas class="stp__viz" data-stp-viz aria-hidden="true"></canvas>
+            <div class="stp__info">
+              <span class="stp__eyebrow" data-stp-eyebrow>bin/music</span>
+              <b class="stp__title" data-stp-title>Nothing playing</b>
+              <span class="stp__sub" data-stp-sub>Press play, or pick any track below.</span>
+            </div>
+            <div class="stp__seek">
+              <span class="stp__time" data-stp-pos>0:00</span>
+              <div class="stp__track" data-stp-track role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="0" aria-valuenow="0" aria-valuetext="0:00">
+                <div class="stp__rail"><i class="stp__outro" data-stp-outro></i><i class="stp__fill" data-stp-fill></i></div>
+                <div class="stp__marks" data-stp-marks></div>
+                <i class="stp__thumb" data-stp-thumb></i>
+                <span class="stp__tip" data-stp-tip hidden></span>
+              </div>
+              <span class="stp__time" data-stp-dur>0:00</span>
+            </div>
+            <div class="stp__ctrl">
+              <button class="stp__btn stp__btn--sm" type="button" data-stp="repeat" aria-pressed="false" title="Repeat this track (R)">🔁<span class="stp__dot"></span></button>
+              <span class="stp__main">
+                <button class="stp__btn" type="button" data-stp="prev" aria-label="Previous track" title="Previous track · restart if past 3 s (P)">⏮</button>
+                <button class="stp__btn" type="button" data-stp="back" aria-label="Rewind 10 seconds" title="Rewind 10 s (←)">⏪</button>
+                <button class="stp__btn stp__btn--play" type="button" data-stp="play" aria-label="Play" title="Play / pause (space)">▶</button>
+                <button class="stp__btn" type="button" data-stp="fwd" aria-label="Forward 10 seconds" title="Forward 10 s (→)">⏩</button>
+                <button class="stp__btn" type="button" data-stp="next" aria-label="Next track" title="Next track (N)">⏭</button>
+              </span>
+              <span class="stp__vol">
+                <button class="stp__btn stp__btn--sm" type="button" data-stp="mute" aria-label="Mute" title="Mute (M)">🔊</button>
+                <input type="range" min="0" max="100" step="1" data-stp-vol aria-label="Volume">
+              </span>
+            </div>
+            <p class="stp__keys muted">space play/pause · ← → 10 s · P / N previous / next · R repeat · M mute</p>
+          </div>
           <div class="st" data-soundtrack></div>
         </div>
       </section>
@@ -34,17 +66,56 @@ sitemap: false
         .st__row.is-on .st__play { background: var(--accent); color: var(--bg); border-color: var(--accent); }
         .st__title { font: 600 13.5px var(--mono); color: var(--text); }
         .st__meta { display: block; font: 11.5px var(--mono); color: var(--muted); }
-        .st__now { margin: 0 0 16px; padding: 10px 14px; border-radius: 12px; border: 1px dashed var(--line-strong); font: 13px var(--mono); }
         .st__row.is-locked { background: repeating-linear-gradient(135deg, var(--bg-soft) 0 8px, transparent 8px 16px); border: 1px dashed var(--line-strong); }
         .st__row.is-locked .st__title { color: var(--muted); }
         .st__row.is-suite { border: 1px solid var(--line-strong); }
         .st__tag { margin-left: 6px; padding: 1px 6px; border-radius: 99px; border: 1px solid var(--line-strong); font: 10px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); vertical-align: 1px; }
-        .st__bar { display: block; height: 4px; margin-top: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
-        .st__bar i { display: block; height: 100%; background: var(--accent); transform-origin: left; transition: transform 0.3s linear; }
+
+        /* the player */
+        .stp { --stp: var(--accent); position: relative; overflow: hidden; display: grid; gap: 12px; margin: 0 0 18px; padding: 18px 18px 12px; border-radius: 16px; border: 1px solid var(--line-strong); background: var(--bg-elev); box-shadow: 0 0 0 1px var(--hl-soft); }
+        .stp > *:not(.stp__viz) { position: relative; }
+        .stp__viz { position: absolute; inset: auto 0 0 0; width: 100%; height: 70%; opacity: 0.22; pointer-events: none; }
+        .stp__info { display: grid; gap: 2px; min-width: 0; }
+        .stp__eyebrow { font: 11px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--stp); }
+        .stp__title { font: 700 clamp(18px, 4vw, 24px) var(--mono); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .stp__sub { font: 12px var(--mono); color: var(--muted); }
+        .stp__seek { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+        .stp__time { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 3.4em; text-align: center; }
+        .stp__track { position: relative; height: 24px; cursor: pointer; touch-action: none; outline: none; }
+        .stp__rail { position: absolute; left: 0; right: 0; top: 9px; height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
+        .stp__fill { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--stp); border-radius: 99px; }
+        .stp__outro { position: absolute; top: 0; bottom: 0; right: 0; width: 0; background: repeating-linear-gradient(135deg, transparent 0 3px, var(--line-strong) 3px 5px); }
+        .stp__marks i { position: absolute; top: 6px; width: 2px; height: 12px; margin-left: -1px; border-radius: 2px; background: var(--muted); opacity: 0.7; }
+        .stp__thumb { position: absolute; top: 5px; left: 0; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--stp); box-shadow: 0 0 0 3px var(--bg-elev), 0 0 12px var(--stp); transition: transform 0.15s; }
+        .stp__track:hover .stp__thumb, .stp__track:focus-visible .stp__thumb, .stp__track.is-drag .stp__thumb { transform: scale(1.3); }
+        .stp__track:focus-visible .stp__rail { box-shadow: 0 0 0 2px var(--stp); }
+        .stp__tip { position: absolute; bottom: 26px; transform: translateX(-50%); padding: 3px 7px; border-radius: 6px; background: var(--code-bg); border: 1px solid var(--line-strong); font: 11px var(--mono); color: var(--text); white-space: nowrap; pointer-events: none; }
+        .stp__ctrl { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+        .stp__main { display: flex; gap: 6px; align-items: center; }
+        .stp__btn { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-size: 15px; cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.1s; }
+        .stp__btn:hover { border-color: var(--stp); }
+        .stp__btn:active { transform: scale(0.94); }
+        .stp__btn:focus-visible { outline: 2px solid var(--stp); outline-offset: 2px; }
+        .stp__btn--play { width: 54px; height: 54px; font-size: 19px; background: var(--stp); color: var(--bg); border-color: var(--stp); }
+        .stp__btn--sm { width: 34px; height: 34px; font-size: 13px; }
+        .stp__btn[aria-pressed="true"] { border-color: var(--stp); background: color-mix(in srgb, var(--stp) 18%, transparent); }
+        .stp__dot { position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--stp); opacity: 0; }
+        .stp__btn[aria-pressed="true"] .stp__dot { opacity: 1; }
+        .stp__vol { display: flex; align-items: center; gap: 6px; justify-self: end; }
+        .stp__vol input { width: 90px; accent-color: var(--stp); }
+        .stp__keys { margin: 0; font: 11px var(--mono); text-align: center; }
+        @media (max-width: 560px) {
+          .stp { padding: 14px 12px 10px; }
+          .stp__ctrl { grid-template-columns: auto 1fr; }
+          .stp__main { grid-column: 1 / -1; grid-row: 1; justify-content: center; }
+          .stp__vol input { width: 70px; }
+          .stp__keys { display: none; }
+          .stp__btn { width: 38px; height: 38px; }
+        }
       </style>
       <script>
         (function boot() {
-          var root = document.querySelector("[data-soundtrack]"), now = document.querySelector("[data-st-now]");
+          var root = document.querySelector("[data-soundtrack]"), stp = document.querySelector("[data-stp]");
           var gate = document.querySelector("[data-st-gate]"), room = document.querySelector("[data-st-room]");
           var L = window.SamukaLofi, A = window.SamukaAuth;
           if (!root) return;
@@ -66,42 +137,168 @@ sitemap: false
           }
           gate.addEventListener("click", function (e) { if (e.target.closest("[data-st-signin]") && A) A.open({ reason: "team" }); });
           window.addEventListener("samuka:auth", check);
+
           function build() {
           built = true;
-          if (!L || !L.catalog) { root.innerHTML = '<p class="muted">Audio isn\'t available in this browser.</p>'; return; }
-          function fmt(s) { return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
-          var mine = { samuka: "knight", nino: "golden" }[A.role()];
+          if (!L || !L.catalog) { root.innerHTML = '<p class="muted">Audio isn\'t available in this browser.</p>'; stp.hidden = true; return; }
+          var ACCENT = { phthalo: "#3ad08f", knight: "#e5383b", golden: "#c49bff" };
+          var store = { get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+          var mine = { samuka: "knight", nino: "golden" }[A.role()] || "phthalo";
+          var repeat = store.get("samuka-st-repeat") === "1", lastVol = L.volume() || 1, cat = [];
+          var $ = function (q) { return stp.querySelector(q); };
+          function alive() { return document.body.contains(root); }
+          function fmt(s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2); }
+          function entry(t) { var th = cat.filter(function (c) { return c.theme === t.theme; })[0]; return th && th.songs[t.si]; }
+
+          /* ---------- track lists ---------- */
           function list() {
-          root.innerHTML = L.catalog().map(function (th) {
-            var plays = th.theme === "phthalo" ? "plays for everyone" : th.theme === "knight" ? "plays on Samuka's theme" : "plays on Nino's theme";
-            return '<div class="st__theme st__theme--' + th.theme + (th.theme === mine ? " is-mine" : "") + '"><h3>' + th.name + ' <small>' + plays + '</small></h3><ol class="st__list">' + th.songs.map(function (s) {
-              if (s.locked) return '<li class="st__row is-locked"><button class="st__play" type="button" data-pb-theme="' + th.theme + '" aria-label="Open the patch bay">🔒</button>' +
-                '<span><span class="st__title">6. ??? <span class="st__tag">secret</span></span><span class="st__meta">' + (s.heard < 5 ? "heard " + s.heard + "/5 · the patch bay wakes when you've heard all five" : "the patch bay is warm · press 🔒 to patch it together") + '</span></span></li>';
-              return '<li class="st__row' + (s.suite ? " is-suite" : "") + '" data-st="' + th.theme + ':' + (s.no - 1) + '"><button class="st__play" type="button" aria-label="Play ' + s.title + '">▶</button>' +
-                '<span><span class="st__title">' + s.no + '. ' + s.title + (s.suite ? ' <span class="st__tag">suite</span>' : "") + '</span><span class="st__meta">' + s.mood + ' · ' + s.bpm + ' bpm · ' + fmt(s.secs) + '</span></span></li>';
-            }).join("") + "</ol></div>";
-          }).join("");
-          }
-          list();
-          window.addEventListener("samuka:suite", function () { if (document.body.contains(root)) { list(); paint(); } });
-          function paint() {
-            var t = L.track();
-            root.querySelectorAll("[data-st]").forEach(function (row) {
-              var onIt = !!(t && row.getAttribute("data-st") === t.theme + ":" + (t.no - 1));
-              row.classList.toggle("is-on", onIt); row.querySelector(".st__play").textContent = onIt ? "■" : "▶";
-            });
-            now.innerHTML = t ? "♪ <b>" + t.name + "</b> · " + t.themeName + " · " + t.style + " · bar " + (t.bar + 1) + "/" + t.bars + '<span class="st__bar"><i style="transform:scaleX(' + ((t.bar + 1) / t.bars).toFixed(3) + ')"></i></span>' : '<span class="muted">Press ▶ on any track. Each one loops here so you can listen properly.</span>';
+            cat = L.catalog();
+            root.innerHTML = cat.map(function (th) {
+              var plays = th.theme === "phthalo" ? "plays for everyone" : th.theme === "knight" ? "plays on Samuka's theme" : "plays on Nino's theme";
+              return '<div class="st__theme st__theme--' + th.theme + (th.theme === mine ? " is-mine" : "") + '"><h3>' + th.name + ' <small>' + plays + '</small></h3><ol class="st__list">' + th.songs.map(function (s) {
+                if (s.locked) return '<li class="st__row is-locked"><button class="st__play" type="button" data-pb-theme="' + th.theme + '" aria-label="Open the patch bay">🔒</button>' +
+                  '<span><span class="st__title">6. ??? <span class="st__tag">secret</span></span><span class="st__meta">' + (s.heard < 5 ? "heard " + s.heard + "/5 · the patch bay wakes when you've heard all five" : "the patch bay is warm · press 🔒 to patch it together") + '</span></span></li>';
+                return '<li class="st__row' + (s.suite ? " is-suite" : "") + '" data-st="' + th.theme + ':' + (s.no - 1) + '"><button class="st__play" type="button" aria-label="Play ' + s.title + '">▶</button>' +
+                  '<span><span class="st__title">' + s.no + '. ' + s.title + (s.suite ? ' <span class="st__tag">suite</span>' : "") + '</span><span class="st__meta">' + s.mood + ' · ' + s.bpm + ' bpm · ' + fmt(s.secs) + '</span></span></li>';
+              }).join("") + "</ol></div>";
+            }).join("");
+            lastKey = null;
           }
           root.addEventListener("click", function (e) {
             var lock = e.target.closest("[data-pb-theme]");
             if (lock) { if (window.SamukaPatchBay) window.SamukaPatchBay.open(lock.getAttribute("data-pb-theme")); return; }
             var row = e.target.closest("[data-st]"); if (!row) return;
             var p = row.getAttribute("data-st").split(":"), t = L.track();
-            if (t && t.theme === p[0] && t.no - 1 === +p[1]) L.stop(); else L.preview(p[0], +p[1]);
-            setTimeout(paint, 50);
+            if (t && t.theme === p[0] && t.si === +p[1]) { if (t.paused) L.resume(); else L.pause(); }
+            else L.preview(p[0], +p[1], repeat);
+            paint();
           });
-          paint();
-          var iv = setInterval(function () { if (!document.body.contains(root)) { clearInterval(iv); return; } paint(); }, 1000);
+
+          /* ---------- the player ---------- */
+          var dragging = null, lastKey = null;
+          function act(what) {
+            var t = L.track();
+            if (what === "play") { if (!t) L.preview(mine, 0, repeat); else if (t.paused) L.resume(); else L.pause(); }
+            else if (what === "prev") { if (!t) L.preview(mine, 0, repeat); else L.prev(); }
+            else if (what === "next") { if (!t) L.preview(mine, 0, repeat); else L.next(); }
+            else if (what === "back") { if (t) L.skip(-10); }
+            else if (what === "fwd") { if (t) L.skip(10); }
+            else if (what === "repeat") { repeat = !repeat; store.set("samuka-st-repeat", repeat ? "1" : "0"); if (t) L.setLoop(repeat); }
+            else if (what === "mute") { var v = L.volume(); if (v > 0) { lastVol = v; L.volume(0); } else L.volume(lastVol || 0.8); }
+            paint();
+          }
+          stp.addEventListener("click", function (e) { var b = e.target.closest("[data-stp]"); if (b && b !== stp) act(b.getAttribute("data-stp")); });
+          var volIn = $("[data-stp-vol]");
+          volIn.addEventListener("input", function () { L.volume(volIn.value / 100); paint(); });
+
+          // seek bar: drag to scrub (commits on release), click to jump, arrows/Home/End when focused
+          var track = $("[data-stp-track]"), tip = $("[data-stp-tip]");
+          function frac(e) { var r = track.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); }
+          function showTip(f, dur) {
+            var t = L.track(), label = fmt(f * dur);
+            if (t && t.si === 5) { var m = L.suite.marks(t.theme).filter(function (x) { return x.at <= f * dur + 0.01; }).pop(); if (m) label += " · " + m.name; }
+            tip.textContent = label; tip.style.left = (f * 100) + "%"; tip.hidden = false;
+          }
+          track.addEventListener("pointerdown", function (e) {
+            var t = L.track(); if (!t || e.button > 0) return;
+            dragging = { f: frac(e), dur: t.dur }; track.setPointerCapture(e.pointerId); track.classList.add("is-drag");
+            showTip(dragging.f, t.dur); draw(dragging.f, t.dur);
+          });
+          track.addEventListener("pointermove", function (e) {
+            var t = L.track(); if (!t) return;
+            if (dragging) { dragging.f = frac(e); draw(dragging.f, dragging.dur); showTip(dragging.f, dragging.dur); }
+            else if (e.pointerType === "mouse") showTip(frac(e), t.dur);
+          });
+          function endDrag() { if (!dragging) return; var d = dragging; dragging = null; track.classList.remove("is-drag"); tip.hidden = true; L.seekTime(d.f * d.dur); paint(); }
+          track.addEventListener("pointerup", endDrag);
+          track.addEventListener("pointercancel", function () { dragging = null; track.classList.remove("is-drag"); tip.hidden = true; });
+          track.addEventListener("pointerleave", function () { if (!dragging) tip.hidden = true; });
+          track.addEventListener("keydown", function (e) {
+            var t = L.track(); if (!t) return;
+            var k = e.key, d = k === "ArrowLeft" || k === "ArrowDown" ? -5 : k === "ArrowRight" || k === "ArrowUp" ? 5 : k === "PageDown" ? -30 : k === "PageUp" ? 30 : 0;
+            if (d) { L.skip(d); } else if (k === "Home") L.seekTime(0); else if (k === "End") L.seekTime(t.dur - 2); else return;
+            e.preventDefault(); e.stopPropagation(); paint();
+          });
+
+          // keyboard shortcuts while the room is open (not while typing or with a dialog up)
+          function onKey(e) {
+            if (!alive()) { document.removeEventListener("keydown", onKey); return; }
+            if (room.hidden || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+            var el = document.activeElement;
+            if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) && el !== volIn)) return;
+            if ([].some.call(document.querySelectorAll('[aria-modal="true"]'), function (d) { return d.offsetParent !== null; })) return;   // a dialog is open
+            var k = e.key, map = { " ": "play", k: "play", ArrowLeft: "back", j: "back", ArrowRight: "fwd", l: "fwd", p: "prev", n: "next", r: "repeat", m: "mute" };
+            var a = map[k.length === 1 ? k.toLowerCase() : k];
+            if (!a || (k === " " && el && el.tagName === "BUTTON")) return;
+            if (el === volIn && (k === "ArrowLeft" || k === "ArrowRight")) return;
+            e.preventDefault(); act(a);
+          }
+          document.addEventListener("keydown", onKey);
+
+          function draw(f, dur) {
+            $("[data-stp-fill]").style.width = (f * 100) + "%";
+            $("[data-stp-thumb]").style.left = (f * 100) + "%";
+            $("[data-stp-pos]").textContent = fmt(f * dur);
+          }
+          function paint() {
+            if (!alive()) return;
+            var t = L.track(), ok = !!t;
+            if (ok && cat.length && !entry(t)) list();
+            stp.style.setProperty("--stp", ok ? ACCENT[t.theme] : ACCENT[mine]);
+            var playing = ok && !t.paused, pb = $('[data-stp="play"]');
+            pb.textContent = playing ? "⏸" : "▶"; pb.setAttribute("aria-label", playing ? "Pause" : "Play");
+            $('[data-stp="repeat"]').setAttribute("aria-pressed", String(repeat));
+            var v = L.volume(); if (document.activeElement !== volIn) volIn.value = Math.round(v * 100);
+            var mb = $('[data-stp="mute"]'); mb.textContent = v === 0 ? "🔇" : v < 0.5 ? "🔉" : "🔊"; mb.setAttribute("aria-label", v === 0 ? "Unmute" : "Mute");
+            if (!ok) {
+              $("[data-stp-eyebrow]").textContent = "bin/music";
+              $("[data-stp-title]").textContent = "Nothing playing";
+              $("[data-stp-sub]").textContent = "Press play, or pick any track below.";
+              $("[data-stp-dur]").textContent = "0:00"; draw(0, 0); $("[data-stp-outro]").style.width = "0"; $("[data-stp-marks]").innerHTML = "";
+              track.setAttribute("aria-valuemax", "0"); track.setAttribute("aria-valuenow", "0"); track.setAttribute("aria-valuetext", "nothing playing");
+            } else {
+              var e = entry(t) || {}, key = t.theme + ":" + t.si;
+              $("[data-stp-eyebrow]").textContent = t.themeName + " · track " + t.no + "/" + t.of + (t.paused ? " · paused" : "");
+              $("[data-stp-title]").textContent = t.name;
+              $("[data-stp-sub]").textContent = t.style + " · " + t.bpm + " bpm" + (t.loop ? " · repeating" : "");
+              $("[data-stp-dur]").textContent = fmt(t.dur);
+              if (!dragging) draw(t.dur ? t.pos / t.dur : 0, t.dur);
+              track.setAttribute("aria-valuemax", String(Math.round(t.dur))); track.setAttribute("aria-valuenow", String(Math.round(t.pos)));
+              track.setAttribute("aria-valuetext", fmt(t.pos) + " of " + fmt(t.dur));
+              if (key !== lastKey) {   // per-track furniture: the outro zone, the suite's movement marks
+                lastKey = key;
+                $("[data-stp-outro]").style.width = e.outro && e.bars ? (e.outro / (e.bars + e.outro) * 100) + "%" : "0";
+                $("[data-stp-marks]").innerHTML = t.si === 5 ? L.suite.marks(t.theme).slice(1).map(function (m) { return '<i style="left:' + (m.at / t.dur * 100) + '%" title="' + m.name + '"></i>'; }).join("") : "";
+              }
+            }
+            root.querySelectorAll("[data-st]").forEach(function (row) {
+              var onIt = !!(t && row.getAttribute("data-st") === t.theme + ":" + t.si);
+              row.classList.toggle("is-on", onIt);
+              var b = row.querySelector(".st__play"); b.textContent = onIt && !t.paused ? "⏸" : "▶";
+            });
+          }
+
+          // a small spectrum behind the player
+          var cv = $("[data-stp-viz]"), cx = cv.getContext && cv.getContext("2d"), bins = null;
+          function viz() {
+            if (!alive()) return;
+            requestAnimationFrame(viz);
+            if (!cx) return;
+            var an = L.analyser(), t = L.track(), w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
+            if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+            cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, w, h);
+            if (!an || !t || t.paused) return;
+            if (!bins || bins.length !== an.frequencyBinCount) bins = new Uint8Array(an.frequencyBinCount);
+            an.getByteFrequencyData(bins);
+            var n = 48, bw = w / n; cx.fillStyle = ACCENT[t.theme] || "#3ad08f";
+            for (var i = 0; i < n; i++) { var v = bins[Math.floor(i * bins.length * 0.75 / n)] / 255; cx.fillRect(i * bw + 1, h - v * h, bw - 2, v * h); }
+          }
+
+          list();
+          window.addEventListener("samuka:suite", function () { if (alive()) { list(); paint(); } });
+          window.addEventListener("samuka:lofi", function () { if (alive()) paint(); });
+          paint(); viz();
+          var iv = setInterval(function () { if (!alive()) { clearInterval(iv); return; } paint(); }, 250);
           }
           check();
         })();

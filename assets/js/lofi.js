@@ -10,6 +10,8 @@
  *           Golden (G minor, glassy bells, shimmer). The secret CRT skin uses Phthalo.
  * Track 6 (secret, per theme) is the suite: all five songs stitched into one journey. It joins the rotation
  *   once unlocked in the Patch Bay (assets/js/patchbay.js), which wakes after you've heard all five songs.
+ * Every song ends with an outro that eases its tempo and tuning into the next track (or itself, when looping)
+ *   and teases that track's opening, so songs hand over on the beat instead of crossfading.
  * On the site the current theme's songs play in order; switching theme crossfades to the same song.
  * SamukaLofi.preview(theme, n) loops one track (used by the /soundtrack/ listening page).
  */
@@ -242,7 +244,8 @@
         var f = F(o, m); a.frequency.setTargetAtTime(f, tt, 0.01); b.frequency.setTargetAtTime(f, tt, 0.01);
         var gg = g.gain; gg.cancelScheduledValues(tt); gg.setTargetAtTime(vol, tt, 0.008); gg.setTargetAtTime(0.0001, tt + len * 0.9, 0.03);
       },
-      rate: function (tt, r) { lfo.frequency.setTargetAtTime(r, tt, 0.1); }
+      rate: function (tt, r) { lfo.frequency.setTargetAtTime(r, tt, 0.1); },
+      bend: function (tt, m, tc) { a.frequency.setTargetAtTime(F(o, m), tt, tc); b.frequency.setTargetAtTime(F(o, m), tt, tc); }   // tape-stop dive
     };
   }
   function makeBinaural(o, t, f, delta, lvl) {   // left f, right f + delta: a slow "beat" felt inside the head
@@ -489,6 +492,113 @@
 
   var SONGS = [SONG_THEME, SONG_HORROR, SONG_LOWEST, SONG_STANDOFF, SONG_EPILOGUE];
 
+  /* ======================= outros =======================
+   * After its last bar every song plays a short outro (song.outroBars) that winds it down, resolves home to
+   * E minor (G major for the epilogue) and, bar by bar, eases its tempo and tuning (440 ↔ 432) into whatever
+   * plays next: the next song, itself when looping, or the suite's start. The final outro bar teases the next
+   * song's opening, so the hand-off lands on the downbeat instead of a crossfade. */
+  SONG_THEME.outroBars = 4;
+  SONG_THEME.outro = function (o, t, st, k, N) {   // drums peel away, the bass filter closes, the hook rings out
+    var six = o.six, fade = 1 - k / N;
+    if (st === 0) {
+      o.cut = Math.max(320, 1150 - k * 260); o.bassLp.frequency.setTargetAtTime(o.cut * 1.5, t, 0.8);
+      o.sub.set(t, 28, 0.04 + 0.2 * fade);
+      if (k === 0) { kick(o, t, 1); clank(o, t, 1); pad(o, t, [52, 55, 59, 64], six * 56, 0.05); o.lead.play(t, 64, six * 24, 0.09); }
+    }
+    if (k < N - 1) bassNote(o, t, 40 + RZ.bass[st], RZ.acc[st] * fade, six * 0.9);
+    if (k < 2 && st % 4 === 0) kick(o, t, 1 - k * 0.35);
+    if (k < 3 && st % 4 === 2) hat(o, t, 0.8 * fade);
+    if (k < 3) arpNote(o, t, [64, 67, 71, 76][RZ.arp[st]], (st % 4 === 0 ? 1 : 0.7) * fade);
+    if (k === 1 && st >= 12) tom(o, t, [180, 150, 120, 95][st - 12], 0.8);
+  };
+  SONG_HORROR.outroBars = 4;
+  SONG_HORROR.outro = function (o, t, st, k, N) {   // one last scream, then a heartbeat that slows to almost nothing
+    var six = o.six, fade = 1 - k / N;
+    if (st === 0) {
+      o.sub.set(t, 28, 0.22 * fade + 0.02);
+      if (k === 0) {
+        kick(o, t, 1.1); clank(o, t, 1); stab(o, t, [64, 65, 71], 1.2); screech(o, t, 76, six * 16, 0.05);
+        strings(o, t, [52, 53, 59], six * 48, 0.035, { a: 0.3, r: 2.5, trem: true, bright: 1.1 });
+        if (o.P.choir) pad(o, t, [52, 53, 58], six * 48, 0.03);
+      }
+      if (k === 1) { piano(o, t, 28, 0.9, 5); piano(o, t, 29, 0.6, 5); }
+    }
+    if (k === 0 && (st === 4 || st === 8 || st === 12)) heart(o, t, 0.9);
+    if (k === 1 && (st === 0 || st === 8)) heart(o, t, 0.75);
+    if (k === 2 && st === 0) heart(o, t, 0.55);
+    if (k === 0 && st % 4 === 2) hat(o, t, 0.5);
+  };
+  SONG_LOWEST.outroBars = 2;
+  SONG_LOWEST.outro = function (o, t, st, k) {   // the piano lets go, strings hold the last breath
+    var six = o.six;
+    if (st === 0 && k === 0) {
+      o.sub.set(t, 28, 0.06);
+      strings(o, t, [55, 59, 64], six * 28, 0.05, { a: 1, r: 3 });
+      strings(o, t, [40], six * 28, 0.05, { a: 0.8, r: 3, bright: 0.6 });
+      if (o.P.choir) pad(o, t, [52, 55, 59], six * 28, 0.02);
+    }
+    if (k === 0 && st % 2 === 0) piano(o, t, [40, 47, 52, 55, 59, 64, 67, 71][st / 2], 0.7 - st * 0.025, 2.6);
+    if (k === 1 && st === 0) piano(o, t, 76, 0.45, 5);
+  };
+  SONG_STANDOFF.outroBars = 4;
+  SONG_STANDOFF.outro = function (o, t, st, k, N) {   // half-time, a tape-stop dive, the two hackers' last words
+    var six = o.six, fade = 1 - k / N;
+    if (st === 0) {
+      o.sub.set(t, 28, 0.18 * fade + 0.03);
+      if (k === 0) { stab(o, t, [52, 55, 59], 1.2); o.reese.rate(t, 0.2); o.reese.play(t, 40, six * 26, 0.22); }
+      if (k === 1) pad(o, t, [52, 55, 59, 64], six * 40, 0.03);
+      if (k === 1) { o.la.play(t, 76, six * 6, 0.07); }
+      if (k === 2) { o.la.play(t, 67, six * 14, 0.05); o.lb.play(t, 64, six * 14, 0.045); }
+    }
+    if (k === 0 && st === 8) o.reese.bend(t, 28, six * 5);
+    if (k === 1 && st === 8) o.lb.play(t, 71, six * 8, 0.065);
+    if (k < 2) {
+      if (st === 0) kick(o, t, 1);
+      if (st === 8) snare(o, t, 0.9 - k * 0.3);
+      if (st % 4 === 2) hat(o, t, 0.6 * fade);
+      if (st % 8 === 0) ride(o, t, 0.6 * fade);
+    }
+  };
+  SONG_EPILOGUE.outroBars = 2;
+  SONG_EPILOGUE.outro = function (o, t, st, k) {   // a last glint of light over the held chord
+    if (st === 0 && k === 0) { o.bin.level(t, 0.0001); o.sub.set(t, 31, 0.05); }
+    if (k === 0 && (st === 0 || st === 4 || st === 8)) piano(o, t, [79, 83, 86][st / 4], 0.28, 3.5);
+  };
+  // the next song's opening, faded in under the outro's last bar (f runs 0 → 1 across it)
+  function foreshadow(o, t, st, si, f) {
+    var six = o.six;
+    if (si === 0) {   // Ring Zero's 16th-note pulse, filter still shut
+      if (st === 0) { o.cut = 380; o.bassLp.frequency.setTargetAtTime(560, t, 0.3); }
+      bassNote(o, t, 40 + RZ.bass[st], 0.2 + 0.6 * f, six * 0.9);
+      if (st >= 8 && st % 4 === 2) hat(o, t, 0.5);
+    } else if (si === 1) {   // a heartbeat and a dissonant shiver
+      if (st === 0 || st === 8) heart(o, t, 0.5 + 0.3 * f);
+      if (st === 0) strings(o, t, [64, 65, 71], six * 16, 0.025, { a: six * 10, r: 0.6, trem: true, bright: 1.3 });
+    } else if (si === 2) {   // a few lonely piano notes
+      if (st % 4 === 0) piano(o, t, [52, 55, 59, 64][st / 4], 0.45, 2.4);
+    } else if (si === 3) {   // hats and a cold pad
+      if (st % 2 === 0) hat(o, t, 0.2 + 0.45 * f);
+      if (st === 0) pad(o, t, [52, 55, 59, 64], six * 16, 0.025);
+    } else if (si === 4) {   // dawn: a warm G chord
+      if (st === 0) pad(o, t, [55, 59, 62, 67], six * 18, 0.03, "warm");
+      if (st === 0 || st === 8) piano(o, t, st ? 74 : 67, 0.3, 3);
+    }
+  }
+  function outroStep(o, t, st, k) {
+    var song = o.song, N = song.outroBars;
+    if (!o.tgt) {   // decided once, at the outro's first step
+      var ti = o.mv ? 0 : o.loop ? o.si : nextIdx(o.theme, o.si), ts = SONGS[ti];
+      o.tgt = { si: ti, six: 60 / (ts.bpm * o.P.bpm) / 4, ref: ts.ref || 440, six0: o.six, ref0: o.ref };
+    }
+    var g = o.tgt, f = (k * 16 + st + 1) / (N * 16), e = f * f * (3 - 2 * f);
+    o.six = o.dur = g.six0 + (g.six - g.six0) * e;   // tempo glides into the next song's
+    o.ref = g.ref0 + (g.ref - g.ref0) * e;             // and so does the tuning (432 ↔ 440)
+    song.outro(o, t, st, k, N);
+    if (k === N - 2 && st === 0 && (g.si === 0 || g.si === 1 || g.si === 3)) riser(o, t, o.six * 32, 0.1);   // lift into something fast
+    if (k === N - 1) foreshadow(o, t, st, g.si, (st + 1) / 16);
+  }
+  function unTarget(o) { if (o && o.tgt) { o.six = o.dur = o.tgt.six0; o.ref = o.tgt.ref0; o.tgt = null; } }
+
   /* ======================= track 6 · the suite (secret) =======================
    * All five songs as one ~9½ minute journey: overture → chase → the standoff at full speed → the fall → home,
    * where the horns play the Ring Zero hook. Each movement keeps its own tempo; risers and an impact glue them. */
@@ -497,7 +607,7 @@
     { si: 1, segs: [[0, 40], [48, 56]], out: "riser", name: "II · the chase" },
     { si: 3, segs: [[8, 88]], name: "III · the standoff" },
     { si: 2, segs: [[8, 40]], in: "impact", name: "IV · the fall" },
-    { si: 4, segs: [[0, 48]], finale: 1, name: "V · home" }
+    { si: 4, segs: [[0, 48 + SONG_EPILOGUE.outroBars]], finale: 1, name: "V · home" }   // incl. its outro, back into the theme
   ];
   var SUITE_MOOD = "the suite · all five songs, one journey";
   function segBars(m) { return m.segs.reduce(function (a, s) { return a + s[1] - s[0]; }, 0); }
@@ -560,7 +670,12 @@
     o.vib = osc("sine", 5.2, t, t + 36000); o.vibG = gain(8); o.vib.connect(o.vibG); o.nodes.push(o.vib);
     o.bassLp = filt("lowpass", 400, 5); var bsh = shaper(P.bassDrive), bout = gain(0.9); o.bassLp.connect(bsh); bsh.connect(bout); bout.connect(o.duck);
     song.init(o, t);
-    o.play = function (tt, s) { var st = s % 16, bar = Math.floor(s / 16); if (o.mv) glue(o, tt, st, bar); song.play(o, tt, st, bar); };
+    o.play = function (tt, s) {
+      var st = s % 16, bar = Math.floor(s / 16);
+      if (bar >= song.bars) return outroStep(o, tt, st, bar - song.bars);
+      if (o.mv) glue(o, tt, st, bar);
+      song.play(o, tt, st, bar);
+    };
     return o;
   }
   function kill(o) {
@@ -575,6 +690,20 @@
     g.cancelScheduledValues(t); g.setValueAtTime(Math.max(0.0001, g.value), t); g.linearRampToValueAtTime(0.0001, t + fade);
     setTimeout(function () { kill(o); }, fade * 1000 + 400);
   }
+  // a fade that starts later (when an outro's last scheduled note has played), letting its tails ring out
+  function retireAt(o, at, fade) {
+    var g = o.bus.gain;
+    o.done = true;
+    g.cancelScheduledValues(at); g.setValueAtTime(1, at); g.linearRampToValueAtTime(0.0001, at + fade);
+    setTimeout(function () { kill(o); }, Math.max(0, at - ctx.currentTime + fade) * 1000 + 400);
+  }
+  // an outro finished: the next track starts exactly on the following downbeat
+  function handoff(o, si, loop, sp) {
+    cur = create(o.theme, si, 0.05, loop, sp);
+    cur.next = Math.max(cur.next, o.next);
+    retireAt(o, o.next, 3);
+    nowPlaying();
+  }
   function switchTo(theme, si, fade, loop, sp) {
     if (cur) retire(cur, fade);
     cur = create(theme, si, fade, loop, sp);
@@ -587,8 +716,7 @@
     if (sp.seg + 1 < segs.length) { sp.seg++; o.s = segs[sp.seg][0] * 16; return false; }
     var mi = sp.mi + 1;
     if (mi < SUITE.length) switchTo(o.theme, 5, SUITE[mi].in === "impact" ? 0.25 : 1.5, o.loop, { mi: mi, seg: 0 });
-    else if (o.loop) switchTo(o.theme, 5, 4, true, { mi: 0, seg: 0 });
-    else switchTo(o.theme, 0, 4, false);
+    else { handoff(o, o.loop ? 5 : 0, o.loop, o.loop ? { mi: 0, seg: 0 } : null); return true; }   // the epilogue's outro already leads into the theme
     cur.next = Math.max(cur.next, o.next);
     return true;
   }
@@ -598,9 +726,8 @@
     if (cur.next < now - 0.25) cur.next = now + 0.02;
     while (cur && cur.next < horizon) {
       if (cur.suite) { if (suiteEdge()) continue; }
-      else if (cur.s >= cur.song.bars * 16) {
-        if (cur.loop) cur.s = 0;
-        else { var o = cur; switchTo(o.theme, nextIdx(o.theme, o.si), 4, false); cur.next = Math.max(cur.next, o.next); continue; }
+      else if (cur.s >= (cur.song.bars + cur.song.outroBars) * 16) {
+        var o = cur; handoff(o, o.tgt ? o.tgt.si : o.loop ? o.si : nextIdx(o.theme, o.si), o.loop); continue;
       }
       if (!cur.suite && cur.s === 64) markHeard(cur.theme, cur.si);   // four bars in counts as "heard"
       cur.play(cur.next, cur.s); cur.s++; cur.next += cur.dur;
@@ -610,10 +737,46 @@
   function halt() { if (timer) clearInterval(timer); timer = null; }
   function ramp(to, dur) { var t = ctx.currentTime, g = master.gain; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(to, t + dur); }
 
+  /* ---------- time: where we are in seconds, and seeking by seconds ---------- */
+  function barSecs(P, song) { return 240 / (song.bpm * P.bpm); }
+  function suiteMap(P) {   // every suite segment with its start time and bar length
+    var t = 0, out = [];
+    SUITE.forEach(function (m, mi) {
+      var bs = barSecs(P, SONGS[m.si]);
+      m.segs.forEach(function (seg, sg) { out.push({ mi: mi, sg: sg, from: seg[0], to: seg[1], t0: t, bs: bs, name: m.name }); t += (seg[1] - seg[0]) * bs; });
+    });
+    out.total = t; return out;
+  }
+  function times() {
+    if (!cur.suite) { var bs = barSecs(cur.P, cur.song), dur = (cur.song.bars + cur.song.outroBars) * bs; return { pos: Math.min(dur, cur.s / 16 * bs), dur: dur }; }
+    var map = suiteMap(cur.P), sp = cur.suite, m = map.filter(function (x) { return x.mi === sp.mi && x.sg === sp.seg; })[0];
+    return { pos: Math.min(map.total, m.t0 + Math.max(0, cur.s / 16 - m.from) * m.bs), dur: map.total };
+  }
+  function seekTime(sec) {
+    if (!cur) return;
+    sec = Math.max(0, +sec || 0);
+    if (!cur.suite) {
+      var bs = barSecs(cur.P, cur.song), max = (cur.song.bars + cur.song.outroBars) * 16 - 1;
+      unTarget(cur); cur.s = Math.min(max, Math.floor(sec / bs * 16)); emit(); return;
+    }
+    var map = suiteMap(cur.P); sec = Math.min(sec, map.total - 0.05);
+    for (var i = 0; i < map.length; i++) {
+      var m = map[i];
+      if (sec < m.t0 + (m.to - m.from) * m.bs || i === map.length - 1) {
+        var s = Math.floor(m.from * 16 + (sec - m.t0) / m.bs * 16);
+        if (m.mi === cur.suite.mi) { unTarget(cur); cur.suite.seg = m.sg; cur.s = s; }
+        else switchTo(cur.theme, 5, 0.4, cur.loop, { mi: m.mi, seg: m.sg, s: s });
+        emit(); return;
+      }
+    }
+  }
+
   function info() {
     if (!cur) return null;
-    var base = { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: cur.si + 1, of: suiteOpen(cur.theme) ? 6 : 5, bpm: cur.bpm, loop: cur.loop };
-    if (!cur.suite) { base.bar = Math.floor(cur.s / 16) % cur.song.bars; base.bars = cur.song.bars; base.style = cur.song.mood; return base; }
+    var tm = times();
+    var base = { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: cur.si + 1, si: cur.si, of: suiteOpen(cur.theme) ? 6 : 5, bpm: Math.round(15 / cur.six), loop: cur.loop, paused: paused, pos: tm.pos, dur: tm.dur };
+    var outro = cur.s >= cur.song.bars * 16 && cur.tgt ? " · outro → " + cur.P.titles[cur.mv ? 0 : cur.tgt.si] : "";
+    if (!cur.suite) { base.bar = Math.min(cur.song.bars - 1, Math.floor(cur.s / 16)); base.bars = cur.song.bars; base.style = cur.song.mood + outro; base.outro = !!outro; return base; }
     var sp = cur.suite, done = 0, i;
     for (i = 0; i < sp.mi; i++) done += segBars(SUITE[i]);
     for (i = 0; i < sp.seg; i++) done += cur.mv.segs[i][1] - cur.mv.segs[i][0];
@@ -626,14 +789,14 @@
     for (var mi = 0; mi < SUITE.length; mi++) for (var sg = 0; sg < SUITE[mi].segs.length; sg++) {
       var seg = SUITE[mi].segs[sg], len = seg[1] - seg[0];
       if (b < len) {
-        if (mi === cur.suite.mi) { cur.suite.seg = sg; cur.s = (seg[0] + b) * 16; }
+        if (mi === cur.suite.mi) { unTarget(cur); cur.suite.seg = sg; cur.s = (seg[0] + b) * 16; }
         else switchTo(cur.theme, 5, 0.6, cur.loop, { mi: mi, seg: sg, s: (seg[0] + b) * 16 });
         return;
       }
       b -= len;
     }
   }
-  function emit() { try { window.dispatchEvent(new CustomEvent("samuka:lofi", { detail: { on: on, track: on && cur ? info().name : null, info: on ? info() : null } })); } catch (e) {} }
+  function emit() { try { window.dispatchEvent(new CustomEvent("samuka:lofi", { detail: { on: on, paused: paused, track: on && cur ? info().name : null, info: on && cur ? info() : null } })); } catch (e) {} }
   function nowPlaying() {
     var i = info(); if (!i) return;
     if (btn) btn.title = "♪ " + i.name + " · " + i.themeName + " · " + i.bpm + " bpm (synthesized live)";
@@ -644,9 +807,10 @@
   }
   function render() {
     if (!btn) return;
-    btn.classList.toggle("is-on", on);
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-    btn.innerHTML = on ? '<span class="lofi-eq" aria-hidden="true"><i></i><i></i><i></i></span>' : "♪";
+    var live = on && !paused;
+    btn.classList.toggle("is-on", live);
+    btn.setAttribute("aria-pressed", live ? "true" : "false");
+    btn.innerHTML = live ? '<span class="lofi-eq" aria-hidden="true"><i></i><i></i><i></i></span>' : "♪";
     if (!on) btn.title = "♪ site soundtrack (synthesized live)";
     if (nextBtn) nextBtn.hidden = !on;
   }
@@ -655,18 +819,53 @@
   // one tab plays at a time: starting music here stops it in the site's other tabs (e.g. the soundtrack room)
   var tabId = Math.random().toString(36).slice(2), bc = null;
   try { bc = new BroadcastChannel("samuka-music"); bc.onmessage = function (e) { if (on && e.data && e.data.from !== tabId) stop(); }; } catch (e) { bc = null; }
+  var paused = false, vol = (function () { try { var v = parseFloat(localStorage.getItem("samuka-volume")); return isFinite(v) ? Math.max(0, Math.min(1, v)) : 1; } catch (e) { return 1; } })();
+  function level() { return MASTER * vol * vol; }   // squared: the slider feels even to the ear
   function start(theme, si, loop) {
     if (!AC || !ensureCtx()) { if (btn) btn.hidden = true; return; }
     if (bc) try { bc.postMessage({ from: tabId }); } catch (e) {}
     quiet(ctx.resume());
-    if (!on) { on = true; token++; ramp(MASTER, 1.2); }
+    if (paused) { paused = false; token++; ramp(level(), 0.2); }
+    if (!on) { on = true; token++; ramp(level(), 1.2); }
     if (theme != null) switchTo(theme, si || 0, cur ? 1.5 : 0.05, loop);
     else if (!cur) switchTo(themeId(), 0, 0.05, false);
     run(); mediaSession(); render(); emit();
   }
+  // pause keeps everything exactly where it is (the audio clock stops), resume carries on mid-bar
+  function pause() {
+    if (!on || paused || !ctx) return;
+    paused = true;
+    var my = ++token;
+    ramp(0.0001, 0.12);
+    setTimeout(function () { if (my !== token || !paused) return; halt(); quiet(ctx.suspend()); }, 160);
+    setMs("paused"); render(); emit();
+  }
+  function resume() {
+    if (!on || !paused) return start();
+    paused = false; token++;
+    var p = ctx.resume();
+    function go() { ramp(level(), 0.15); run(); }
+    if (p && p.then) p.then(go, go); else go();
+    setMs("playing"); render(); emit();
+  }
+  function setVolume(v) {
+    vol = Math.max(0, Math.min(1, +v || 0));
+    try { localStorage.setItem("samuka-volume", String(vol)); } catch (e) {}
+    if (on && !paused && ctx) ramp(level(), 0.08);
+    emit();
+  }
+  function prevIdx(th, si) { return si === 5 ? 4 : si > 0 ? si - 1 : suiteOpen(th) ? 5 : 4; }
+  // ⏮ restarts the track if it's a few seconds in, otherwise goes to the previous one
+  function prev() {
+    if (!on) return start();
+    if (paused) resume();
+    if (times().pos > 3) { if (cur.suite) seekTime(0); else { unTarget(cur); cur.s = 0; emit(); } return; }
+    var si = prevIdx(cur.theme, cur.si); if (pinned) pinned.si = si;
+    switchTo(cur.theme, si, 1.2, cur.loop);
+  }
   function stop() {
     if (!on) return;
-    on = false; pinned = null;
+    on = false; pinned = null; paused = false;
     var my = ++token;
     ramp(0, 0.8);
     render(); emit();
@@ -676,8 +875,14 @@
       quiet(ctx.suspend());
     }, 900);
   }
-  function next() { if (!on) return start(); pinned = null; switchTo(cur.theme, nextIdx(cur.theme, cur.si), 2, false); }
-  function preview(theme, si) { pinned = { theme: THEMES[theme] ? theme : "phthalo", si: si }; start(pinned.theme, si, true); }
+  function next() {
+    if (!on) return start();
+    if (paused) resume();
+    var si = nextIdx(cur.theme, cur.si); if (pinned) pinned.si = si;
+    switchTo(cur.theme, si, 1.2, pinned ? cur.loop : false);
+  }
+  // the listening page: a pinned track (theme changes elsewhere don't switch it); loops unless loop === false
+  function preview(theme, si, loop) { pinned = { theme: THEMES[theme] ? theme : "phthalo", si: si }; start(pinned.theme, si, loop !== false); }
   function bpmRange(P) {
     var b = SONGS.map(function (s) { return Math.round(s.bpm * P.bpm); });
     return Math.min.apply(null, b) + "–" + Math.max.apply(null, b);
@@ -685,10 +890,14 @@
 
   window.SamukaLofi = {
     toggle: function () { if (on) stop(); else start(); },
-    start: function () { start(); }, stop: stop, isOn: function () { return on; }, next: next, preview: preview,
+    start: function () { start(); }, stop: stop, isOn: function () { return on; }, next: next, prev: prev, preview: preview,
+    pause: pause, resume: resume, isPaused: function () { return on && paused; },
+    seekTime: seekTime, skip: function (d) { if (cur) seekTime(times().pos + d); },
+    setLoop: function (v) { if (cur) { cur.loop = !!v; if (!v && cur.tgt && cur.tgt.si === cur.si && !cur.mv) cur.tgt.si = nextIdx(cur.theme, cur.si); emit(); } },
+    volume: function (v) { if (v != null) setVolume(v); return vol; },
     // play a track in the normal rotation (it carries on to the next one when it ends)
     play: function (theme, si) { pinned = null; start(THEMES[theme] ? theme : themeId(), si | 0, false); },
-    seek: function (bar) { if (!cur) return; if (cur.suite) suiteSeek(bar); else cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; },
+    seek: function (bar) { if (!cur) return; if (cur.suite) suiteSeek(bar); else { unTarget(cur); cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; } },
     track: function () { return on ? info() : null; },
     analyser: function () { return on ? analyser : null; },
     theme: themeId,
@@ -696,12 +905,14 @@
       open: suiteOpen, unlock: unlockSuite, heard: heardCount, heardMask: heardMask,
       title: function (th) { return THEMES[th] ? THEMES[th].titles[5] : null; },
       themes: function () { return Object.keys(THEMES).map(function (k) { return { theme: k, name: THEMES[k].name, titles: THEMES[k].titles.slice(0, 5), suite: THEMES[k].titles[5], tr: THEMES[k].tr }; }); },
-      movements: SUITE.map(function (m) { return { si: m.si, name: m.name }; })
+      movements: SUITE.map(function (m) { return { si: m.si, name: m.name }; }),
+      // where each movement starts, in seconds (for markers on a seek bar)
+      marks: function (th) { var P = THEMES[th] || THEMES.phthalo, seen = {}; return suiteMap(P).filter(function (x) { if (seen[x.mi]) return false; seen[x.mi] = 1; return true; }).map(function (x) { return { at: x.t0, name: x.name }; }); }
     },
     catalog: function () {
       return Object.keys(THEMES).map(function (k) {
         var P = THEMES[k];
-        var songs = SONGS.map(function (s, i) { return { no: i + 1, title: P.titles[i], mood: s.mood, bpm: Math.round(s.bpm * P.bpm), bars: s.bars, secs: Math.round(s.bars * 4 * 60 / (s.bpm * P.bpm)) }; });
+        var songs = SONGS.map(function (s, i) { return { no: i + 1, title: P.titles[i], mood: s.mood, bpm: Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round((s.bars + s.outroBars) * 4 * 60 / (s.bpm * P.bpm)) }; });
         songs.push({ no: 6, title: P.titles[5], mood: SUITE_MOOD, bpm: bpmRange(P), bars: SUITE_BARS, secs: suiteSecs(P), suite: true, locked: !suiteOpen(k), heard: heardCount(k) });
         return { theme: k, name: P.name, songs: songs };
       });
@@ -717,19 +928,21 @@
     else switchTo(th, cur.mv.si, 2, false);   // that theme's suite is still locked: drop into the same song there
   });
   document.addEventListener("visibilitychange", function () {
-    if (!on || !ctx) return;
+    if (!on || !ctx || paused) return;
     tick();
     if (!document.hidden && ctx.state !== "running") { var p = ctx.resume(); if (p && p.then) p.then(run, run); else run(); }
   });
+  function setMs(state) { try { if (navigator.mediaSession) navigator.mediaSession.playbackState = state; } catch (e) {} }
   function mediaSession() {
     var ms = navigator.mediaSession; if (!ms) return;
-    try {
-      ms.setActionHandler("pause", function () { stop(); ms.playbackState = "paused"; });
-      ms.setActionHandler("play", function () { start(); ms.playbackState = "playing"; });
-      ms.setActionHandler("stop", function () { stop(); });
-      ms.setActionHandler("nexttrack", next);
-      ms.playbackState = "playing";
-    } catch (e) {}
+    var h = {
+      pause: pause, play: resume, stop: stop, nexttrack: next, previoustrack: prev,
+      seekbackward: function (d) { if (cur) seekTime(times().pos - ((d && d.seekOffset) || 10)); },
+      seekforward: function (d) { if (cur) seekTime(times().pos + ((d && d.seekOffset) || 10)); },
+      seekto: function (d) { if (d && d.seekTime != null) seekTime(d.seekTime); }
+    };
+    Object.keys(h).forEach(function (k) { try { ms.setActionHandler(k, h[k]); } catch (e) {} });
+    setMs(paused ? "paused" : "playing");
   }
   function mount() {
     var bar = document.querySelector(".tabs__actions");
@@ -737,7 +950,7 @@
     btn = document.createElement("button");
     btn.type = "button"; btn.className = "icon-btn lofi-btn"; btn.setAttribute("aria-pressed", "false");
     btn.setAttribute("aria-label", "Play the site soundtrack"); btn.textContent = "♪";
-    btn.addEventListener("click", function () { if (on) stop(); else start(); });
+    btn.addEventListener("click", function () { if (paused) resume(); else if (on) stop(); else start(); });
     nextBtn = document.createElement("button");
     nextBtn.type = "button"; nextBtn.className = "icon-btn lofi-btn lofi-next"; nextBtn.setAttribute("aria-label", "Next track"); nextBtn.textContent = "⏭"; nextBtn.hidden = true;
     nextBtn.addEventListener("click", next);
