@@ -73,7 +73,12 @@
         "</div>";
       api.foot("<span><kbd>B</kbd> box this lap · <kbd>S</kbd><kbd>M</kbd><kbd>H</kbd><kbd>I</kbd><kbd>W</kbd> next tyre · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> save / normal / push · <kbd>Space</kbd> sim speed. Dry race? Use two dry compounds or take +10 s. Pushing, worn tyres and slicks in the wet raise the crash risk.</span>");
       var $ = function (sel) { return stage.querySelector(sel); };
-      var path = $("[data-path]"), carsG = $("[data-cars]"), arena = $("[data-arena]"), plen = 1;
+      var path = $("[data-path]"), carsG = $("[data-cars]"), arena = $("[data-arena]"), plen = 1, LUT = [], LUT_N = 800;
+      function pointAt(frac) {   // linear interpolation between precomputed samples
+        frac = ((frac % 1) + 1) % 1;
+        var f = frac * LUT_N, i = Math.floor(f), t = f - i, j = i * 2, k = Math.min(LUT_N, i + 1) * 2;
+        return { x: LUT[j] + (LUT[k] - LUT[j]) * t, y: LUT[j + 1] + (LUT[k + 1] - LUT[j + 1]) * t };
+      }
 
       /* ---------- radio: newest on top, scrollable history ---------- */
       function radio(msg, cls) {
@@ -90,6 +95,8 @@
         track = t; LAPS = t.laps; BASE = t.base;
         ["[data-kerb]", "[data-road]", "[data-path]"].forEach(function (s) { $(s).setAttribute("d", t.d); });
         plen = path.getTotalLength();
+        LUT = [];
+        for (var li = 0; li <= LUT_N; li++) { var lp = path.getPointAtLength(li / LUT_N * plen); LUT.push(lp.x, lp.y); }
         var p0 = path.getPointAtLength(0), p1 = path.getPointAtLength(2), ang = Math.atan2(p1.y - p0.y, p1.x - p0.x) + Math.PI / 2;
         var st = $("[data-start]");
         st.setAttribute("x1", (p0.x + Math.cos(ang) * 9).toFixed(1)); st.setAttribute("y1", (p0.y + Math.sin(ang) * 9).toFixed(1));
@@ -217,7 +224,7 @@
           var loss = sc ? Math.round(track.pit / 2) : track.pit;
           extra = loss; c.pitLossNow = loss;
           c.tyre = c.nextTyre || c.tyre; c.age = 0; c.stops++; c.used[c.tyre] = 1; c.pitNext = false; c.nextTyre = null;
-          if (c.i === 0) radio("Box box, done. " + TYRES[c.tyre].name + "s on, " + (sc ? "cheap stop under the safety car." : loss + " s in the pit lane."), "ok");
+          if (c.i === 0) { radio("Box box, done. " + TYRES[c.tyre].name + "s on, " + (sc ? "cheap stop under the safety car." : loss + " s in the pit lane."), "ok"); syncControls(); }
           else c.plan = c.lap + planStop(c.tyre);
         }
         c.lapTime = lapTime(c, extra);
@@ -255,24 +262,26 @@
       }
 
       /* ---------- rendering (smooth: cars ease toward their sim position and face the track) ---------- */
-      var dots = {};
+      var dots = {}, easeK = 0.3;
       function carShape(c) {
         var g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttribute("class", "pw__car" + (c.i === 0 ? " pw__car--me" : ""));
         g.innerHTML = '<g class="pw__body"><path d="M7,0 L-5,-4.2 L-3,0 L-5,4.2 Z" fill="' + c.color + '"/></g>' + (c.i === 0 ? '<text y="-9" text-anchor="middle">YOU</text>' : "");
         carsG.appendChild(g);
-        return { g: g, body: g.firstChild, d: 0 };
+        return { g: g, body: g.firstChild, d: 0, a: null };
       }
       function drawCars() {
         cars.forEach(function (c) {
           var v = dots[c.code] || (dots[c.code] = carShape(c));
-          var target = (c.lap + progress(c)) * plen;
-          if (!v.d || Math.abs(target - v.d) > plen * 0.5) v.d = target;
-          v.d += (target - v.d) * 0.35;   // ease: no jumps when lap times are recalculated
-          var l = ((v.d % plen) + plen) % plen, p = path.getPointAtLength(l), q = path.getPointAtLength((l + 1.5) % plen);
+          var target = c.lap + progress(c);   // in laps
+          if (!v.d || Math.abs(target - v.d) > 0.5) v.d = target;
+          v.d += (target - v.d) * easeK;      // frame-rate independent easing: no jumps, no jitter
+          var p = pointAt(v.d), q = pointAt(v.d + 3 / plen);
           var ang = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+          if (v.a === null) v.a = ang;
+          var da = ((ang - v.a + 540) % 360) - 180; v.a += da * Math.min(1, easeK * 1.6);   // heading turns smoothly
           v.g.setAttribute("transform", "translate(" + p.x.toFixed(2) + "," + p.y.toFixed(2) + ")");
-          v.body.setAttribute("transform", "rotate(" + ang.toFixed(1) + ")");
+          v.body.setAttribute("transform", "rotate(" + v.a.toFixed(1) + ")");
           var inPit = c.pitLossNow && (simT - c.lapStart) < c.pitLossNow;
           v.g.classList.toggle("is-pit", !!inPit);
           v.g.classList.toggle("is-out", !!c.out);
@@ -282,7 +291,7 @@
       function riskLabel(r) { return r < 0.009 ? ["low", 1] : r < 0.035 ? ["medium", 2] : ["HIGH", 3]; }
       function drawTower() {
         var o = order(), lead = o[0];
-        $("[data-tower]").innerHTML = o.map(function (c, k) {
+        var html = o.map(function (c, k) {
           var gap;
           if (c.out) gap = '<em class="err">OUT</em>';
           else if (k === 0) gap = c.finished ? "FIN" : "L" + Math.min(LAPS, c.lap + 1) + "/" + LAPS;
@@ -290,7 +299,11 @@
           else gap = fmtGap(Math.max(0, (c.finished ? c.finishT : c.lapStart) - (lead.finished ? lead.finishT : lead.lapStart)));
           var pit = c.pitLossNow && (simT - c.lapStart) < c.pitLossNow;
           return '<li class="' + (c.i === 0 ? "is-me" : "") + (c.out ? " is-out" : "") + '"><b>' + (k + 1) + '</b><i style="background:' + c.color + '"></i><span class="pw__code">' + c.code + '</span><span class="pw__gap">' + (pit ? "<em>PIT</em>" : gap) + '</span><span class="pw__ty pw__ty--' + c.tyre + '">' + c.tyre + '</span><span class="pw__age">' + c.age + "</span></li>";
-        }).join("");
+        });
+        var tower = $("[data-tower]");
+        if (tower.children.length !== html.length) tower.innerHTML = html.join("");
+        else html.forEach(function (h, k) { if (tower.__rows && tower.__rows[k] === h) return; tower.children[k].outerHTML = h; });
+        tower.__rows = html;
         var lap = Math.min(LAPS, o[0].lap + 1), fc = [], icon = { dry: "☀", damp: "🌦", wet: "🌧" };
         for (var k = 0; k < 4; k++) fc.push(wxAt(o[0].lap + k));
         $("[data-wx]").innerHTML = '<span>LAP <b>' + lap + "/" + LAPS + "</b></span>" + (sc ? '<span class="pw__sc">SAFETY CAR</span>' : "") +
@@ -317,11 +330,12 @@
         if (!alive) return;
         raf = requestAnimationFrame(frame);
         if (!last) last = ts;
-        var dt = Math.min(0.05, (ts - last) / 1000); last = ts;
+        var dt = Math.min(0.06, Math.max(0, (ts - last) / 1000)); last = ts;
         if (!paused) step(dt * SIM_PER_SEC * speed);
         if (!alive) return;
+        easeK = 1 - Math.pow(0.0005, dt);   // same feel at 30, 60 or 120 fps
         drawCars();
-        uiT += dt; if (uiT > 0.25) { uiT = 0; drawTower(); }
+        uiT += dt; if (uiT > 0.3) { uiT = 0; drawTower(); }
       }
 
       /* ---------- player actions ---------- */
