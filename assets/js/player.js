@@ -3,8 +3,7 @@
  */
 (function () {
   "use strict";
-  var root = document.querySelector("[data-pcard]");
-  if (!root) return;
+  var root = null;
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
   var card = null;
   function A() { return window.SamukaAuth; }
@@ -95,12 +94,14 @@
     document.body.appendChild(a); a.click(); a.remove();
   }
 
-  root.addEventListener("submit", function (e) {
-    if (!e.target.matches("[data-pcard-find]")) return;
+  document.addEventListener("submit", function (e) {
+    if (!root || !e.target.matches("[data-pcard-find]")) return;
     e.preventDefault();
-    var n = e.target.elements.n.value.trim(); if (n) location.search = "?n=" + encodeURIComponent(n);
+    var n = e.target.elements.n.value.trim(); if (!n) return;
+    if (window.SamukaNav) window.SamukaNav.go("/u/?n=" + encodeURIComponent(n)); else location.search = "?n=" + encodeURIComponent(n);
   });
-  root.addEventListener("click", function (e) {
+  document.addEventListener("click", function (e) {
+    if (!root || !root.contains(e.target)) return;
     if (e.target.closest("[data-pcard-copy]")) {
       var b = e.target.closest("[data-pcard-copy]");
       if (navigator.clipboard) navigator.clipboard.writeText(location.origin + "/u/?n=" + encodeURIComponent(card.name)).then(function () { b.textContent = "✓ copied"; });
@@ -109,7 +110,8 @@
     if (e.target.closest("[data-acct-open], [data-pcard-signin]")) { var a = A(); if (a) a.open(); }
   });
   var started = false;
-  function go() { if (!started) { started = true; load(); } }
+  function go() { root = document.querySelector("[data-pcard]"); if (root && !started) { started = true; load(); } }
   window.addEventListener("samuka:auth", function () { setTimeout(go, 50); });
+  window.addEventListener("samuka:page", function () { started = false; card = null; go(); });
   setTimeout(go, 2500);
 })();

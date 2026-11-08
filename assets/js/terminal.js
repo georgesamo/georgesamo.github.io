@@ -25,12 +25,14 @@
   function echo(cmd) {
     var prompt = mode === "irb"
       ? '<span class="hl">irb(main):' + String(history.length).padStart(3, "0") + ":0&gt;</span> "
+      : mode === "chat" ? '<span class="hl">#lobby&gt;</span> '
       : '<span class="u">visitor@samuka</span>:<span class="d">~</span>$ ';
     print(prompt + esc(cmd), "cmd");
   }
   function setPrompt() {
     ps1.innerHTML = mode === "irb"
       ? '<span class="u">irb(main)</span>:<span class="d">' + String(history.length + 1).padStart(3, "0") + "</span>&gt;"
+      : mode === "chat" ? '<span class="hl">#lobby</span>&gt;'
       : '<span class="u">visitor@samuka</span>:<span class="d">~</span>$';
   }
 
@@ -94,6 +96,7 @@
     ".secret": function () { return '<span class="dim"># You found it.</span>\n<span class="hl">Rubies are formed under pressure. So are good backends.</span>'; }
   };
 
+  function navTo(u) { if (window.SamukaNav) window.SamukaNav.go(u); else location.href = u; }
   function ach(k) { if (window.SamukaAch) window.SamukaAch.unlock(k); }
   function resumeRb() {
     var k = function (s) { return '<span class="k">' + s + "</span>"; }, str = function (s) { return '<span class="ok">"' + esc(s) + '"</span>'; };
@@ -177,6 +180,8 @@
       ["wall / blog / projects", "visitor commits · pull requests · repos"],
       ["music [on|off]", "generated lo-fi that follows the theme"],
       ["who / cursors [on|off]", "who's online · ghost cursors"],
+      ["chat", "live #lobby chat with everyone on the site"],
+      ["events / card [name]", "this week's challenge · player cards"],
       ["ls, cat &lt;file&gt;, pwd, date, echo, history, clear, exit", ""]
     ];
     return rows.map(function (r) {
@@ -306,6 +311,19 @@
     vim: function () { ach("vim"); return "You are now stuck in vim forever. <span class=\"dim\">(type :q! … no wait, wrong terminal. You're fine.)</span>"; },
     coffee: function () { return '<span class="warn">418 I\'m a teapot</span> · but Samuka runs on coffee anyway.'; },
     ruby: function (a) { return a[0] === "-v" ? "ruby 3.3.6 (2024-11-05) [samuka-linux]" : "usage: ruby -v · or try rails console"; },
+    chat: function () {
+      if (!window.SamukaChat) return "chat not loaded";
+      mode = "chat";
+      window.SamukaChat.enter({ print: print });
+      var A = window.SamukaAuth;
+      return '<span class="hl">joined #lobby</span> <span class="dim">· everyone on the site · ' + (A && A.user() ? "type to talk" : "read-only until you <b>login</b>") + " · /help · /exit</span>";
+    },
+    events: function () { return window.SamukaEvents ? window.SamukaEvents.text() + '\n<span class="dim">more: /events/</span>' : "events not loaded"; },
+    card: function (a) {
+      var A = window.SamukaAuth, n = a[0] || (A && A.user() ? A.publicName() : "");
+      if (!n) return "usage: card &lt;nickname&gt;";
+      close(); navTo("/u/?n=" + encodeURIComponent(n)); return "→ player card of " + esc(n);
+    },
     achievements: function () {
       var t = window.SamukaAch && window.SamukaAch.text();
       return t || 'sign in to collect achievements: <span class="b">login</span>';
@@ -358,7 +376,7 @@
       var peers = P.peers();
       return "you" + (peers.length ? "\n" + peers.map(function (x) { return esc(x.name) + ' <span class="dim">(' + esc(x.role) + ")</span>"; }).join("\n") : '\n<span class="dim">nobody else right now</span>');
     },
-    blog: function () { location.href = "/blog/"; return "→ /blog/"; },
+    blog: function () { close(); navTo("/blog/"); return "→ /blog/"; },
     projects: function () { close(); S.go && S.go("projects"); return "→ projects"; },
     hello: function () { return 'გამარჯობა! <span class="dim">(gamarjoba: hello in Georgian)</span>'; },
     gamarjoba: function () { return COMMANDS.hello(); }
@@ -430,6 +448,11 @@
     history.push(line); hIdx = history.length;
     var outHtml;
     if (mode === "irb") outHtml = irb(line);
+    else if (mode === "chat") {
+      var r = window.SamukaChat ? window.SamukaChat.input(line) : { leave: true, html: "chat unavailable" };
+      if (r.leave) mode = "sh";
+      outHtml = r.html;
+    }
     else {
       var parts = line.split(/\s+/), cmd = parts[0].toLowerCase(), args = parts.slice(1);
       var fn = COMMANDS[cmd];
@@ -457,7 +480,7 @@
     if (e.key === "ArrowUp") { e.preventDefault(); if (hIdx > 0) { hIdx--; input.value = history[hIdx]; } }
     else if (e.key === "ArrowDown") { e.preventDefault(); if (hIdx < history.length - 1) { hIdx++; input.value = history[hIdx]; } else { hIdx = history.length; input.value = ""; } }
     else if (e.key === "l" && e.ctrlKey) { e.preventDefault(); out.innerHTML = ""; }
-    else if (e.key === "c" && e.ctrlKey && !window.getSelection().toString()) { e.preventDefault(); echo(input.value + "^C"); input.value = ""; if (mode === "irb") { mode = "sh"; setPrompt(); } }
+    else if (e.key === "c" && e.ctrlKey && !window.getSelection().toString()) { e.preventDefault(); echo(input.value + "^C"); input.value = ""; if (mode === "chat" && window.SamukaChat) window.SamukaChat.leave(); if (mode !== "sh") { mode = "sh"; setPrompt(); } }
   });
 
   /* ---------- ruby rain ---------- */

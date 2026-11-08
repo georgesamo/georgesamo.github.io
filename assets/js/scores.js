@@ -207,6 +207,7 @@
     loadAll();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+  window.addEventListener("samuka:page", boot);
 
   window.SamukaScores = { dailyIntro: dailyIntro, dailyCard: dailyCard, openDaily: openDaily, board: fetchBoard, reload: function () { cache = {}; loadAll(); } };
 })();

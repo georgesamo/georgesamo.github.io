@@ -29,8 +29,8 @@
     blurb: "Match three gems from the Gemfile. Power-ups: Pipeline, Force push, Bundle.",
     mount: function (stage, api) {
       var T = api.reduced ? 0.01 : 1;  // animation time scale
-      var rng = api.rng, daily = api.mode === "daily";
-      var MOVES_RUN = daily ? 20 : MOVES, moveLog = [], moveStart = 0;
+      var rng = api.rng, daily = api.mode === "daily", race = api.mode === "race" && api.opts.race;
+      var MOVES_RUN = daily || race ? 20 : MOVES, moveLog = [], moveStart = 0;
       var board = [], cells = [], sel = -1, focusI = 0, busy = false, alive = false;
       var score = 0, moves = MOVES_RUN, best = api.peekBest(), hintTimer = 0, uid = 0, combo = 0;
 
@@ -119,6 +119,7 @@
         });
       }
       function hud() {
+        if (race && alive) race.tick(score, MOVES_RUN - moves, 0);
         api.hud('<span>score <b>' + score + '</b></span><span>moves <b' + (moves <= 5 ? ' class="low"' : "") + ">" + moves + '</b></span><span class="hide-sm">best <b>' + Math.max(best, score) + "</b></span>");
       }
       function cellBox(i) {
@@ -373,13 +374,18 @@
       }
       function start() {
         score = 0; moves = MOVES_RUN; sel = -1; alive = true; busy = false; moveLog = [];
-        if (daily) rng = window.SamukaArcade.seeded(api.opts.seed); // everyone gets the same board
+        if (daily || race) rng = window.SamukaArcade.seeded(api.opts.seed); // everyone gets the same board
         fill(); paint(); hud(); api.clearOverlay(); armHint();
         cells[focusI].focus();
       }
       function over() {
         alive = false; clearHint();
         var b = api.best(score, { log: moveLog }); best = b.best;
+        if (race) {
+          race.over(score, MOVES_RUN);
+          api.overlay('<p class="arcade__kicker">$ bundle exec rspec · 20 moves done</p><dl class="arcade__stats"><dt>your score</dt><dd>' + score + '</dd></dl><div class="race-result" data-race-result><p class="muted">waiting for the other player…</p></div>');
+          return;
+        }
         if (daily) { api.overlay(window.SamukaScores ? window.SamukaScores.dailyCard(score, moveLog) : "<h3>" + score + "</h3>"); return; }
         api.overlay(
           '<p class="arcade__kicker">$ bundle exec rspec</p>' +
@@ -447,6 +453,7 @@
       window.addEventListener("pointerup", onPointerUp);
       stage.addEventListener("click", onClick);
       intro();
+      if (race) start();
 
       return {
         key: function (e) {
@@ -466,6 +473,7 @@
         // test hook (used only by automated playtests)
         _debug: { board: function () { return board; }, place: function (i, t, sp) { board[i] = gem(t, sp); paint(); }, COLOR: COLOR },
         destroy: function () {
+          if (race && alive) race.over(score, MOVES_RUN - moves, true); // closing the window forfeits
           alive = false; clearHint();
           window.removeEventListener("pointermove", onPointerMove);
           window.removeEventListener("pointerup", onPointerUp);

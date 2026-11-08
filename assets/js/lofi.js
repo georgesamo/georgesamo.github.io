@@ -266,7 +266,8 @@
 
   function tick() {
     if (!ctx) return;
-    var now = ctx.currentTime, horizon = now + LOOK, i, o;
+    // background tabs get timers far less often, so schedule further ahead while hidden
+    var now = ctx.currentTime, horizon = now + (document.hidden ? 3 : LOOK), i, o;
     for (i = 0; i < insts.length; i++) {
       o = insts[i];
       if (o.next < now - 0.25) o.next = now + 0.02;
@@ -308,7 +309,7 @@
     ramp(MASTER, 1.5);
     if (!cur || insts.indexOf(cur) < 0) cur = create(skin(), 0.05);
     else swap(skin());
-    if (!document.hidden) run();
+    run(); mediaSession();
     render(); emit();
   }
 
@@ -337,12 +338,24 @@
     swap((e && e.detail && e.detail.skin) || skin());
   });
 
+  // keep playing while the tab is hidden or the window minimised
   document.addEventListener("visibilitychange", function () {
     if (!on || !ctx) return;
-    if (document.hidden) { halt(); quiet(ctx.suspend()); return; }
-    var p = ctx.resume();
-    if (p && p.then) p.then(run, run); else run();
+    tick();   // fill the longer lookahead right away
+    if (!document.hidden && ctx.state !== "running") { var p = ctx.resume(); if (p && p.then) p.then(run, run); else run(); }
   });
+
+  // OS media controls (lock screen, media keys) where supported
+  function mediaSession() {
+    var ms = navigator.mediaSession; if (!ms) return;
+    try {
+      if (window.MediaMetadata) ms.metadata = new MediaMetadata({ title: "night-city lo-fi", artist: "Samuka's Arcade", album: "generated live · " + skin() });
+      ms.setActionHandler("pause", function () { stop(); ms.playbackState = "paused"; });
+      ms.setActionHandler("play", function () { start(); ms.playbackState = "playing"; });
+      ms.setActionHandler("stop", function () { stop(); });
+      ms.playbackState = "playing";
+    } catch (e) {}
+  }
 
   function mount() {
     var bar = document.querySelector(".tabs__actions");

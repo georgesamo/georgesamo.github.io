@@ -44,6 +44,7 @@
   window.addEventListener("samuka:auth", function () { teamLinks(); paintStats(); });
   window.addEventListener("samuka:achievement", paintStats);
   window.addEventListener("samuka:presence", paintStats);
+  window.addEventListener("samuka:page", function () { teamLinks(); paintStats(); });
   setInterval(paintStats, 5000);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function () { teamLinks(); paintStats(); }); else { teamLinks(); paintStats(); }
 })();

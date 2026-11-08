@@ -130,6 +130,7 @@
     var n = (state.profile && state.profile.display_name) || (state.user && state.user.email) || "?";
     return n.charAt(0).toUpperCase();
   }
+  window.addEventListener("samuka:page", function () { paintButtons(); });
   function paintButtons() {
     document.querySelectorAll("[data-account]").forEach(function (b) {
       if (!enabled) { b.hidden = true; return; }

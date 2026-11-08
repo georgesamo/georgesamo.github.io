@@ -106,9 +106,10 @@
       if (h) moderate(+h.getAttribute("data-wall-hide"), "hide");
       if (d && confirm("Delete this commit from the wall? This can't be undone.")) moderate(+d.getAttribute("data-wall-del"), "del");
     });
-    setTimeout(live, 3000);
+    if (!sub) setTimeout(live, 3000);
   }
   window.addEventListener("samuka:auth", function () { if (root) load(); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+  window.addEventListener("samuka:page", boot);
   window.SamukaWall = { reload: load };
 })();

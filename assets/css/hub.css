@@ -120,3 +120,47 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .status__viz canvas { display: block; width: 120px; height: 16px; }
 .status__viz:empty { display: none; }
 @media (max-width: 640px) { .status__viz canvas { width: 70px; } }
+
+/* ---------- events ---------- */
+.ev-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.ev-grid .ev-card:last-child { grid-column: 1 / -1; }
+@media (max-width: 900px) { .ev-grid { grid-template-columns: minmax(0, 1fr); } }
+.ev-card { padding: 20px 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-elev); }
+.ev-kicker { margin: 0 0 8px; font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.ev-title { margin: 0 0 12px; font: 700 20px/1.25 var(--sans); letter-spacing: -0.02em; }
+.hub-card .ev-title { font-size: 15px; margin-bottom: 10px; }
+.ev-bar { height: 10px; border-radius: 6px; background: var(--bg-soft); overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); }
+.ev-bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), var(--hl)); transition: width 0.6s var(--ease); }
+.ev-bar.is-done i { background: var(--hl); box-shadow: 0 0 14px var(--hl); }
+.ev-prog { margin: 6px 0 14px; font: 12px var(--mono); color: var(--text-2); }
+.ev-now { margin: 0 0 12px; }
+.ev-seasons { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.ev-seasons li { display: grid; grid-template-columns: 28px 1fr; gap: 2px 8px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; }
+.ev-seasons li span { grid-row: span 2; font-size: 20px; }
+.ev-seasons li small { font: 11px var(--mono); color: var(--muted); }
+.ev-seasons li.is-on { border-color: var(--hl); background: var(--hl-soft); }
+.lobby { position: relative; }
+.season-fx { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.season-fx span { position: absolute; top: -30px; opacity: 0.35; animation: seasonFall linear infinite; }
+@keyframes seasonFall { to { transform: translate(40px, 110vh) rotate(200deg); } }
+.lobby > :not(.season-fx) { position: relative; z-index: 1; }
+
+/* ---------- 2-player picker + co-op bar ---------- */
+.race__pick { display: grid; gap: 6px; margin: 14px 0 4px; padding: 0; border: 0; text-align: left; }
+.race__pick legend { font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.race__pick label { display: grid; grid-template-columns: auto 1fr; gap: 0 10px; align-items: center; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; font-size: 14px; }
+.race__pick label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.race__pick small { grid-column: 2; color: var(--muted); font: 11.5px var(--mono); }
+.race-hud__team { position: relative; flex: 1; max-width: 280px; height: 18px; border-radius: 9px; background: var(--line); overflow: hidden; text-align: center; }
+.race-hud__team i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--accent), var(--hl)); transition: width 0.4s; }
+.race-hud__team b { position: relative; font: 600 11px/18px var(--mono); color: var(--text); }
+
+/* ---------- terminal chat ---------- */
+.chat__name { color: var(--blue); font-weight: 600; }
+.chat__name--samuka { color: #e5383b; }
+.chat__name--nino { color: #b98cff; }
+
+/* ---------- seamless page switch: thin progress line under the tabs ---------- */
+.nav-bar { position: fixed; left: 0; top: 0; z-index: 500; height: 2px; width: 0; background: linear-gradient(90deg, var(--accent), var(--hl)); box-shadow: 0 0 10px var(--accent); opacity: 0; transition: width 0.35s ease, opacity 0.3s; pointer-events: none; }
+.nav-bar.is-on { width: 70%; opacity: 1; transition: width 2.5s cubic-bezier(.1,.7,.2,1), opacity 0.1s; }
+#main h1:focus, #main h2:focus { outline: none; }

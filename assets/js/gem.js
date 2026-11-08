@@ -2,7 +2,8 @@
 (function () {
   "use strict";
   var canvas = document.getElementById("gem-canvas");
-  if (!canvas || !canvas.getContext) return;
+  if (!canvas || !canvas.getContext || canvas.__gem) return;
+  canvas.__gem = true;
   var ctx = canvas.getContext("2d");
   var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -228,7 +229,7 @@
     if (shatter.t < 1) shatter.t = Math.min(1, shatter.t + dt / shatter.dur);
     draw(dt);
     var idle = reduced && !dragging && shatter.t >= 1 && !sparks.length && Math.abs(velY) < 0.001;
-    if (!visible || idle) { running = false; return; }
+    if (!visible || idle || !canvas.isConnected) { running = false; return; }   // stops when the page was switched away
     requestAnimationFrame(frame);
   }
   function wake() {

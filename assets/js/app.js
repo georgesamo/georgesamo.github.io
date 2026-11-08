@@ -169,15 +169,16 @@
       d += n * 22 + 70;
     });
   }
-  $$(".code[data-type]").forEach(prepareTyping);
 
   /* ---------- reveal on scroll ---------- */
+  var revealIO = null;
   function setupReveal() {
     $$(".migrations, .gitlog__list").forEach(function (group) {
       $$(".reveal", group).forEach(function (el, i) { el.style.setProperty("--rd", Math.min(i * 70, 420) + "ms"); });
     });
     if (!("IntersectionObserver" in window)) { $$(".reveal").forEach(function (el) { el.classList.add("is-in"); }); return; }
-    var io = new IntersectionObserver(function (entries) {
+    if (revealIO) revealIO.disconnect();
+    var io = revealIO = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
         if (!en.isIntersecting) return;
         en.target.classList.add("is-in");
@@ -190,8 +191,7 @@
   }
 
   /* ---------- scroll spy: tab name, tree, status bar ---------- */
-  var sections = $$("[data-file]");
-  var tabName = $("[data-tab-name]"), tabCrumbs = $("[data-tab-crumbs]"), tabIcon = $("[data-tab-icon]"), statusFile = $("[data-status-file]"), statusPos = $("[data-status-pos]");
+  var sections = [], tabName = null, tabCrumbs = null, tabIcon = null, statusFile = null, statusPos = $("[data-status-pos]"), spy = null;
   function setActive(sec) {
     var file = sec.getAttribute("data-file");
     var parts = file.split("/");
@@ -201,8 +201,12 @@
     if (statusFile) statusFile.textContent = file;
     $$("[data-nav]").forEach(function (a) { a.classList.toggle("is-active", a.getAttribute("data-nav") === sec.id); });
   }
-  if ("IntersectionObserver" in window) {
-    var spy = new IntersectionObserver(function (entries) {
+  function initSpy() {
+    sections = $$("[data-file]");
+    tabName = $("[data-tab-name]"); tabCrumbs = $("[data-tab-crumbs]"); tabIcon = $("[data-tab-icon]"); statusFile = $("[data-status-file]");
+    if (spy) spy.disconnect();
+    if (!("IntersectionObserver" in window)) return;
+    spy = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) { if (en.isIntersecting) setActive(en.target); });
     }, { rootMargin: "-40% 0px -55% 0px" });
     sections.forEach(function (s) { spy.observe(s); });
@@ -219,9 +223,7 @@
   }, { passive: true });
 
   /* ---------- git graph ---------- */
-  var gitlog = $("#gitlog");
-  var paths = gitlog ? $$("path", gitlog) : [];
-  var lens = [0, 0];
+  var gitlog = null, paths = [], lens = [0, 0], gitRO = null;
   function laneX(lane) {
     var cs = getComputedStyle(document.documentElement);
     return parseFloat(cs.getPropertyValue(lane ? "--lane1" : "--lane0")) || (lane ? 44 : 18);
@@ -263,9 +265,12 @@
     paths[0].style.strokeDashoffset = lens[0] * (1 - p);
     if (lens[1]) paths[1].style.strokeDashoffset = lens[1] * (1 - p);
   }
-  if (gitlog) {
-    if ("ResizeObserver" in window) new ResizeObserver(function () { buildGraph(); }).observe(gitlog);
-    window.addEventListener("resize", buildGraph);
+  window.addEventListener("resize", buildGraph);
+  function initGitlog() {
+    gitlog = $("#gitlog"); paths = gitlog ? $$("path", gitlog) : []; lens = [0, 0];
+    if (gitRO) { gitRO.disconnect(); gitRO = null; }
+    if (!gitlog) return;
+    if ("ResizeObserver" in window) { gitRO = new ResizeObserver(function () { buildGraph(); }); gitRO.observe(gitlog); }
     gitlog.addEventListener("click", function (e) {
       var head = e.target.closest("button.commit__head");
       if (!head) return;
@@ -295,7 +300,7 @@
     "mentoring and leadership": ["mentor", "supported continuous"], "ai-assisted coding (claude)": []
   };
   var jobs = (data.experience || []);
-  var traceBody = $("[data-trace-body]");
+  var traceBody = null;
   var hitLines = [];
   function regexFor(skill) {
     var terms = ALIASES[skill] || [skill];
@@ -345,6 +350,8 @@
     if (traceBody) traceBody.outerHTML = '<div data-trace-body>' + html + "</div>";
     traceBody = $("[data-trace-body]");
   }
+  function initGems() {
+  traceBody = $("[data-trace-body]"); hitLines = [];
   $$(".gem").forEach(function (g) {
     g.addEventListener("mouseenter", function () { trace(g); });
     g.addEventListener("focus", function () { trace(g); });
@@ -357,10 +364,12 @@
       }
     });
   });
+  }
 
   /* ---------- bundle install ---------- */
-  var bundleBtn = $("[data-bundle]"), bundleOut = $("[data-bundle-out]");
   function ver(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return (h % 7 + 1) + "." + (h % 13) + "." + (h % 5); }
+  function initBundle() {
+  var bundleBtn = $("[data-bundle]"), bundleOut = $("[data-bundle-out]");
   if (bundleBtn) bundleBtn.addEventListener("click", async function () {
     if (bundleBtn.disabled) return;
     bundleBtn.disabled = true;
@@ -381,10 +390,13 @@
     bundleOut.scrollTop = bundleOut.scrollHeight;
     setTimeout(function () { gems.forEach(function (g) { g.classList.remove("is-installed"); }); bundleBtn.disabled = false; }, 800);
   });
+  }
 
   /* ---------- contact form ---------- */
-  var form = $("#contact-form"), resp = form && $("[data-response]", form);
+  var form = null, resp = null;
   function showResponse(html) { resp.hidden = false; resp.innerHTML = html; }
+  function initForm() {
+  form = $("#contact-form"); resp = form && $("[data-response]", form);
   if (form) form.addEventListener("submit", async function (e) {
     e.preventDefault();
     var f = form.elements;
@@ -419,6 +431,7 @@
       showResponse('<span class="err">HTTP/1.1 503 Service Unavailable</span>\n{ "error": "' + esc(err.message) + '" }\n\nThe mail relay didn\'t answer. Please email <a href="mailto:' + esc(data.person.email) + '">' + esc(data.person.email) + "</a> directly.");
     } finally { btn.disabled = false; }
   });
+  }
 
   /* ---------- public API (used by terminal.js / gem.js) ---------- */
   window.Samuka = {
@@ -432,10 +445,34 @@
       if (el) { el.scrollIntoView({ behavior: reduced ? "auto" : "smooth" }); return; }
       // the section lives on the other page: arcade hub (/) or the creator's profile (/samuka/)
       var hub = { lobby: 1, games: 1, boards: 1, wall: 1, arcade: 1 };
-      location.href = (hub[id] ? "/#" + (id === "arcade" ? "games" : id) : "/samuka/#" + (id === "hero" ? "" : id));
+      var to = hub[id] ? "/#" + (id === "arcade" ? "games" : id) : "/samuka/#" + (id === "hero" ? "" : id);
+      if (window.SamukaNav) window.SamukaNav.go(to); else location.href = to;
     },
-    focusContact: function () { if (!form) { location.href = "/samuka/#contact"; return; } this.go("contact"); setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, reduced ? 0 : 650); }
+    focusContact: function () {
+      if (!form) {
+        if (window.SamukaNav) { window.SamukaNav.go("/samuka/#contact"); window.addEventListener("samuka:page", function () { setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, 400); }, { once: true }); }
+        else location.href = "/samuka/#contact";
+        return;
+      } this.go("contact"); setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, reduced ? 0 : 650); }
   };
+
+  /* ---------- page parts (re-run after a seamless page switch) ---------- */
+  function initPage() {
+    $$("[data-years]").forEach(function (el) { el.textContent = years; });
+    $$("[data-year]").forEach(function (el) { el.textContent = new Date().getFullYear(); });
+    $$(".code[data-type]").forEach(prepareTyping);
+    initSpy(); initGitlog(); initGems(); initBundle(); initForm();
+  }
+  initPage();
+  window.addEventListener("samuka:page", function () {
+    initPage();
+    setupReveal();
+    $$("[data-scramble]").forEach(scramble);
+    requestAnimationFrame(buildGraph);
+    // the hero gem lives on the profile page: start a fresh one for the new canvas
+    var g = document.getElementById("gem-canvas");
+    if (g && !g.__gem) { var s = document.createElement("script"); s.src = "/assets/js/gem.js"; document.body.appendChild(s); }
+  });
 
   /* ---------- go ---------- */
   boot().then(function () {

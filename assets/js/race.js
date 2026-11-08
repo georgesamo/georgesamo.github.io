@@ -6,7 +6,8 @@
  */
 (function () {
   "use strict";
-  var ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  var ALPHA = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", COOP_TARGET = 4000;
+  var choice = { game: "sidekiq", coop: false };
   var dlg = null, ch = null, room = null, isHost = false, me = null, opp = null, st = null, bar = null, cdTimer = 0;
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
   function A() { return window.SamukaAuth; }
@@ -29,8 +30,12 @@
   }
   function body(html) { dlg.querySelector("[data-race-body]").innerHTML = html; }
   function lobby(prefill) {
-    body('<p class="arcade__kicker">$ bundle exec sidekiq --race</p><h3>Live 1v1</h3>' +
-      "<p>Both of you get the same queue at the same moment. Highest score when Redis runs out wins.</p>" +
+    body('<p class="arcade__kicker">$ bin/arcade --live</p><h3>Live 2-player</h3>' +
+      "<p>Both of you get the same game at the same moment and see each other's score live.</p>" +
+      '<fieldset class="race__pick"><legend>game</legend>' +
+        '<label><input type="radio" name="rgame" value="sidekiq" checked> Sidekiq Rush <small>versus · last one standing scores most</small></label>' +
+        '<label><input type="radio" name="rgame" value="gems"> Gem Match · versus <small>same board, 20 moves, higher score wins</small></label>' +
+        '<label><input type="radio" name="rgame" value="gems-coop"> Gem Match · co-op <small>same board, add up to ' + fmt(COOP_TARGET) + " together</small></label></fieldset>" +
       '<div class="race__choices"><button class="btn btn--primary" type="button" data-race-create>⚔ create a room</button>' +
       '<form class="race__join"><input name="code" maxlength="4" placeholder="CODE" autocomplete="off" spellcheck="false" aria-label="Room code" value="' + esc(prefill || "") + '"><button class="btn" type="submit">join</button></form></div>');
     if (prefill) setTimeout(function () { var f = dlg.querySelector(".race__join"); if (f) f.requestSubmit ? f.requestSubmit() : null; }, 50);
@@ -54,7 +59,11 @@
   }
   function onClick(e) {
     if (e.target.closest("[data-race-close]")) return close();
-    if (e.target.closest("[data-race-create]")) return enter(code(), true);
+    if (e.target.closest("[data-race-create]")) {
+      var pickEl = dlg.querySelector('input[name="rgame"]:checked'), v = pickEl ? pickEl.value : "sidekiq";
+      choice = { game: v === "sidekiq" ? "sidekiq" : "gems", coop: v === "gems-coop" };
+      return enter(code(), true);
+    }
     if (e.target.closest("[data-race-copy]")) {
       var link = location.origin + location.pathname + "#race=" + room;
       if (navigator.clipboard) navigator.clipboard.writeText(link).then(function () { e.target.textContent = "✓ link copied"; });
@@ -81,7 +90,7 @@
         opp = { id: others[0], name: o.name, role: o.role };
         if (isHost && st.phase === "waiting") {
           var seed = "race-" + room + "-" + Date.now();
-          ch.send({ type: "broadcast", event: "start", payload: { seed: seed } });
+          ch.send({ type: "broadcast", event: "start", payload: { seed: seed, game: choice.game, coop: choice.coop } });
           countdown(seed);
         } else if (st.phase === "waiting") {
           body('<h3 class="race__code">' + room + "</h3><p>Opponent: <b>" + esc(opp.name) + "</b>. Waiting for the host to start…</p>");
@@ -89,7 +98,11 @@
       }
       if (!o && opp && st.phase === "playing" && !st.them.over) { st.them.over = true; st.them.forfeit = true; settle(); }
     });
-    ch.on("broadcast", { event: "start" }, function (m) { if (!isHost && st.phase === "waiting") countdown(m.payload.seed); });
+    ch.on("broadcast", { event: "start" }, function (m) {
+      if (isHost || st.phase !== "waiting") return;
+      choice = { game: m.payload.game === "gems" ? "gems" : "sidekiq", coop: !!m.payload.coop };
+      countdown(m.payload.seed);
+    });
     ch.on("broadcast", { event: "tick" }, function (m) { var p = m.payload; st.them.score = p.score; st.them.done = p.done; st.them.mem = p.mem; paintBar(); });
     ch.on("broadcast", { event: "over" }, function (m) { var p = m.payload; st.them.score = p.score; st.them.done = p.done; st.them.over = true; st.them.forfeit = !!p.forfeit; paintBar(); settle(); });
     ch.subscribe(function (status) {
@@ -106,7 +119,7 @@
   function countdown(seed) {
     st.phase = "countdown";
     var n = 3;
-    body('<p class="arcade__kicker">vs <b>' + esc(opp ? opp.name : "opponent") + '</b></p><p class="race__count" aria-live="assertive">' + n + "</p>");
+    body('<p class="arcade__kicker">' + (choice.coop ? "co-op with" : "vs") + ' <b>' + esc(opp ? opp.name : "opponent") + "</b> · " + (choice.game === "gems" ? "Gem Match" : "Sidekiq Rush") + '</p><p class="race__count" aria-live="assertive">' + n + "</p>");
     cdTimer = setInterval(function () {
       n--;
       var el = dlg.querySelector(".race__count");
@@ -130,7 +143,7 @@
         paintBar(); settle();
       }
     };
-    window.SamukaArcade.open("sidekiq", { mode: "race", seed: seed, race: ctl });
+    window.SamukaArcade.open(choice.game, { mode: "race", seed: seed, race: ctl, coop: choice.coop });
     var win = document.querySelector(".arcade .arcade__win");
     bar = document.createElement("div");
     bar.className = "race-hud";
@@ -140,6 +153,11 @@
   function paintBar() {
     if (!bar || !st) return;
     var lead = st.my.score === st.them.score ? 0 : st.my.score > st.them.score ? 1 : -1;
+    if (choice.coop) {
+      var team = st.my.score + st.them.score, pct = Math.min(100, team / COOP_TARGET * 100);
+      bar.innerHTML = '<span class="race-hud__p"><b>you</b> ' + fmt(st.my.score) + '</span><span class="race-hud__team"><i style="width:' + pct.toFixed(1) + '%"></i><b>' + fmt(team) + " / " + fmt(COOP_TARGET) + '</b></span><span class="race-hud__p race-hud__p--them"><b>' + esc(opp ? opp.name : "teammate") + "</b> " + fmt(st.them.score) + (st.them.over ? " · done" : "") + "</span>";
+      return;
+    }
     bar.innerHTML =
       '<span class="race-hud__p' + (lead > 0 ? " is-lead" : "") + '"><b>you</b> ' + fmt(st.my.score) + (st.my.over ? " · OOM" : "") + "</span>" +
       '<span class="race-hud__vs">vs</span>' +
@@ -152,7 +170,15 @@
     st.phase = "done";
     var win = st.them.forfeit && !st.my.forfeit ? true : st.my.forfeit ? false : st.my.score > st.them.score;
     var tie = !st.my.forfeit && !st.them.forfeit && st.my.score === st.them.score;
-    if (win && !tie && window.SamukaAch) window.SamukaAch.unlock("race_win");
+    if (choice.coop) {
+      var team = st.my.score + st.them.score, shipped = team >= COOP_TARGET;
+      if (shipped && window.SamukaAch) window.SamukaAch.unlock("coop_ship");
+      var slotC = document.querySelector("[data-race-result]");
+      if (slotC) slotC.innerHTML = '<p class="race-result__verdict ' + (shipped ? "is-win" : "is-loss") + '">' + (shipped ? "Shipped together 🚀" : "Not quite shipped") + "</p>" +
+        '<p class="muted">team score ' + fmt(team) + " / " + fmt(COOP_TARGET) + "</p>" + '<button class="btn btn--primary" type="button" data-race-again>↻ again</button>';
+      return;
+    }
+    if (win && !tie && window.SamukaAch) window.SamukaAch.unlock(choice.game === "gems" ? "gems_duel" : "race_win");
     var html = '<p class="race-result__verdict ' + (tie ? "" : win ? "is-win" : "is-loss") + '">' + (tie ? "Tie. Race condition detected." : win ? "You win 🏁" : esc(opp ? opp.name : "Opponent") + " wins") + "</p>" +
       "<p class=\"muted\">" + fmt(st.my.score) + " vs " + fmt(st.them.score) + (st.them.forfeit ? " · opponent left" : "") + "</p>" +
       (st.my.forfeit ? "" : '<button class="btn btn--primary" type="button" data-race-again>↻ rematch</button>');
@@ -165,7 +191,7 @@
     if (e.target.closest(".arcade [data-race-again]") && room) {
       var r = room, h = isHost;
       window.SamukaArcade.close();
-      setTimeout(function () { open(); enter(r, h); }, 60);
+      setTimeout(function () { open(); enter(r, h); }, 60);   // the host keeps the same game choice
     }
     var b = e.target.closest("[data-race]");
     if (b) { e.preventDefault(); open(); }
