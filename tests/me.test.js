@@ -206,7 +206,7 @@
       M.paint();
       window.SamukaAch.has = function () { return true; };
       window.dispatchEvent(new CustomEvent("samuka:achievement"));
-      expect(root.querySelector('[data-me-act="badges"] small').textContent).toBe("3/3");
+      expect(root.querySelector(".tree__who small").textContent).toBe("3/3");
     });
     it("repaints after a page swap (nav.js replaces the sidebar)", function () {
       var root = mount('<div data-me-tree hidden></div>');

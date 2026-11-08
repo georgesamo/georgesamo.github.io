@@ -36,6 +36,23 @@
     document.querySelectorAll("[data-team-only]").forEach(function (el) { el.hidden = !team; });
   }
 
+  // sidebar folders: click a folder name to fold it; remembered per device. The closed list lives on
+  // <html data-tree-closed> (set before paint in default.html), so CSS hides folded groups with no flash.
+  var TREE_KEY = "samuka-tree-closed";
+  function syncFolders() {
+    var closed = (document.documentElement.dataset.treeClosed || "").split(" ");
+    document.querySelectorAll("[data-tree-dir]").forEach(function (b) { b.setAttribute("aria-expanded", String(closed.indexOf(b.getAttribute("data-tree-dir")) < 0)); });
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-tree-dir]"); if (!b) return;
+    var C = window.SamukaAccountCore, root = document.documentElement;
+    root.dataset.treeClosed = C ? C.toggleFolder(root.dataset.treeClosed, b.getAttribute("data-tree-dir")) : "";
+    try { localStorage.setItem(TREE_KEY, root.dataset.treeClosed); } catch (x) {}
+    syncFolders();
+  });
+  window.addEventListener("samuka:page", syncFolders);   // nav.js swaps the sidebar markup
+  syncFolders();
+
   // phone "more" sheet
   document.addEventListener("click", function (e) {
     var sheet = document.getElementById("msheet"); if (!sheet) return;

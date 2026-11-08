@@ -229,18 +229,34 @@
       expect(C.treeHtml({ enabled: false, signedIn: true, name: "x" })).toBe("");
       expect(C.sheetHtml({ enabled: false })).toBe("");
     });
+    it("folds and unfolds sidebar folders", function () {
+      expect(C.toggleFolder("", "arcade")).toBe("arcade");
+      expect(C.toggleFolder("arcade", "about")).toBe("arcade about");
+      expect(C.toggleFolder("arcade about", "arcade")).toBe("about");
+      expect(C.toggleFolder("  arcade   about ", "about")).toBe("arcade");
+      expect(C.toggleFolder(null, "team")).toBe("team");
+      expect(C.toggleFolder("arcade", "")).toBe("arcade");
+    });
     it("invites guests to sign in", function () {
       var t = dom(C.treeHtml({ enabled: true, signedIn: false }));
       expect(t.querySelector('[data-me-act="signin"]')).toBeTruthy();
       expect(t.querySelectorAll("a").length).toBe(0);
       expect(dom(C.sheetHtml({ enabled: true, signedIn: false })).querySelector('[data-me-act="signin"]')).toBeTruthy();
     });
-    it("lists your card, ranks, achievements and settings", function () {
+    it("is a single compact row: avatar, name and badges, linking to your card", function () {
       var t = dom(C.treeHtml({ enabled: true, signedIn: true, name: "neo", ach: { n: 5, total: 30 } }));
-      expect(texts(t, ".tree__item")).toEqual(["player_card.rb", "my_ranks.yml", "achievements.log5/30", "settings.rb"]);
-      expect(t.querySelector('a[href="/u/?n=neo"]')).toBeTruthy();
-      expect(t.querySelector(".tree__me-name").textContent).toBe("neo");
+      expect(t.children.length).toBe(1);
+      var row = t.querySelector("a.tree__who");
+      expect(row.getAttribute("href")).toBe("/u/?n=neo");
+      expect(row.querySelector(".acct__avatar").textContent).toBe("N");
+      expect(row.querySelector(".tree__who-name").textContent).toBe("neo");
+      expect(row.querySelector("small").textContent).toBe("5/30");
       expect(t.querySelector(".is-here")).toBe(null);
+    });
+    it("escapes the name in the sidebar row", function () {
+      var t = dom(C.treeHtml({ enabled: true, signedIn: true, name: "<i>x</i>" }));
+      expect(t.querySelector("i")).toBe(null);
+      expect(t.querySelector(".tree__who-name").textContent).toBe("<i>x</i>");
     });
     it("marks your card as the current page", function () {
       var t = dom(C.treeHtml({ enabled: true, signedIn: true, name: "neo", here: "card" }));

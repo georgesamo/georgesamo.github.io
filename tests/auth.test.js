@@ -165,7 +165,7 @@
       var w = await load("user");
       var name = w.SamukaAuth.publicName();
       expect(q(w, "[data-me-tree]").hidden).toBe(false);
-      expect(q(w, "[data-me-tree] .tree__me-name").textContent).toBe(name);
+      expect(q(w, "[data-me-tree] .tree__who-name").textContent).toBe(name);
       expect(q(w, "[data-me-sheet] .msheet__who b").textContent).toBe(name);
     }));
     it("sign out from the menu clears your stuff everywhere", local(async function () {

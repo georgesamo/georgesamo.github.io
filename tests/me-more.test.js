@@ -152,11 +152,11 @@
 
   describe("me.js: first sign-in tip", function () {
     it("points at the avatar once, and 'got it' remembers", function () {
-      mount('<button data-account>me</button>');
+      var btn = mount('<button data-account>me</button>').querySelector("button");
       expect(M.showTip()).toBe(true);
       var tip = document.querySelector(".me-tip");
       expect(tip).toBeTruthy();
-      expect(parseInt(tip.style.top, 10)).toBeGreaterThan(0);
+      expect(parseInt(tip.style.top, 10)).toBe(Math.round(btn.getBoundingClientRect().bottom + 10));   // just under the avatar
       tip.querySelector("[data-me-tip-close]").click();
       expect(document.querySelector(".me-tip")).toBe(null);
       expect(localStorage.getItem("samuka-tip-menu")).toBe("1");
@@ -177,6 +177,28 @@
       expect(M.showTip()).toBe(false);
       fake({ user: true, modalOpen: true });
       expect(M.showTip()).toBe(false);
+    });
+  });
+
+  describe("hub.js: foldable sidebar folders", function () {
+    var root = document.documentElement, before;
+    beforeEach(function () { before = root.dataset.treeClosed; root.dataset.treeClosed = ""; });
+    afterEach(function () { root.dataset.treeClosed = before || ""; try { localStorage.removeItem("samuka-tree-closed"); } catch (e) {} });
+    it("clicking a folder folds it, remembers it, and clicking again unfolds", function () {
+      var b = mount('<button data-tree-dir="arcade" aria-expanded="true">arcade</button><div data-tree-group="arcade">x</div>').querySelector("button");
+      b.click();
+      expect(root.dataset.treeClosed).toBe("arcade");
+      expect(b.getAttribute("aria-expanded")).toBe("false");
+      expect(localStorage.getItem("samuka-tree-closed")).toBe("arcade");
+      b.click();
+      expect(root.dataset.treeClosed).toBe("");
+      expect(b.getAttribute("aria-expanded")).toBe("true");
+    });
+    it("re-applies the state to fresh sidebar markup after a page swap", function () {
+      root.dataset.treeClosed = "about";
+      var b = mount('<button data-tree-dir="about" aria-expanded="true">about</button>').querySelector("button");
+      window.dispatchEvent(new CustomEvent("samuka:page"));
+      expect(b.getAttribute("aria-expanded")).toBe("false");
     });
   });
 

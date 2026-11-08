@@ -57,6 +57,14 @@
     });
     return top;
   }
+  // sidebar folders: "a b" + toggle "b" → "a"; toggle "c" → "a b c" (space-separated, no blanks)
+  function toggleFolder(closed, key) {
+    var list = String(closed || "").split(/\s+/).filter(Boolean);
+    if (!key) return list.join(" ");
+    var i = list.indexOf(key);
+    if (i > -1) list.splice(i, 1); else list.push(key);
+    return list.join(" ");
+  }
   // roving focus for menus (vertical) and tab lists (horizontal); -1 = key not handled
   function nextIndex(i, len, key, horizontal) {
     if (!len) return -1;
@@ -347,19 +355,17 @@
   }
 
   /* ---------- sidebar "me" folder and phone sheet header ---------- */
+  // one compact row at the bottom of the sidebar (everything else is in the avatar menu)
   // c: { enabled, signedIn, name, ach, here: "card"|"" }
   function treeHtml(c) {
     if (!c.enabled) return "";
     if (!c.signedIn) {
-      return '<p class="tree__dir">▾ me</p>' +
-        '<button type="button" class="tree__item" data-me-act="signin"><i class="fi fi--rb"></i>sign_in.rb<small>save scores</small></button>';
+      return '<button type="button" class="tree__who tree__who--in" data-me-act="signin"><span class="acct__avatar" aria-hidden="true">?</span><span class="tree__who-name">sign in</span><small>save scores</small></button>';
     }
     var a = c.ach || { n: 0, total: 0 };
-    return '<p class="tree__dir">▾ me <span class="tree__me-name">' + esc(c.name) + "</span></p>" +
-      '<a class="tree__item' + (c.here === "card" ? " is-here" : "") + '" href="' + esc(cardHref(c.name)) + '"><i class="fi fi--rb"></i>player_card.rb</a>' +
-      '<a class="tree__item" href="' + RANKS_HREF + '"><i class="fi fi--yml"></i>my_ranks.yml</a>' +
-      '<button type="button" class="tree__item" data-me-act="badges"><i class="fi fi--log"></i>achievements.log<small>' + a.n + "/" + a.total + "</small></button>" +
-      '<button type="button" class="tree__item" data-me-act="profile"><i class="fi fi--rb"></i>settings.rb</button>';
+    return '<a class="tree__who' + (c.here === "card" ? " is-here" : "") + '" href="' + esc(cardHref(c.name)) + '" title="Your player card">' +
+      '<span class="acct__avatar" aria-hidden="true">' + esc(initial(c.name)) + '</span><span class="tree__who-name">' + esc(c.name) + "</span>" +
+      '<small title="badges">' + a.n + "/" + a.total + "</small></a>";
   }
   function sheetHtml(c) {
     if (!c.enabled) return "";
@@ -377,7 +383,7 @@
   return {
     esc: esc, fmt: fmt, ROLE_LABEL: ROLE_LABEL, GAMES: GAMES, TABS: TABS, RANKS_HREF: RANKS_HREF,
     isTeam: isTeam, roleLabel: roleLabel, initial: initial, cardHref: cardHref, isMyCard: isMyCard,
-    cleanNickname: cleanNickname, achCount: achCount, bestGame: bestGame, nextIndex: nextIndex,
+    cleanNickname: cleanNickname, achCount: achCount, bestGame: bestGame, nextIndex: nextIndex, toggleFolder: toggleFolder,
     tabOf: tabOf, collectExtras: collectExtras, visibleTabs: visibleTabs, pickTab: pickTab, tabsHtml: tabsHtml,
     statsHtml: statsHtml, profileHtml: profileHtml, appearanceHtml: appearanceHtml, settingsHtml: settingsHtml, footerHtml: footerHtml, guestHtml: guestHtml,
     dataHtml: dataHtml, deleteConfirmHtml: deleteConfirmHtml, confirmMatches: confirmMatches, exportFileName: exportFileName,

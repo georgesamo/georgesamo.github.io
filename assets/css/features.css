@@ -95,14 +95,34 @@
 .me-menu__icon { width: 20px; text-align: center; }
 .me-menu__sep { margin: 4px 6px; border: 0; border-top: 1px solid var(--line); }
 
-/* sidebar `me` folder (buttons look like the file links) */
+/* ---------- minimal sidebar: foldable folders, sub-pages only where you are, identity row, icon footer ---------- */
+.tree__nav button.tree__dir { display: flex; align-items: center; gap: 6px; width: calc(100% - 16px); padding: 0; border: 0; background: none; font: inherit; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; }
+.tree__nav button.tree__dir:first-child { margin-top: 2px; }
+.tree__nav button.tree__dir::before { content: "▾"; display: inline-block; width: 10px; transition: transform 0.15s; }
+.tree__nav button.tree__dir[aria-expanded="false"]::before { transform: rotate(-90deg); }
+.tree__nav button.tree__dir:hover { color: var(--text-2); }
+.tree__nav button.tree__dir[hidden], .tree__group[hidden] { display: none; }
+.tree__group { display: grid; gap: 1px; margin-bottom: 8px; }
+:root[data-tree-closed~="arcade"] [data-tree-group="arcade"],
+:root[data-tree-closed~="about"] [data-tree-group="about"],
+:root[data-tree-closed~="team"] [data-tree-group="team"] { display: none; }
+.tree__nav a.tree__sub { padding-left: 40px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.tree__nav a.tree__sub:hover, .tree__nav a.tree__sub.is-active, .tree__nav a.tree__sub.is-here { color: var(--text); }
+.tree__nav a.tree__sub.is-active::before { left: 26px; }
+.tree__nav .tree__tag { margin-left: auto; }
+
 .tree__me[hidden] { display: none; }
-.tree__me { padding-bottom: 4px; margin-bottom: 4px; border-bottom: 1px dashed var(--line); }
-.tree__me .tree__dir:first-child { margin-top: 0; }
-.tree__me-name { margin-left: 4px; color: var(--hl); }
-.tree__nav button.tree__item { position: relative; display: flex; align-items: center; gap: 8px; width: 100%; padding: 4px 10px 4px 22px; border: 0; border-radius: 6px; background: transparent; color: var(--text-2); font: inherit; text-align: left; cursor: pointer; transition: background 0.2s, color 0.2s; }
-.tree__nav button.tree__item:hover { background: var(--bg-hover); color: var(--text); }
-.tree__item small { margin-left: auto; color: var(--muted); font-size: 11px; }
+.tree__me { padding: 8px 8px 0; border-top: 1px solid var(--line); }
+.tree__who { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--text-2); font: 13px var(--mono); text-align: left; text-decoration: none; cursor: pointer; transition: background 0.2s, color 0.2s; }
+.tree__who:hover, .tree__who.is-here { background: var(--bg-hover); color: var(--text); text-decoration: none; }
+.tree__who .acct__avatar { width: 24px; height: 24px; font-size: 12px; flex: none; }
+.tree__who-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree__who small { margin-left: auto; color: var(--muted); font-size: 11px; }
+.tree__who--in .acct__avatar { background: transparent; color: var(--hl); }
+
+.tree__foot { display: flex; gap: 6px; padding: 8px 12px 12px; border-top: 0; }
+.tree__icon { flex: 1; display: grid; place-items: center; height: 32px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--text-2); font: 13px var(--mono); cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; }
+.tree__icon:hover { border-color: var(--line-strong); color: var(--text); background: var(--bg-hover); }
 
 /* phone sheet: who you are + shortcuts */
 .msheet__me[hidden] { display: none !important; }

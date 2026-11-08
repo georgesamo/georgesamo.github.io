@@ -16,6 +16,7 @@
       d.dataset.theme = t === "light" ? "light" : "dark";  // mode
       if (need[s] && need[s] === r) d.dataset.skin = s;    // role skin
       if (s === "crt" && localStorage.getItem("samuka-konami") === "1") d.dataset.skin = s; // secret skin
+      d.dataset.treeClosed = localStorage.getItem("samuka-tree-closed") || "";   // collapsed sidebar folders
     } catch (e) {}
     document.documentElement.classList.add("js");
   </script>
