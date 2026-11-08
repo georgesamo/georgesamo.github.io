@@ -95,6 +95,17 @@
 .me-menu__icon { width: 20px; text-align: center; }
 .me-menu__sep { margin: 4px 6px; border: 0; border-top: 1px solid var(--line); }
 
+/* ---------- "home" link with the theme's logo (ruby · bat · bunny · terminal), pure CSS so no flash ---------- */
+.tree__home { display: inline-flex; align-items: center; gap: 8px; color: inherit; text-decoration: none; }
+.tree__home:hover, .tree__home.is-here { color: var(--text); text-decoration: none; }
+.tree__home:hover .tree__logo { filter: drop-shadow(0 0 6px var(--hl-soft)); }
+.theme-logo { display: inline-flex; }
+.theme-logo__mark { display: none; align-items: center; }
+:root:not([data-skin="knight"]):not([data-skin="golden"]):not([data-skin="crt"]) .theme-logo--phthalo,
+:root[data-skin="knight"] .theme-logo--knight,
+:root[data-skin="golden"] .theme-logo--golden,
+:root[data-skin="crt"] .theme-logo--crt { display: inline-flex; }
+
 /* ---------- minimal sidebar: foldable folders, sub-pages only where you are, identity row, icon footer ---------- */
 .tree__nav button.tree__dir { display: flex; align-items: center; gap: 6px; width: calc(100% - 16px); padding: 0; border: 0; background: none; font: inherit; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; }
 .tree__nav button.tree__dir:first-child { margin-top: 2px; }

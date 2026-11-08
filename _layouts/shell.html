@@ -32,8 +32,7 @@ layout: default
   <!-- ================= sidebar / file tree ================= -->
   <aside class="tree" aria-label="Site">
     <div class="tree__head">
-      <span class="tree__logo">{% include ruby.svg %}</span>
-      <a class="tree__home" href="{{ '/' | relative_url }}">samuka</a>
+      <a class="tree__home{% if tab == "lobby" %} is-here{% endif %}" href="{{ '/' | relative_url }}"{% if tab == "lobby" %} aria-current="page"{% endif %}><span class="tree__logo">{% include theme-logo.html %}</span>home</a>
       <span class="tree__branch">⎇ main</span>
     </div>
     {%- comment -%} you: always this spot, same height from first paint (me.js fills it) {%- endcomment %}
@@ -81,7 +80,7 @@ layout: default
   <!-- ================= editor ================= -->
   <div class="editor">
     <div class="tabs" role="navigation" aria-label="Main">
-      <a class="tabs__brand" href="{{ '/' | relative_url }}" aria-label="Samuka's Arcade home"><span class="tree__logo">{% include ruby.svg %}</span><span>samuka<b>.arcade</b></span></a>
+      <a class="tabs__brand" href="{{ '/' | relative_url }}" aria-label="Samuka's Arcade home"><span class="tree__logo">{% include theme-logo.html %}</span><span>samuka<b>.arcade</b></span></a>
       <div class="tabs__files">
         {%- for t in tabs -%}
           {%- assign tp = t | split: "|" -%}
