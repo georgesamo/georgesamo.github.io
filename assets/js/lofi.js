@@ -173,7 +173,11 @@
     { 0: [0, 0.8, 1], 7: [0, 0.4, 0.8], 10: [3, 0.5, 0.7], 12: [5, 0.5, 0.6], 14: [7, 0.4, 0.5] },
     { 0: [0, 0.22, 1], 1: [0, 0.2, 1], 2: [12, 0.2, 1], 3: [0, 0.2, 1], 4: [0, 0.22, 1], 5: [0, 0.2, 1], 6: [12, 0.2, 1], 7: [0, 0.2, 1], 8: [0, 0.22, 1], 9: [0, 0.2, 1], 10: [12, 0.2, 1], 11: [0, 0.2, 1], 12: [0, 0.22, 1], 13: [0, 0.2, 1], 14: [12, 0.2, 1], 15: [7, 0.2, 1] },
     { 0: [0, 3.5, 1], 12: [-2, 0.8, 0.5] },
-    { 0: [0, 0.3, 1], 2: [7, 0.3, 1], 4: [12, 0.3, 1], 6: [7, 0.3, 1], 8: [0, 0.3, 1], 10: [7, 0.3, 1], 12: [12, 0.3, 1], 14: [10, 0.3, 1] }
+    { 0: [0, 0.3, 1], 2: [7, 0.3, 1], 4: [12, 0.3, 1], 6: [7, 0.3, 1], 8: [0, 0.3, 1], 10: [7, 0.3, 1], 12: [12, 0.3, 1], 14: [10, 0.3, 1] },
+    // electro: funky, distorted, syncopated
+    { 0: [0, 0.28, 1], 3: [0, 0.2, 1], 4: [12, 0.2, 0.8], 6: [0, 0.28, 1], 8: [0, 0.28, 1], 10: [10, 0.2, 0.9], 11: [12, 0.2, 0.7], 14: [7, 0.28, 1] },
+    // techno: rolling off-beat bass
+    { 2: [0, 0.2, 1], 3: [0, 0.14, 0.8], 6: [0, 0.2, 1], 7: [0, 0.14, 0.8], 10: [0, 0.2, 1], 11: [0, 0.14, 0.8], 14: [0, 0.2, 1], 15: [12, 0.14, 0.6] }
   ];
   // per-track flavours, shared by every skin (each skin weights them differently)
   // pad: saw | tri | ep (electric piano) | choir | wob (vapor wobble)   melody: lead | piano | bells
@@ -189,17 +193,21 @@
     vapor: { grooves: [8, 2], supersaw: 0, stabs: 0, leadEarly: 0.6, bassVol: 0.6, bpm: -18, lead: [0.4, 0.55], drums: "vapor", piano: 0.4, pad: "wob", melody: "bells" },
     chip: { grooves: [9, 4], supersaw: 0, stabs: 0, leadEarly: 1, bassVol: 0.5, bpm: 8, lead: [0.6, 0.78], drums: "chip", piano: 0, chip: true, arp16: true, swing: 0 },
     musicbox: { grooves: [2, 0], supersaw: 0, stabs: 0, leadEarly: 0.9, bassVol: 0.5, bpm: -10, lead: [0.5, 0.68], drums: "dream", piano: 0.2, pad: "tri", melody: "bells" },
-    choir: { grooves: [2, 1], supersaw: 0.4, stabs: 0, leadEarly: 0.5, bassVol: 0.6, bpm: -6, lead: [0.45, 0.6], drums: "noir", piano: 0.3, pad: "choir" }
+    choir: { grooves: [2, 1], supersaw: 0.4, stabs: 0, leadEarly: 0.5, bassVol: 0.6, bpm: -6, lead: [0.45, 0.6], drums: "noir", piano: 0.3, pad: "choir" },
+    // French-electro feel: distorted funky bass, chopped chord stabs, heavy pump, claps
+    electro: { grooves: [10], supersaw: 0.3, stabs: 0, leadEarly: 0.3, bassVol: 0.8, bpmAbs: [118, 124], lead: [0.35, 0.5], drums: "electro", piano: 0, pad: "chop", dist: true, swing: 0.04, arpMul: 0.5 },
+    // dark underground techno: four-on-the-floor, rolling bass, resonant acid line, echoing stabs
+    techno: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0, bassVol: 0.75, bpmAbs: [126, 132], lead: [0.2, 0.3], drums: "techno", piano: 0, pad: "darkstab", acid: true, swing: 0, arpMul: 1.1 }
   };
   var MOODS = {
-    phthalo: { flavors: ["noir", "noir", "dream", "calm", "calm", "hop", "vapor", "musicbox", "choir", "drive"], modes: ["minor", "dorian", "minor"], bpm: [72, 84], keys: [45, 47, 48, 50, 52], pad: [900, 1400], arp: [1500, 2400], arpWaves: ["square", "triangle", "sawtooth"], leadWaves: ["triangle", "sine"],
-      words: [["Neon", "Phthalo", "Midnight", "Glass", "Velvet", "Subway", "Rooftop", "Emerald", "Afterglow", "Jade", "Chrome", "Low-light", "Holo", "Mint", "Ivy", "Hologram"], ["Drive", "Signal", "Grid", "Avenue", "Afterhours", "Overpass", "Transit", "Circuit", "District", "Arcade", "Monorail", "Terrace", "Garden", "Frequency", "Boulevard", "Tunnel"]] },
-    knight: { flavors: ["noir", "noir", "noir", "choir", "choir", "calm", "dream", "drive", "hop"], modes: ["minor", "minor", "dorian"], bpm: [74, 86], keys: [45, 46, 48, 50], pad: [900, 1400], arp: [1800, 2800], arpWaves: ["sawtooth", "square"], leadWaves: ["sawtooth", "square", "triangle"], fb: 0.46, tone: 2600, bassCut: 420,
-      words: [["Crimson", "Iron", "Shadow", "Midnight", "Gargoyle", "Steel", "Harbor", "Cold", "Silent", "Obsidian", "Ashen", "Scarlet", "Rain-slick", "Last", "Hollow"], ["Watch", "Patrol", "Signal", "Alley", "Vigil", "Lantern", "Skyline", "Rooftops", "Precinct", "Searchlight", "Pursuit", "Bridge", "Cathedral", "Oath", "Night Shift", "Ledger"]] },
-    golden: { flavors: ["dream", "dream", "calm", "calm", "vapor", "musicbox", "hop", "choir"], modes: ["major", "major", "lydian"], bpm: [76, 88], keys: [48, 50, 52, 53, 55], pad: [1400, 2000], arp: [2400, 3400], arpWaves: ["triangle", "square"], leadWaves: ["triangle", "sine"], arpUp: true, swing: 0.08,
+    phthalo: { flavors: ["noir", "noir", "dream", "calm", "calm", "hop", "vapor", "musicbox", "choir", "drive", "electro", "techno"], modes: ["minor", "dorian", "minor"], bpm: [72, 84], keys: [45, 47, 48, 50, 52], pad: [900, 1400], arp: [1500, 2400], arpWaves: ["square", "triangle", "sawtooth"], leadWaves: ["triangle", "sine"],
+      words: [["Neon", "Phthalo", "Midnight", "Glass", "Velvet", "Subway", "Rooftop", "Emerald", "Afterglow", "Jade", "Chrome", "Low-light", "Holo", "Mint", "Ivy", "Hologram"], ["Drive", "Signal", "Grid", "Avenue", "Afterhours", "Overpass", "Transit", "Circuit", "District", "Arcade", "Monorail", "Terrace", "Garden", "Frequency", "Boulevard", "Tunnel", "Rave", "Afterparty", "Megablock"]] },
+    knight: { flavors: ["noir", "noir", "noir", "choir", "choir", "calm", "dream", "drive", "hop", "techno", "techno", "electro", "electro"], modes: ["minor", "minor", "dorian"], bpm: [74, 86], keys: [45, 46, 48, 50], pad: [900, 1400], arp: [1800, 2800], arpWaves: ["sawtooth", "square"], leadWaves: ["sawtooth", "square", "triangle"], fb: 0.46, tone: 2600, bassCut: 420,
+      words: [["Crimson", "Iron", "Shadow", "Midnight", "Gargoyle", "Steel", "Harbor", "Cold", "Silent", "Obsidian", "Ashen", "Scarlet", "Rain-slick", "Last", "Hollow"], ["Watch", "Patrol", "Signal", "Alley", "Vigil", "Lantern", "Skyline", "Rooftops", "Precinct", "Searchlight", "Pursuit", "Bridge", "Cathedral", "Oath", "Night Shift", "Ledger", "Overdrive", "Undercity", "Warehouse"]] },
+    golden: { flavors: ["dream", "dream", "calm", "calm", "vapor", "musicbox", "hop", "choir", "electro"], modes: ["major", "major", "lydian"], bpm: [76, 88], keys: [48, 50, 52, 53, 55], pad: [1400, 2000], arp: [2400, 3400], arpWaves: ["triangle", "square"], leadWaves: ["triangle", "sine"], arpUp: true, swing: 0.08,
       words: [["Lavender", "Golden", "Starlight", "Candy", "Moonlit", "Sugar", "Cloud", "Purple", "Sunset", "Bunny", "Lilac", "Glitter", "Ribbon", "Peach", "Velvet", "Cotton"], ["Hour", "Dream", "Parade", "Bloom", "Glow", "Letters", "Stage", "Confetti", "Daydream", "Encore", "Postcard", "Carousel", "Lightstick", "Promise", "Diary", "Balloon"]] },
-    crt: { flavors: ["noir", "noir", "calm", "dream", "hop", "musicbox"], modes: ["minor", "dorian"], bpm: [76, 88], keys: [45, 48, 50], pad: [800, 1100], arp: [2000, 2800], arpWaves: ["pulse"], leadWaves: ["square", "pulse"], arpDensity: 0.82,
-      words: [["8-bit", "Phosphor", "Cathode", "Pixel", "Scanline", "Terminal", "Bitwise", "Raster", "Amber", "Floppy", "Modem", "Sprite", "Vector", "Sector", "Overflow", "Null"], ["Boot", "Loop", "Dreams", "Prompt", "Cursor", "Kernel", "Daemon", "Cache", "Uplink", "Checksum", "Level 2", "High Score", "Interrupt", "Handshake", "Buffer", "Sector"]] }
+    crt: { flavors: ["noir", "noir", "calm", "dream", "hop", "musicbox", "techno", "techno", "electro"], modes: ["minor", "dorian"], bpm: [76, 88], keys: [45, 48, 50], pad: [800, 1100], arp: [2000, 2800], arpWaves: ["pulse"], leadWaves: ["square", "pulse"], arpDensity: 0.82,
+      words: [["8-bit", "Phosphor", "Cathode", "Pixel", "Scanline", "Terminal", "Bitwise", "Raster", "Amber", "Floppy", "Modem", "Sprite", "Vector", "Sector", "Overflow", "Null"], ["Boot", "Loop", "Dreams", "Prompt", "Cursor", "Kernel", "Daemon", "Cache", "Uplink", "Checksum", "Level 2", "High Score", "Interrupt", "Handshake", "Buffer", "Sector", "Firewall", "Breach", "Netrun"]] }
   };
   STYLES = MOODS;
   // song shapes: classic (as before), slow build, short, and a key-change lift for the last choruses
@@ -259,12 +267,12 @@
       drums: fl.drums, piano: chance(fl.piano), calm: !!fl.calm, chip: !!fl.chip, pad: fl.pad || (fl.calm ? "tri" : "saw"), melody: fl.melody || "lead", arp16: !!fl.arp16, arpMul: fl.arpMul || 1,
       supersaw: chance(fl.supersaw), stabs: chance(fl.stabs), leadEarly: chance(fl.leadEarly), bassVol: fl.bassVol,
       name: name, no: trackNo, mode: mode, skin: skinName(skinId),
-      bpm: Math.max(56, irand(m.bpm[0], m.bpm[1]) + fl.bpm),
+      bpm: fl.bpmAbs ? irand(fl.bpmAbs[0], fl.bpmAbs[1]) : Math.max(56, irand(m.bpm[0], m.bpm[1]) + fl.bpm), dist: !!fl.dist, acid: !!fl.acid,
       progA: pa.map(function (c) { return voicing(key, c[0], c[1]); }),
       progB: pb.map(function (c) { return voicing(key, c[0], c[1]); }),
       scale: scale,
       padCut: rnd(m.pad[0], m.pad[1]), padVol: rnd(0.06, 0.076),
-      arpCut: rnd(m.arp[0], m.arp[1]), arpVol: rnd(0.026, 0.034), arpWave: fl.chip ? "pulse" : pick(m.arpWaves), arpPat: pick(ARP_PATS), arpUp: !!m.arpUp, arpDensity: m.arpDensity || rnd(0.6, 0.78),
+      arpCut: rnd(m.arp[0], m.arp[1]), arpVol: rnd(0.026, 0.034), arpWave: fl.acid ? "sawtooth" : fl.chip ? "pulse" : pick(m.arpWaves), arpPat: pick(ARP_PATS), arpUp: !!m.arpUp, arpDensity: m.arpDensity || rnd(0.6, 0.78),
       groove: GROOVES[pick(fl.grooves)], leadWave: fl.chip ? pick(["square", "pulse"]) : pick(m.leadWaves), leadVol: rnd(0.062, 0.078), leadDensity: rnd(fl.lead[0], fl.lead[1]), leadCut: rnd(1400, 2200),
       swing: fl.swing != null ? fl.swing : m.swing != null ? m.swing : rnd(0.06, 0.16), drone: m.drone || 0, fb: m.fb || rnd(0.36, 0.46), tone: m.tone || rnd(2200, 3000), bassCut: m.bassCut || rnd(380, 480)
     };
@@ -281,10 +289,21 @@
     }
     var padLp = filt("lowpass", cfg.padCut * b, 0.9); padLp.connect(duck);
     lfo(o, 1 / (beat * 16), cfg.padCut * 0.5 * b, padLp.frequency);
-    var arpLp = filt("lowpass", cfg.arpCut * b, 3); arpLp.connect(o.bus);
-    lfo(o, 1 / (beat * 8), cfg.arpCut * 0.4 * b, arpLp.frequency);
+    var arpLp = filt("lowpass", cfg.acid ? 700 : cfg.arpCut * b, cfg.acid ? 9 : 3); arpLp.connect(cfg.acid ? duck : o.bus);
+    if (cfg.acid) lfo(o, 1 / (beat * 32), 550, arpLp.frequency);   // slow hypnotic open/close over 8 bars
+    else lfo(o, 1 / (beat * 8), cfg.arpCut * 0.4 * b, arpLp.frequency);
     var subLp = filt("lowpass", 180, 0.7); subLp.connect(duck);
-    var bassLp = filt("lowpass", cfg.chip ? 1400 : cfg.bassCut, cfg.chip ? 1 : 4); bassLp.connect(duck);
+    var bassLp = filt("lowpass", cfg.chip ? 1400 : cfg.dist ? 900 : cfg.bassCut, cfg.chip ? 1 : 4); bassLp.connect(duck);
+    var bassIn = bassLp;
+    if (cfg.dist) {
+      // soft-clip drive for the electro bass
+      var shaper = ctx.createWaveShaper(), curve = new Float32Array(1024);
+      for (var ci = 0; ci < 1024; ci++) { var xx = ci / 512 - 1; curve[ci] = Math.tanh(xx * 4) * 0.8; }
+      shaper.curve = curve; shaper.oversample = "2x";
+      var pre = ctx.createGain(); pre.gain.value = 3.2; pre.connect(shaper);
+      var post = ctx.createGain(); post.gain.value = 0.09; shaper.connect(post); post.connect(bassLp);
+      bassIn = pre;
+    }
     lfo(o, 1 / (beat * 4), 120, bassLp.frequency);
     var leadLp = filt("lowpass", cfg.leadCut * b, 1); leadLp.connect(o.bus);
     var vib = lfo(o, 4.2, cfg.chip ? 2 : 3.5, null);   // gentle, no wobble
@@ -319,6 +338,7 @@
     function padChord(ch, t) {
       var j, n = ch.length;
       if (cfg.pad === "ep") { for (j = 0; j < n; j++) epiano(ch[j], t + j * 0.012, 0.9, beat * 3.2); return; }
+      if (cfg.pad === "chop" || cfg.pad === "darkstab") return;   // played rhythmically in play()
       if (cfg.pad === "choir") {
         for (j = 0; j < n; j++) [-6, 6].forEach(function (dt) { voice(o, "sawtooth", mtof(ch[j]), t, beat * 1.6, beat * 5.5, cfg.padVol / n * 0.9, choirIn, 0.25, dt); });
         return;
@@ -416,6 +436,15 @@
       } else if (d === "vapor") {
         if (st === 8) snare(t, 0.55);
         if (st % 4 === 2 && chance(0.5)) hat(t + sw, 0.45);
+      } else if (d === "electro") {
+        if (st % 4 === 2) hat(t, 1, true);
+        else if (chance(0.35)) hat(t + sw, 0.35);
+        if (st === 4 || st === 12) { snare(t, 1.2); snare(t + 0.012, 0.6); }   // doubled = clap
+      } else if (d === "techno") {
+        if (st % 4 === 2) hat(t, 1.1, true);
+        else if (st % 2 === 1 && chance(0.6)) hat(t, 0.35);
+        if (st === 12 && bar % 2 === 1) { snare(t, 0.8); snare(t + 0.014, 0.4); }
+        if ((st === 7 || st === 15) && chance(0.35)) rim(t, 0.5);
       } else if (d === "chip") {
         if (st % 2 === 0) hat(t, st % 4 === 0 ? 0.7 : 0.45);
         if (st === 4 || st === 12) chipSnare(t, 1);
@@ -429,6 +458,8 @@
         case "outrun": return st % 4 === 0;
         case "vapor": return st === 0 || (st === 9 && chance(0.5));
         case "chip": return st === 0 || st === 8;
+        case "electro": return st % 4 === 0;
+        case "techno": return st % 4 === 0;
         default: return st === 0 || (st === 11 && chance(0.4));
       }
     }
@@ -471,11 +502,22 @@
           voice(o, "triangle", mtof(root + g[0]), t, 0.002, beat * g[1], 0.16 * bv, bassLp, 0);
         } else {
           voice(o, "sine", mtof(root + g[0]), t + sw, 0.008, beat * g[1], 0.17 * bv, subLp, 0);
-          voice(o, "sawtooth", mtof(root + g[0]), t + sw, 0.01, beat * g[1] * 0.8, 0.08 * bv, bassLp, 0.05);
-          voice(o, "sawtooth", mtof(root + g[0]), t + sw, 0.01, beat * g[1] * 0.8, 0.05 * bv, bassLp, 0, 12);
+          voice(o, "sawtooth", mtof(root + g[0]), t + sw, 0.01, beat * g[1] * 0.8, 0.08 * bv, bassIn, 0.05);
+          voice(o, "sawtooth", mtof(root + g[0]), t + sw, 0.01, beat * g[1] * 0.8, 0.05 * bv, bassIn, 0, 12);
         }
       }
-      if (sec.kick && kickHere(st, bar)) { kick(o, t, cfg.calm ? 0.09 : cfg.drums === "outrun" ? 0.17 : st ? 0.13 : 0.2, 95, 45, 0.32); if (!cfg.calm) pump(t, 0.45); }
+      var fourFloor = cfg.drums === "electro" || cfg.drums === "techno";
+      if (sec.kick && kickHere(st, bar)) {
+        kick(o, t, cfg.calm ? 0.09 : fourFloor ? 0.21 : cfg.drums === "outrun" ? 0.17 : st ? 0.13 : 0.2, fourFloor ? 120 : 95, fourFloor ? 42 : 45, fourFloor ? 0.28 : 0.32);
+        if (!cfg.calm) pump(t, fourFloor ? 0.22 : 0.45);
+      }
+      // rhythmic chords: electro chops on the off-beats, techno stabs echo into the delay
+      if (cfg.pad === "chop" && sec.pads && (st === 2 || st === 6 || st === 10 || (st === 13 && chance(0.5)) || st === 14)) {
+        for (j = 0; j < ch.length; j++) voice(o, "sawtooth", mtof(ch[j] + 12), t + sw, 0.003, beat * 0.22, cfg.padVol / ch.length * 1.6, padLp, 0.2, (j % 2 ? -7 : 7));
+      }
+      if (cfg.pad === "darkstab" && sec.pads && st === 0 && bar % 2 === 0) {
+        for (j = 0; j < Math.min(3, ch.length); j++) voice(o, "sawtooth", mtof(ch[j]), t, 0.004, beat * 0.6, cfg.padVol / 3 * 1.4, padLp, 0.7, (j % 2 ? -6 : 6));
+      }
       if (sec.kick || (bar >= 2 && bar < 4 && cfg.drums !== "calm")) drums(t, st, bar, sw);
       // piano: the voice of calm tracks, a quiet counter-melody elsewhere
       if (cfg.piano) {
@@ -489,7 +531,8 @@
       }
       var arpChance = st % 2 ? 0 : cfg.arpDensity * sec.arp * cfg.arpMul * 0.85;   // eighths only: calm, not chattering
       if (sec.arp && !cfg.calm && chance(arpChance)) {
-        var n = ch[cfg.arpPat[(st + bar * 3) % cfg.arpPat.length] % ch.length] + 12 + ((cfg.arpUp || sec.up) && st >= 8 && chance(0.22) ? 12 : 0);
+        var n = cfg.acid ? ch[0] + [0, 12, 0, 7, 0, 12, 10, 3][(st / 2 + bar) % 8]
+          : ch[cfg.arpPat[(st + bar * 3) % cfg.arpPat.length] % ch.length] + 12 + ((cfg.arpUp || sec.up) && st >= 8 && chance(0.22) ? 12 : 0);
         voice(o, cfg.arpWave, mtof(n), t + sw, 0.004, o.dur * 2.4, cfg.arpVol * 0.75, arpLp, 0.5, rnd(-4, 4));
       }
       // synthwave chord stabs on the off-beats
