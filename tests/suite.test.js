@@ -22,24 +22,24 @@
       L().catalog().forEach(function (th) {
         expect(th.songs).toHaveLength(6);
         var s = th.songs[5];
-        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(242);
+        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(300);
       });
     });
-    it("is the longest track: about nine and a half minutes", function () {
-      var s = L().catalog()[0].songs;
-      expect(s[5].secs).toBeGreaterThan(540);
+    it("is a full-length piece: about as long as all five songs together", function () {
+      var s = L().catalog()[0].songs, five = s.slice(0, 5).reduce(function (a, x) { return a + x.secs; }, 0);
+      expect(Math.abs(s[5].secs - five) < 60).toBe(true);
       expect(s[5].secs).toBeGreaterThan(Math.max.apply(null, s.slice(0, 5).map(function (x) { return x.secs; })));
       expect(s[5].bpm).toBe("60–172");
     });
     it("gives every song an outro that counts towards its length", function () {
       L().catalog().forEach(function (th) { th.songs.slice(0, 5).forEach(function (s) { expect(s.outro >= 2).toBe(true); }); });
     });
-    it("marks where each suite movement starts, in order", function () {
+    it("marks where each chapter of the director's cut starts, in order", function () {
       var m = L().suite.marks("golden");
-      expect(m).toHaveLength(5);
+      expect(m).toHaveLength(9);
       expect(m[0].at).toBe(0);
       expect(m.every(function (x, i) { return !i || x.at > m[i - 1].at; })).toBe(true);
-      expect(m[4].name).toBe("V · home");
+      expect(m[0].name).toBe("cold open"); expect(m[8].name).toBe("dawn");
     });
     it("exposes player controls", function () {
       ["pause", "resume", "prev", "next", "seekTime", "skip", "setLoop", "volume"].forEach(function (k) { expect(typeof L()[k]).toBe("function"); });
@@ -48,8 +48,7 @@
     it("names each theme's suite", function () {
       expect(L().catalog().map(function (t) { return t.songs[5].title; })).toEqual(["Root Access", "The Long Night", "Alchemy"]);
     });
-    it("runs the movements theme → chase → standoff → lowest → epilogue", function () {
-      expect(L().suite.movements.map(function (m) { return m.si; })).toEqual([0, 1, 3, 2, 4]);
+    it("keeps the patch bay's story order: theme → chase → standoff → lowest → epilogue", function () {
       expect(P()._order).toEqual([0, 1, 3, 2, 4]);
     });
   });
@@ -145,6 +144,30 @@
       P().open("phthalo");
       document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
       expect(P().isOpen()).toBe(false);
+    });
+  });
+  describe("player dock", function () {
+    function D() { return window.SamukaDock; }
+    afterEach(function () { if (D().isOpen()) D().close(); });
+    it("opens with the theme's five songs and the transport, music off", function () {
+      D().open();
+      var el = document.querySelector(".mdock");
+      expect(el.hidden).toBe(false);
+      expect(el.querySelectorAll("[data-md-si]")).toHaveLength(5);
+      expect(el.querySelector("[data-md-title]").textContent).toBe("Music is off");
+      ["prev", "back", "fwd", "next", "stop"].forEach(function (k) { expect(el.querySelector('[data-md="' + k + '"]').disabled).toBe(true); });
+    });
+    it("lists the director's cut once it is unlocked", function () {
+      L().suite.unlock(L().theme());
+      D().open();
+      var rows = document.querySelectorAll(".mdock [data-md-si]");
+      expect(rows).toHaveLength(6);
+      expect(rows[5].textContent).toContain("secret");
+    });
+    it("closes on Escape", function () {
+      D().open();
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      expect(D().isOpen()).toBe(false);
     });
   });
 })();

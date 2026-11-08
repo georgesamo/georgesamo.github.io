@@ -382,7 +382,7 @@
       if (a[0] === "suite") {
         var th = L.theme ? L.theme() : "phthalo";
         if (!L.suite || !L.suite.open(th)) return '🔒 <span class="dim">track 6 is locked in this theme ·</span> patchbay';
-        L.play(th, 5); return "♪ playing <b>" + esc(L.suite.title(th)) + '</b> <span class="dim">(the suite · all five songs, one journey)</span>';
+        L.play(th, 5); return "♪ playing <b>" + esc(L.suite.title(th)) + '</b> <span class="dim">(the director’s cut · the same story, told once, end to end)</span>';
       }
       if (a[0] === "next" || a[0] === "skip") { if (!L.isOn()) L.start(); else L.next(); var n = L.track(); return "⏭ " + (n ? esc(n.name) : "next track"); }
       if (a[0] === "now" || (L.isOn() && !a[0])) { var t = L.track(); return t ? "♪ <b>" + esc(t.name) + '</b> <span class="dim">· ' + (t.style || "") + " · " + t.bpm + " bpm · bar " + (t.bar + 1) + "/" + t.bars + " · track " + t.no + "/" + (t.of || 5) + " · " + esc(t.themeName) + " · music next | music off · <a href=\"/soundtrack/\">/soundtrack/</a></span>" : "nothing playing"; }

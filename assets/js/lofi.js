@@ -8,7 +8,7 @@
  *   5 the epilogue   calm, A=432 tuning, soft 2.5 Hz binaural drone, strings, brass at the end (60 bpm)
  * Palettes: Phthalo (E minor, cold analog) · Dark Knight (D minor, heavier, choir, low brass) ·
  *           Golden (G minor, glassy bells, shimmer). The secret CRT skin uses Phthalo.
- * Track 6 (secret, per theme) is the suite: all five songs stitched into one journey. It joins the rotation
+ * Track 6 (secret, per theme) is the director's cut: one long original piece built from the same motifs. It joins the rotation
  *   once unlocked in the Patch Bay (assets/js/patchbay.js), which wakes after you've heard all five songs.
  * Every song ends with an outro that eases its tempo and tuning into the next track (or itself, when looping)
  *   and teases that track's opening, so songs hand over on the beat instead of crossfading.
@@ -480,13 +480,7 @@
         if (last) strings(o, t, [r + 24], len, 0.03, { a: 2, r: 6, bright: 1.2 });
       }
       if (sec.piano && (st === 0 || st === 6 || st === 10)) piano(o, t, [r + 12, r + 19, t3 + 12][st === 0 ? 0 : st === 6 ? 1 : 2], sec.piano, 3);
-      // the suite's finale: the horns remember the Ring Zero hook at half speed (E minor and G major share every note)
-      var quote = o.mv && o.mv.finale && bar >= 40 && !last;
-      if (quote && st % 2 === 0) {
-        var pos = ((bar - 40) * 16 + st) / 2;
-        RZ.lead.forEach(function (n) { if (n[0] === pos && n[0] < 64) brass(o, t, [n[1] - 12], n[2] * six * 2, 0.07, { a: 0.25 }); });
-      }
-      if (sec.mel != null && !last && !quote) melodyAt(EC.mel, bar % 8, st).forEach(function (n) { strings(o, t, [n[2] + sec.mel], n[3] * six, sec.mv, { a: 0.6, r: 1.4, bright: 1.05 }); });
+      if (sec.mel != null && !last) melodyAt(EC.mel, bar % 8, st).forEach(function (n) { strings(o, t, [n[2] + sec.mel], n[3] * six, sec.mv, { a: 0.6, r: 1.4, bright: 1.05 }); });
     }
   };
 
@@ -495,7 +489,7 @@
   /* ======================= outros =======================
    * After its last bar every song plays a short outro (song.outroBars) that winds it down, resolves home to
    * E minor (G major for the epilogue) and, bar by bar, eases its tempo and tuning (440 ↔ 432) into whatever
-   * plays next: the next song, itself when looping, or the suite's start. The final outro bar teases the next
+   * plays next: the next song, itself when looping, or the theme after the director's cut. The final outro bar teases the next
    * song's opening, so the hand-off lands on the downbeat instead of a crossfade. */
   SONG_THEME.outroBars = 4;
   SONG_THEME.outro = function (o, t, st, k, N) {   // drums peel away, the bass filter closes, the hook rings out
@@ -587,7 +581,7 @@
   function outroStep(o, t, st, k) {
     var song = o.song, N = song.outroBars;
     if (!o.tgt) {   // decided once, at the outro's first step
-      var ti = o.mv ? 0 : o.loop ? o.si : nextIdx(o.theme, o.si), ts = SONGS[ti];
+      var ti = o.loop ? o.si : nextIdx(o.theme, o.si), ts = TRACKS[ti];
       o.tgt = { si: ti, six: 60 / (ts.bpm * o.P.bpm) / 4, ref: ts.ref || 440, six0: o.six, ref0: o.ref };
     }
     var g = o.tgt, f = (k * 16 + st + 1) / (N * 16), e = f * f * (3 - 2 * f);
@@ -599,30 +593,215 @@
   }
   function unTarget(o) { if (o && o.tgt) { o.six = o.dur = o.tgt.six0; o.ref = o.tgt.ref0; o.tgt = null; } }
 
-  /* ======================= track 6 · the suite (secret) =======================
-   * All five songs as one ~9½ minute journey: overture → chase → the standoff at full speed → the fall → home,
-   * where the horns play the Ring Zero hook. Each movement keeps its own tempo; risers and an impact glue them. */
-  var SUITE = [
-    { si: 0, segs: [[0, 32]], name: "I · overture" },                         // ends on its own break riser
-    { si: 1, segs: [[0, 40], [48, 56]], out: "riser", name: "II · the chase" },
-    { si: 3, segs: [[8, 88]], name: "III · the standoff" },
-    { si: 2, segs: [[8, 40]], in: "impact", name: "IV · the fall" },
-    { si: 4, segs: [[0, 48 + SONG_EPILOGUE.outroBars]], finale: 1, name: "V · home" }   // incl. its outro, back into the theme
-  ];
-  var SUITE_MOOD = "the suite · all five songs, one journey";
-  function segBars(m) { return m.segs.reduce(function (a, s) { return a + s[1] - s[0]; }, 0); }
-  var SUITE_BARS = SUITE.reduce(function (a, m) { return a + segBars(m); }, 0);
-  function suiteSecs(P) { return Math.round(SUITE.reduce(function (a, m) { return a + segBars(m) * 240 / (SONGS[m.si].bpm * P.bpm); }, 0)); }
-  function impact(o, t) {   // standoff → the fall: one huge hit, then the floor drops away
-    kick(o, t, 1.2); tom(o, t, 62, 1); stab(o, t, [52, 55, 59, 64], 1.3);
-    strings(o, t, [28, 40, 47], o.six * 24, 0.07, { a: 0.01, r: 4, bright: 0.7 });
+  /* ======================= track 6 · the director's cut (secret) =======================
+   * Not a medley: one long original piece telling the same story with the same motifs, arranged anew and in
+   * story order. A cold open where a lone piano plays the Ring Zero hook · the machine booting up, the hook
+   * reharmonised (Em G D B) over a new syncopated groove · something follows (the chase's E–F cluster, a
+   * heartbeat kick, the hook crawling in the low brass) · two cursors at 172, where hacker B now answers with
+   * the hook · the last commit, every motif at once · the collapse · 3 AM (the lowest point's melody, then the
+   * hook on cello) · dawn at A=432, where the horns finally play the hook in G major.
+   * One tempo map (CUT.tempo) carries it: it accelerates and slows between chapters, it never cuts. */
+  var CUT = {
+    chapters: [[0, "cold open"], [16, "boot sequence"], [32, "the machine"], [80, "something follows"], [104, "two cursors"], [180, "the last commit"], [196, "collapse"], [204, "3 AM"], [244, "dawn"]],
+    // [bar, bpm]: straight lines between points; a repeated bar is a jump (196: 172 → 86, the half-time fall)
+    tempo: [[0, 76], [16, 76], [32, 112], [80, 112], [84, 138], [104, 138], [108, 172], [196, 172], [196, 86], [204, 72], [244, 72], [248, 60], [300, 60]],
+    prog: [[40, 0], [43, 1], [38, 1], [35, 1]]   // Em G D B: the hook's new harmony
+  };
+  var CUT_MOOD = "the director's cut · the same story, told once, end to end";
+  function cutBpm(pos) {
+    var T = CUT.tempo, i = T.length - 1;
+    while (i > 0 && T[i][0] > pos) i--;
+    var a = T[i], b = T[i + 1];
+    if (!b || b[0] <= a[0]) return a[1];
+    return a[1] + (b[1] - a[1]) * (pos - a[0]) / (b[0] - a[0]);
   }
-  function glue(o, t, st, bar) {
-    if (st !== 0) return;
-    var mv = o.mv, segs = mv.segs, lastSeg = o.suite.seg === segs.length - 1;
-    if (mv.out === "riser" && lastSeg && bar === segs[segs.length - 1][1] - 2) riser(o, t, o.six * 32, 0.13);
-    if (mv.in === "impact" && o.suite.seg === 0 && bar === segs[0][0] && !o.hit) { o.hit = 1; impact(o, t); }
+  function hookAt(pos) { return RZ.lead.filter(function (n) { return n[0] === pos; }); }   // pos: 16ths into the 8-bar hook
+
+  function cutCold(o, t, st, bar) {   // 0–16 · 76 bpm · the hook alone on piano, over its own chords
+    var ch = RZ.chords[Math.floor(bar / 2) % 4], six = o.six, pos = (bar % 8) * 16 + st;
+    if (st === 0) {
+      o.sub.set(t, ch.bass - 12, bar < 4 ? 0.05 : 0.09);
+      if (bar % 2 === 0) { piano(o, t, ch.bass, 0.45, six * 30); piano(o, t, ch.bass + 7, 0.3, six * 30); }
+      if (bar >= 8 && bar % 2 === 0) strings(o, t, ch.pad, six * 32, 0.03, { a: 1.5, r: 2 });
+      if (o.P.choir && bar >= 8 && bar % 4 === 0) pad(o, t, ch.pad.slice(0, 3), six * 64, 0.02);
+      if (bar < 8) heart(o, t, 0.45);
+      if (bar === 12) riser(o, t, six * 64, 0.06);
+    }
+    hookAt(pos).forEach(function (n) { piano(o, t, n[1], bar < 8 ? 0.75 : 0.85, n[2] * six * 1.4); if (bar >= 8) piano(o, t, n[1] - 12, 0.35, n[2] * six); });
+    if (bar >= 12 && st % 4 === 2) hat(o, t, 0.2 + (bar - 12) * 0.08);
   }
+  function cutMachine(o, t, st, bar) {   // 16–80 · 76 → 112 · boot, groove, breakdown, the hook over Em G D B
+    var c = CUT.prog[Math.floor(bar / 2) % 4], r = c[0], tri = triad(r + 24, c[1]), six = o.six, pos = (bar % 8) * 16 + st;
+    var boot = bar < 32, brk = bar >= 48 && bar < 56, full = bar >= 56;
+    o.cut = boot ? 300 + (bar - 16) * 55 : brk ? 500 : full ? 1500 : 1200;
+    if (st === 0) {
+      o.bassLp.frequency.setTargetAtTime(o.cut * 1.5, t, 0.8);
+      o.sub.set(t, r - 12, boot ? 0.12 : 0.24);
+      if (bar % 2 === 0) pad(o, t, tri.concat(r + 36), six * 32, brk ? 0.05 : 0.035);
+      if (bar === 28 || bar === 52) riser(o, t, six * 64, 0.1);
+      if (full && bar % 4 === 0 && o.P.brass > 1) brass(o, t, tri.map(function (n) { return n - 12; }), six * 6, 0.07, { a: 0.05 });
+      if (full && bar % 2 === 0) o.lb.play(t, tri[1] + 12, six * 28, 0.03);   // a held counter-line on the chord's third
+    }
+    var BS = { 0: [0, 1], 3: [0, 0.6], 6: [12, 0.8], 8: [0, 0.9], 11: [0, 0.6], 14: [12, 0.8] };   // a new, syncopated bass
+    if (!brk && BS[st] && bar >= 20) bassNote(o, t, r + BS[st][0], BS[st][1], six * 1.6);
+    if (!(brk && st % 2)) arpNote(o, t, [tri[0], tri[1], tri[2], tri[0] + 12][[0, 1, 2, 3, 2, 1, 2, 3, 0, 1, 2, 3, 3, 2, 1, 2][st]], st % 4 === 0 ? 0.9 : 0.6);
+    var fill = bar % 8 === 7 && st >= 12 && !boot;
+    if (bar >= 24 && !brk && (st === 0 || st === 7 || st === 10) && !fill) kick(o, t, st ? 0.8 : 1);
+    if (!boot && !brk && (st === 4 || st === 12)) snare(o, t, 1);
+    if (bar >= 20 && st % 2 === 0) hat(o, t, (st % 4 === 2 ? 0.9 : 0.5) * (brk ? 0.5 : 1), st === 14 && bar % 2 === 1);
+    if (!boot && !brk && st === 10 && bar % 2 === 1) clank(o, t, 0.7);
+    if (fill) tom(o, t, [180, 150, 120, 95][st - 12], 1);
+    if (bar === 31 && st >= 8) snare(o, t, 0.3 + (st - 8) * 0.08);
+    if (brk || full) hookAt(pos).forEach(function (n) { o.lead.play(t, n[1], n[2] * six, brk ? 0.1 : 0.085); if (brk) piano(o, t, n[1] + 12, 0.4, n[2] * six * 1.2); });
+  }
+  function cutFollows(o, t, st, bar) {   // 80–104 · 112 → 138 · a heartbeat kick, the cluster, the hook in the low brass
+    var ch = KP.chords[Math.floor(bar / 2) % 4], six = o.six, k = bar - 80;
+    o.cut = 1300;
+    if (st === 0) {
+      o.sub.set(t, ch.bass - 12, 0.22); o.bassLp.frequency.setTargetAtTime(1900, t, 0.5);
+      if (bar % 2 === 0) strings(o, t, ch.cl.map(function (n) { return n + 12; }), six * 32, 0.025, { a: 0.6, r: 1, trem: true, bright: 1.3 });
+      if (k === 0) { stab(o, t, ch.cl, 1.2); clank(o, t, 1); }
+      if (bar === 100) riser(o, t, six * 64, 0.12);
+      if (o.P.choir && bar % 4 === 0) pad(o, t, [ch.bass + 12, ch.bass + 13, ch.bass + 18], six * 64, 0.025);
+    }
+    if (st === 0 || st === 8) heart(o, t, 0.6);
+    if (st === 0 || st === 3 || st === 8 || st === 11) kick(o, t, st % 8 ? 0.7 : 1);   // lub-dub, lub-dub
+    if (k >= 4 && (st === 4 || st === 12)) snare(o, t, 0.9);
+    if (st % 2 === 0) hat(o, t, st % 4 === 2 ? 0.8 : 0.4);
+    if (k >= 4) bassNote(o, t, ch.bass + KP.bass[st], st % 4 === 0 ? 1 : 0.6, six * 0.85);
+    if (k >= 4 && bar % 2 === 0 && KP.stab.indexOf(st) >= 0) stab(o, t, ch.cl, 0.6);
+    if (bar % 4 === 3 && st === 8) screech(o, t, ch.cl[2] + 12, six * 8, 0.04);
+    if (k >= 8) { var p = (k - 8) * 16 + st; if (p % 2 === 0) hookAt(p / 2).forEach(function (n) { brass(o, t, [n[1] - 24], n[2] * six * 2, 0.06, { a: 0.08 }); }); }
+  }
+  function cutCursors(o, t, st, bar) {   // 104–196 · 138 → 172 · the standoff, then the last commit
+    var six = o.six, intro = bar < 108, build = bar >= 108 && bar < 116, brk = bar >= 140 && bar < 148, drop2 = bar >= 148 && bar < 180, last = bar >= 180;
+    var root, maj, c;
+    if (last) { c = CUT.prog[Math.floor((bar - 180) / 2) % 4]; root = c[0]; maj = c[1]; }
+    else if (brk) { c = LM.chords[Math.floor((bar - 140) / 2) % 8]; root = c[0] - 12; maj = c[1]; }
+    else { c = RC.chords[Math.floor(bar / 2) % 4]; root = c[0]; maj = c[1]; }
+    var drums = !intro && !build && !brk;
+    if (bar === 195 && st >= 8) return;   // a breath before the fall
+    if (st === 0) {
+      o.sub.set(t, root - 12, drums ? 0.2 : 0.12);
+      if (bar % 2 === 0 && (build || brk || last)) pad(o, t, triad(root + 12, maj).concat(root + 24), six * 32, brk ? 0.04 : 0.025);
+      if (bar % 2 === 0 && (brk || last)) strings(o, t, triad(root + 24, maj), six * 32, 0.045, { a: 0.6 });
+      if (bar === 112 || bar === 144 || bar === 176) riser(o, t, six * 64, 0.11);
+      if (drums) o.reese.rate(t, bar % 4 === 3 ? 2 : 0.35);
+      if (last && o.P.choir && bar % 2 === 0) pad(o, t, triad(root + 12, maj), six * 32, 0.03);
+    }
+    if (intro) {   // the roll speeds up with the tempo, the reese wakes
+      if (st % (bar < 106 ? 2 : 1) === 0) snare(o, t, 0.25 + 0.5 * ((bar - 104) * 16 + st) / 64);
+      if (st === 0) kick(o, t, 1);
+      if (bar >= 106) RC.bass.forEach(function (b) { if (b[0] === st) o.reese.play(t, 40 + b[1], b[2] * six, 0.12); });
+      return;
+    }
+    if (drums) {
+      var fill = bar % 8 === 7 && st >= 12;
+      if (st === 0 || st === 10 || (bar % 2 === 1 && st === 13)) kick(o, t, 1);
+      if (st === 4 || st === 12) snare(o, t, 1);
+      if (RC.ghost[st]) snare(o, t, RC.ghost[st]);
+      if (st % 2 === 0) hat(o, t, st % 4 === 2 ? 0.9 : 0.45);
+      if ((drop2 || last) && st % 4 === 0) ride(o, t, 0.8);
+      if (fill) tom(o, t, [190, 160, 130, 100][st - 12], 0.9);
+      RC.bass.forEach(function (b) { if (b[0] === st) o.reese.play(t, root + b[1], b[2] * six, 0.2); });
+      if ((drop2 || last) && bar % 2 === 0 && (st === 0 || st === 10)) stab(o, t, triad(root + 12, maj), 0.7);
+    } else if (st % 4 === 2) hat(o, t, 0.6);
+    function phrase(lead, list, vol) { list.forEach(function (n) { if (n[0] === st) lead.play(t, n[1], n[2] * six, vol); }); }
+    if (brk) {   // the lowest point's melody, half speed, over its own chords
+      var mstep = ((bar - 140) % 2) * 16 + st;
+      if (mstep % 2 === 0) melodyAt(LM.mel, Math.floor((bar - 140) / 2) % 8, mstep / 2).forEach(function (n) { strings(o, t, [n[2] + 12], n[3] * six * 2, 0.06, { a: 0.3, r: 1 }); });
+      return;
+    }
+    if (last) {   // everything at once: the hook in brass and high strings, the hackers underneath
+      hookAt(((bar - 180) % 8) * 16 + st).forEach(function (n) { brass(o, t, [n[1] - 12], n[2] * six, 0.07, { a: 0.03 }); strings(o, t, [n[1] + 12], n[2] * six, 0.03, { a: 0.05, r: 0.4 }); });
+      phrase(bar % 2 ? o.lb : o.la, bar % 2 ? RC.b1 : RC.a1, 0.04);
+      return;
+    }
+    // A calls with its own phrases; B answers with the Ring Zero hook, the phrase that fits the chord
+    var trade = drop2 ? 2 : 4, aTurn = build || (trade === 4 ? bar % 4 < 2 : bar % 2 === 0), phr = Math.floor(bar / 2) % 4;
+    if (aTurn) phrase(o.la, bar % 2 ? RC.a2 : RC.a1, 0.07);
+    else if (trade === 4) hookAt(phr * 32 + (bar % 2) * 16 + st).forEach(function (n) { o.lb.play(t, n[1] + 12, n[2] * six, 0.065); });
+    else hookAt(phr * 32 + st * 2).forEach(function (n) { o.lb.play(t, n[1] + 12, n[2] * six / 2, 0.065); });   // twice as fast
+  }
+  function cutCollapse(o, t, st, bar) {   // 196–204 · 86 → 72 · the hit, a tape-stop dive, a heartbeat running down
+    var six = o.six, k = bar - 196;
+    if (st === 0) {
+      o.sub.set(t, 28, Math.max(0.04, 0.2 - k * 0.02));
+      if (k === 0) {
+        kick(o, t, 1.2); tom(o, t, 62, 1); stab(o, t, [52, 55, 59, 64], 1.3);
+        o.reese.rate(t, 0.2); o.reese.play(t, 40, six * 24, 0.22);
+        strings(o, t, [28, 40, 47], six * 48, 0.06, { a: 0.01, r: 4, bright: 0.7 });
+      }
+      if (k === 2) strings(o, t, [52, 53, 59], six * 64, 0.03, { a: 0.5, r: 3, trem: true, bright: 1.1 });
+      if (k === 5) { piano(o, t, 28, 0.8, 6); piano(o, t, 29, 0.5, 6); }
+    }
+    if (k === 0 && st === 4) o.reese.bend(t, 16, six * 6);
+    if (k >= 1 && k < 6 && (st === 0 || (k < 3 && st === 8))) heart(o, t, 0.8 - k * 0.1);
+  }
+  function cutThreeAm(o, t, st, bar) {   // 204–244 · 72 · piano and strings; at the end the hook on cello
+    var k = bar - 204, six = o.six, barLen = six * 16, r, t3, hookPart = k >= 32;
+    if (hookPart) { var hi = Math.floor((k - 32) / 2) % 4; r = RZ.chords[hi].bass + 12; t3 = r + (hi % 2 ? 4 : 3); }   // Em C Am B
+    else { var c = LM.chords[k % 8]; r = c[0]; t3 = r + (c[1] ? 4 : 3); }
+    if (st === 0) {
+      o.sub.set(t, r - 24, k >= 24 && !hookPart ? 0.12 : 0.05);
+      if (k < 8 || hookPart) pad(o, t, [r, t3, r + 7], barLen * 1.05, 0.016, "warm");
+      if (k >= 8) strings(o, t, [r - 12], barLen * 1.02, 0.05, { a: 0.9, r: 1.2, bright: 0.6 });
+      if (k >= 16 && !hookPart) strings(o, t, [t3, r + 7, r + 12], barLen * 1.02, k >= 24 ? 0.065 : 0.05, { a: 1.2, r: 1.4 });
+      if (k >= 24 && !hookPart && k % 2 === 0) tom(o, t, F(o, r - 24) * 2, 0.55);
+      if (o.P.choir && k >= 24 && !hookPart && k % 2 === 0) pad(o, t, [r, t3, r + 7], barLen * 2, 0.025);
+      if (k % 2 === 0) piano(o, t, r + 24, 0.25, 4);   // a music-box glint, new to this telling
+      if (k === 39) pad(o, t, [55, 59, 62], barLen * 2, 0.03, "warm");   // dawn is coming: G
+    }
+    if (st % 2 === 0) piano(o, t, [r - 12, r, t3, r + 7, r + 12, r + 7, t3, r][st / 2], (hookPart ? 0.45 : 0.7) * (st === 0 ? 1 : 0.75), 2.4);
+    if (!hookPart && k >= 8) {
+      var oct = k < 16 ? -12 : k < 24 ? 0 : 12;
+      melodyAt(LM.mel, k % 8, st).forEach(function (n) { strings(o, t, [n[2] + oct], n[3] * six, 0.06, { a: 0.35, r: 0.9, bright: 1.1 }); });
+    }
+    if (hookPart) hookAt(((k - 32) % 8) * 16 + st).forEach(function (n) { strings(o, t, [n[1] - 24], n[2] * six, 0.07, { a: 0.2, r: 1, bright: 0.7 }); });
+  }
+  function cutDawn(o, t, st, bar) {   // 244–300 · 72 → 60, A=432 · the epilogue's melody, then the hook in G major
+    var eb = bar - 248, six = o.six, barLen = six * 16, c = EC.chords[Math.max(0, eb) % 8], r = c[0], t3 = r + (c[1] ? 4 : 3), last = bar === 299;
+    var len = last ? barLen * 4 : barLen * 1.03;
+    if (st === 0) {
+      if (bar === 244) o.bin.level(t, 1);
+      if (eb === 44) o.bin.level(t, 0.0001);
+      o.sub.set(t, c[2] - 12, 0.08);
+      if (eb < 32) pad(o, t, [r, t3, r + 7, r + 12], len, eb < 0 ? 0.035 : 0.025, "warm");
+      if (eb >= 8) strings(o, t, [c[2]], len, 0.05, { a: 1.5, r: last ? 5 : 1.5, bright: 0.6 });
+      if (eb >= 12) strings(o, t, [t3, r + 7, r + 12], len, 0.045, { a: 1.6, r: last ? 6 : 1.8 });
+      if (eb >= 28) brass(o, t, [r - 12, t3 - 12, r - 5], len, eb >= 40 ? 0.05 : 0.035, { a: last ? 2 : 1.2 });
+      if (eb >= 44) tom(o, t, F(o, c[2]) * 2, 0.5 + (eb - 44) * 0.08);
+      if (last) strings(o, t, [r + 24], len, 0.03, { a: 2, r: 6, bright: 1.2 });
+    }
+    if (eb < 20 && st % 2 === 0) piano(o, t, [r + 12, t3 + 12, r + 19, r + 24][(st / 2) % 4], 0.16, 1.6);   // harp-like ripples
+    if (eb >= 12 && eb < 40) {
+      var oct = eb >= 24 ? 12 : 0;
+      melodyAt(EC.mel, eb % 8, st).forEach(function (n) { strings(o, t, [n[2] + oct], n[3] * six, 0.05, { a: 0.6, r: 1.4, bright: 1.05 }); });
+    }
+    if (eb >= 40 && eb < 48 && st % 2 === 0)   // the horns finally sing the hook, in G major, at half speed
+      hookAt(((eb - 40) * 16 + st) / 2).forEach(function (n) { brass(o, t, [n[1] - 12], n[2] * six * 2, 0.075, { a: 0.25 }); });
+  }
+  var SONG_CUT = {
+    mood: CUT_MOOD, bpm: 76, bars: 300, outroBars: 2,
+    tempo: cutBpm,
+    refAt: function (pos) { return pos < 244 ? 440 : pos < 248 ? 440 - 2 * (pos - 244) : 432; },   // dawn retunes to A=432
+    chapter: function (bar) { var name = CUT.chapters[0][1]; CUT.chapters.forEach(function (c) { if (bar >= c[0]) name = c[1]; }); return name; },
+    init: function (o, t) {
+      o.sub = makeSub(o, t); o.lead = makeLead(o, t, o.P.lead, 0); o.la = makeLead(o, t, o.P.lead, -0.6); o.lb = makeLead(o, t, o.P.lead2, 0.6);
+      o.reese = makeReese(o, t); o.bin = makeBinaural(o, t, 108, 2.5, 0.03);
+    },
+    play: function (o, t, st, bar) {
+      if (bar < 16) cutCold(o, t, st, bar);
+      else if (bar < 80) cutMachine(o, t, st, bar);
+      else if (bar < 104) cutFollows(o, t, st, bar);
+      else if (bar < 196) cutCursors(o, t, st, bar);
+      else if (bar < 204) cutCollapse(o, t, st, bar);
+      else if (bar < 244) cutThreeAm(o, t, st, bar);
+      else cutDawn(o, t, st, bar);
+    },
+    outro: SONG_EPILOGUE.outro
+  };
+  var TRACKS = SONGS.concat([SONG_CUT]);
 
   /* ---------- the suite's lock: which songs you've heard, which suites you've opened (per theme) ---------- */
   var SKEY = "samuka-suite";
@@ -654,17 +833,15 @@
   function nextIdx(th, si) { return si < 4 ? si + 1 : si === 4 && suiteOpen(th) ? 5 : 0; }
 
   /* ---------- engine ---------- */
-  // si 0–4 are the songs; si 5 is the suite, where sp = { mi: movement, seg: segment, s: step } says where to start
+  // si 0–4 are the songs, si 5 the director's cut; sp = { s: step } starts somewhere other than the top
   function create(theme, si, fade, loop, sp) {
-    var mv = si === 5 ? SUITE[(sp && sp.mi) || 0] : null;
-    var P = THEMES[theme], song = SONGS[mv ? mv.si : si], bpm = song.bpm * P.bpm, six = 60 / bpm / 4, t = ctx.currentTime;
-    var o = { P: P, song: song, theme: theme, si: si, s: 0, six: six, dur: six, next: t + 0.08, nodes: [], loop: !!loop, ref: song.ref || 440, bpm: Math.round(bpm), cut: 800 };
-    if (mv) { o.mv = mv; o.suite = { mi: (sp && sp.mi) || 0, seg: (sp && sp.seg) || 0 }; o.s = sp && sp.s != null ? sp.s : mv.segs[o.suite.seg][0] * 16; }
+    var P = THEMES[theme], song = TRACKS[si], bpm = song.bpm * P.bpm, six = 60 / bpm / 4, t = ctx.currentTime;
+    var o = { P: P, song: song, theme: theme, si: si, s: (sp && sp.s) || 0, six: six, dur: six, next: t + 0.08, nodes: [], loop: !!loop, ref: song.ref || 440, bpm: Math.round(bpm), cut: 800 };
     o.bus = gain(0.0001); o.bus.gain.linearRampToValueAtTime(1, t + fade); o.bus.connect(master);
     var verb = ctx.createConvolver(); verb.buffer = verbBuf;
     o.verb = gain(1); var vOut = gain(P.verb); o.verb.connect(verb); verb.connect(vOut); vOut.connect(o.bus);
     o.delay = gain(1); var dl = ctx.createDelay(2), fb = gain(0.32), dtone = filt("lowpass", 1800, 0.5);
-    dl.delayTime.value = six * 3; o.delay.connect(dl); dl.connect(dtone); dtone.connect(fb); fb.connect(dl); dtone.connect(o.bus); dtone.connect(o.verb);
+    dl.delayTime.value = six * 3; o.dl = dl; o.delay.connect(dl); dl.connect(dtone); dtone.connect(fb); fb.connect(dl); dtone.connect(o.bus); dtone.connect(o.verb);
     o.drums = gain(1); var dsh = shaper(P.drive), dpost = gain(0.8); o.drums.connect(dsh); dsh.connect(dpost); dpost.connect(o.bus);
     o.duck = gain(1); o.duck.connect(o.bus);
     o.vib = osc("sine", 5.2, t, t + 36000); o.vibG = gain(8); o.vib.connect(o.vibG); o.nodes.push(o.vib);
@@ -673,7 +850,12 @@
     o.play = function (tt, s) {
       var st = s % 16, bar = Math.floor(s / 16);
       if (bar >= song.bars) return outroStep(o, tt, st, bar - song.bars);
-      if (o.mv) glue(o, tt, st, bar);
+      if (song.tempo) {   // a tempo map: the step length (and tuning) follow it, the echoes keep time
+        var pos = bar + st / 16;
+        o.six = o.dur = 60 / (song.tempo(pos) * o.P.bpm) / 4;
+        if (song.refAt) o.ref = song.refAt(pos);
+        if (st === 0) o.dl.delayTime.setTargetAtTime(Math.min(1.9, o.six * 3), tt, 0.3);
+      }
       song.play(o, tt, st, bar);
     };
     return o;
@@ -709,27 +891,15 @@
     cur = create(theme, si, fade, loop, sp);
     nowPlaying();
   }
-  // suite bookkeeping at a segment's end: jump to the next segment, the next movement, or out of the suite
-  function suiteEdge() {
-    var o = cur, sp = o.suite, segs = o.mv.segs;
-    if (o.s < segs[sp.seg][1] * 16) return false;
-    if (sp.seg + 1 < segs.length) { sp.seg++; o.s = segs[sp.seg][0] * 16; return false; }
-    var mi = sp.mi + 1;
-    if (mi < SUITE.length) switchTo(o.theme, 5, SUITE[mi].in === "impact" ? 0.25 : 1.5, o.loop, { mi: mi, seg: 0 });
-    else { handoff(o, o.loop ? 5 : 0, o.loop, o.loop ? { mi: 0, seg: 0 } : null); return true; }   // the epilogue's outro already leads into the theme
-    cur.next = Math.max(cur.next, o.next);
-    return true;
-  }
   function tick() {
     if (!ctx || !cur) return;
     var now = ctx.currentTime, horizon = now + (document.hidden ? 3 : LOOK);   // hidden tabs get timers less often
     if (cur.next < now - 0.25) cur.next = now + 0.02;
     while (cur && cur.next < horizon) {
-      if (cur.suite) { if (suiteEdge()) continue; }
-      else if (cur.s >= (cur.song.bars + cur.song.outroBars) * 16) {
+      if (cur.s >= (cur.song.bars + cur.song.outroBars) * 16) {
         var o = cur; handoff(o, o.tgt ? o.tgt.si : o.loop ? o.si : nextIdx(o.theme, o.si), o.loop); continue;
       }
-      if (!cur.suite && cur.s === 64) markHeard(cur.theme, cur.si);   // four bars in counts as "heard"
+      if (cur.si < 5 && cur.s === 64) markHeard(cur.theme, cur.si);   // four bars in counts as "heard"
       cur.play(cur.next, cur.s); cur.s++; cur.next += cur.dur;
     }
   }
@@ -738,63 +908,42 @@
   function ramp(to, dur) { var t = ctx.currentTime, g = master.gain; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(to, t + dur); }
 
   /* ---------- time: where we are in seconds, and seeking by seconds ---------- */
-  function barSecs(P, song) { return 240 / (song.bpm * P.bpm); }
-  function suiteMap(P) {   // every suite segment with its start time and bar length
-    var t = 0, out = [];
-    SUITE.forEach(function (m, mi) {
-      var bs = barSecs(P, SONGS[m.si]);
-      m.segs.forEach(function (seg, sg) { out.push({ mi: mi, sg: sg, from: seg[0], to: seg[1], t0: t, bs: bs, name: m.name }); t += (seg[1] - seg[0]) * bs; });
-    });
-    out.total = t; return out;
+  var stepCache = {};
+  function stepTimes(theme, si) {   // start time of every step of a tempo-mapped track (the outro at its last tempo)
+    var key = theme + ":" + si; if (stepCache[key]) return stepCache[key];
+    var P = THEMES[theme], song = TRACKS[si], n = (song.bars + song.outroBars) * 16, a = new Float64Array(n + 1), t = 0;
+    for (var s = 0; s < n; s++) { a[s] = t; t += 60 / (song.tempo(Math.min(s / 16, song.bars - 1 / 16)) * P.bpm) / 4; }
+    a[n] = t; return (stepCache[key] = a);
+  }
+  function trackSecs(theme, si) {
+    var song = TRACKS[si]; if (song.tempo) { var a = stepTimes(theme, si); return a[a.length - 1]; }
+    return (song.bars + song.outroBars) * 240 / (song.bpm * THEMES[theme].bpm);
   }
   function times() {
-    if (!cur.suite) { var bs = barSecs(cur.P, cur.song), dur = (cur.song.bars + cur.song.outroBars) * bs; return { pos: Math.min(dur, cur.s / 16 * bs), dur: dur }; }
-    var map = suiteMap(cur.P), sp = cur.suite, m = map.filter(function (x) { return x.mi === sp.mi && x.sg === sp.seg; })[0];
-    return { pos: Math.min(map.total, m.t0 + Math.max(0, cur.s / 16 - m.from) * m.bs), dur: map.total };
+    var song = cur.song, n = (song.bars + song.outroBars) * 16, s = Math.min(cur.s, n);
+    if (song.tempo) { var a = stepTimes(cur.theme, cur.si); return { pos: a[s], dur: a[n] }; }
+    var dur = trackSecs(cur.theme, cur.si); return { pos: s / n * dur, dur: dur };
   }
   function seekTime(sec) {
     if (!cur) return;
+    var song = cur.song, n = (song.bars + song.outroBars) * 16, s;
     sec = Math.max(0, +sec || 0);
-    if (!cur.suite) {
-      var bs = barSecs(cur.P, cur.song), max = (cur.song.bars + cur.song.outroBars) * 16 - 1;
-      unTarget(cur); cur.s = Math.min(max, Math.floor(sec / bs * 16)); emit(); return;
-    }
-    var map = suiteMap(cur.P); sec = Math.min(sec, map.total - 0.05);
-    for (var i = 0; i < map.length; i++) {
-      var m = map[i];
-      if (sec < m.t0 + (m.to - m.from) * m.bs || i === map.length - 1) {
-        var s = Math.floor(m.from * 16 + (sec - m.t0) / m.bs * 16);
-        if (m.mi === cur.suite.mi) { unTarget(cur); cur.suite.seg = m.sg; cur.s = s; }
-        else switchTo(cur.theme, 5, 0.4, cur.loop, { mi: m.mi, seg: m.sg, s: s });
-        emit(); return;
-      }
-    }
+    if (song.tempo) {
+      var a = stepTimes(cur.theme, cur.si), lo = 0, hi = n - 1;
+      while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (a[mid] <= sec) lo = mid; else hi = mid - 1; }
+      s = lo;
+    } else s = Math.min(n - 1, Math.floor(sec / trackSecs(cur.theme, cur.si) * n));
+    unTarget(cur); cur.s = s; emit();
   }
 
   function info() {
     if (!cur) return null;
     var tm = times();
     var base = { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: cur.si + 1, si: cur.si, of: suiteOpen(cur.theme) ? 6 : 5, bpm: Math.round(15 / cur.six), loop: cur.loop, paused: paused, pos: tm.pos, dur: tm.dur };
-    var outro = cur.s >= cur.song.bars * 16 && cur.tgt ? " · outro → " + cur.P.titles[cur.mv ? 0 : cur.tgt.si] : "";
-    if (!cur.suite) { base.bar = Math.min(cur.song.bars - 1, Math.floor(cur.s / 16)); base.bars = cur.song.bars; base.style = cur.song.mood + outro; base.outro = !!outro; return base; }
-    var sp = cur.suite, done = 0, i;
-    for (i = 0; i < sp.mi; i++) done += segBars(SUITE[i]);
-    for (i = 0; i < sp.seg; i++) done += cur.mv.segs[i][1] - cur.mv.segs[i][0];
-    done += Math.floor(cur.s / 16) - cur.mv.segs[sp.seg][0];
-    base.bar = Math.max(0, Math.min(SUITE_BARS - 1, done)); base.bars = SUITE_BARS; base.style = SUITE_MOOD + " · " + cur.mv.name; base.movement = sp.mi + 1;
+    var outro = cur.s >= cur.song.bars * 16 && cur.tgt ? " · outro → " + cur.P.titles[cur.tgt.si] : "";
+    base.bar = Math.min(cur.song.bars - 1, Math.floor(cur.s / 16)); base.bars = cur.song.bars; base.outro = !!outro;
+    base.style = (cur.song.chapter ? "the director's cut · " + cur.song.chapter(base.bar) : cur.song.mood) + outro;
     return base;
-  }
-  function suiteSeek(b) {
-    b = Math.max(0, Math.min(SUITE_BARS - 1, b | 0));
-    for (var mi = 0; mi < SUITE.length; mi++) for (var sg = 0; sg < SUITE[mi].segs.length; sg++) {
-      var seg = SUITE[mi].segs[sg], len = seg[1] - seg[0];
-      if (b < len) {
-        if (mi === cur.suite.mi) { unTarget(cur); cur.suite.seg = sg; cur.s = (seg[0] + b) * 16; }
-        else switchTo(cur.theme, 5, 0.6, cur.loop, { mi: mi, seg: sg, s: (seg[0] + b) * 16 });
-        return;
-      }
-      b -= len;
-    }
   }
   function emit() { try { window.dispatchEvent(new CustomEvent("samuka:lofi", { detail: { on: on, paused: paused, track: on && cur ? info().name : null, info: on && cur ? info() : null } })); } catch (e) {} }
   function nowPlaying() {
@@ -811,7 +960,7 @@
     btn.classList.toggle("is-on", live);
     btn.setAttribute("aria-pressed", live ? "true" : "false");
     btn.innerHTML = live ? '<span class="lofi-eq" aria-hidden="true"><i></i><i></i><i></i></span>' : "♪";
-    if (!on) btn.title = "♪ site soundtrack (synthesized live)";
+    if (!on) btn.title = "♪ soundtrack player (synthesized live)";
     if (nextBtn) nextBtn.hidden = !on;
   }
 
@@ -859,7 +1008,7 @@
   function prev() {
     if (!on) return start();
     if (paused) resume();
-    if (times().pos > 3) { if (cur.suite) seekTime(0); else { unTarget(cur); cur.s = 0; emit(); } return; }
+    if (times().pos > 3) { seekTime(0); return; }
     var si = prevIdx(cur.theme, cur.si); if (pinned) pinned.si = si;
     switchTo(cur.theme, si, 1.2, cur.loop);
   }
@@ -884,7 +1033,7 @@
   // the listening page: a pinned track (theme changes elsewhere don't switch it); loops unless loop === false
   function preview(theme, si, loop) { pinned = { theme: THEMES[theme] ? theme : "phthalo", si: si }; start(pinned.theme, si, loop !== false); }
   function bpmRange(P) {
-    var b = SONGS.map(function (s) { return Math.round(s.bpm * P.bpm); });
+    var b = CUT.tempo.map(function (x) { return Math.round(x[1] * P.bpm); });   // the cut spans every song's tempo
     return Math.min.apply(null, b) + "–" + Math.max.apply(null, b);
   }
 
@@ -893,11 +1042,11 @@
     start: function () { start(); }, stop: stop, isOn: function () { return on; }, next: next, prev: prev, preview: preview,
     pause: pause, resume: resume, isPaused: function () { return on && paused; },
     seekTime: seekTime, skip: function (d) { if (cur) seekTime(times().pos + d); },
-    setLoop: function (v) { if (cur) { cur.loop = !!v; if (!v && cur.tgt && cur.tgt.si === cur.si && !cur.mv) cur.tgt.si = nextIdx(cur.theme, cur.si); emit(); } },
+    setLoop: function (v) { if (cur) { cur.loop = !!v; if (!v && cur.tgt && cur.tgt.si === cur.si) cur.tgt.si = nextIdx(cur.theme, cur.si); emit(); } },
     volume: function (v) { if (v != null) setVolume(v); return vol; },
     // play a track in the normal rotation (it carries on to the next one when it ends)
     play: function (theme, si) { pinned = null; start(THEMES[theme] ? theme : themeId(), si | 0, false); },
-    seek: function (bar) { if (!cur) return; if (cur.suite) suiteSeek(bar); else { unTarget(cur); cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; } },
+    seek: function (bar) { if (!cur) return; unTarget(cur); cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; },
     track: function () { return on ? info() : null; },
     analyser: function () { return on ? analyser : null; },
     theme: themeId,
@@ -905,15 +1054,14 @@
       open: suiteOpen, unlock: unlockSuite, heard: heardCount, heardMask: heardMask,
       title: function (th) { return THEMES[th] ? THEMES[th].titles[5] : null; },
       themes: function () { return Object.keys(THEMES).map(function (k) { return { theme: k, name: THEMES[k].name, titles: THEMES[k].titles.slice(0, 5), suite: THEMES[k].titles[5], tr: THEMES[k].tr }; }); },
-      movements: SUITE.map(function (m) { return { si: m.si, name: m.name }; }),
-      // where each movement starts, in seconds (for markers on a seek bar)
-      marks: function (th) { var P = THEMES[th] || THEMES.phthalo, seen = {}; return suiteMap(P).filter(function (x) { if (seen[x.mi]) return false; seen[x.mi] = 1; return true; }).map(function (x) { return { at: x.t0, name: x.name }; }); }
+      // where each chapter of the director's cut starts, in seconds (for markers on a seek bar)
+      marks: function (th) { var a = stepTimes(THEMES[th] ? th : "phthalo", 5); return CUT.chapters.map(function (c) { return { at: a[c[0] * 16], name: c[1] }; }); }
     },
     catalog: function () {
       return Object.keys(THEMES).map(function (k) {
         var P = THEMES[k];
         var songs = SONGS.map(function (s, i) { return { no: i + 1, title: P.titles[i], mood: s.mood, bpm: Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round((s.bars + s.outroBars) * 4 * 60 / (s.bpm * P.bpm)) }; });
-        songs.push({ no: 6, title: P.titles[5], mood: SUITE_MOOD, bpm: bpmRange(P), bars: SUITE_BARS, secs: suiteSecs(P), suite: true, locked: !suiteOpen(k), heard: heardCount(k) });
+        songs.push({ no: 6, title: P.titles[5], mood: CUT_MOOD, bpm: bpmRange(P), bars: SONG_CUT.bars, outro: SONG_CUT.outroBars, secs: Math.round(trackSecs(k, 5)), suite: true, locked: !suiteOpen(k), heard: heardCount(k) });
         return { theme: k, name: P.name, songs: songs };
       });
     }
@@ -923,9 +1071,8 @@
   window.addEventListener("samuka:theme", function () {
     if (!on || !ctx || !cur || pinned) return;
     var th = themeId(); if (th === cur.theme) return;
-    if (!cur.suite) switchTo(th, cur.si, 2, false);
-    else if (suiteOpen(th)) switchTo(th, 5, 2, false, { mi: cur.suite.mi, seg: cur.suite.seg, s: cur.s });
-    else switchTo(th, cur.mv.si, 2, false);   // that theme's suite is still locked: drop into the same song there
+    if (cur.si === 5 && !suiteOpen(th)) switchTo(th, 0, 2, false);   // that theme's cut is still locked
+    else switchTo(th, cur.si, 2, false, { s: cur.s < cur.song.bars * 16 ? cur.s : 0 });   // same place, new palette
   });
   document.addEventListener("visibilitychange", function () {
     if (!on || !ctx || paused) return;
@@ -950,14 +1097,17 @@
     btn = document.createElement("button");
     btn.type = "button"; btn.className = "icon-btn lofi-btn"; btn.setAttribute("aria-pressed", "false");
     btn.setAttribute("aria-label", "Play the site soundtrack"); btn.textContent = "♪";
-    btn.addEventListener("click", function () { if (paused) resume(); else if (on) stop(); else start(); });
-    nextBtn = document.createElement("button");
-    nextBtn.type = "button"; nextBtn.className = "icon-btn lofi-btn lofi-next"; nextBtn.setAttribute("aria-label", "Next track"); nextBtn.textContent = "⏭"; nextBtn.hidden = true;
-    nextBtn.addEventListener("click", next);
+    // ♪ opens the player dock (assets/js/musicdock.js); the first click also starts the music
+    btn.setAttribute("aria-haspopup", "dialog"); btn.setAttribute("aria-label", "Soundtrack player");
+    btn.addEventListener("click", function () {
+      var D = window.SamukaDock;
+      if (!D) { if (paused) resume(); else if (on) stop(); else start(); return; }
+      if (!on && !D.isOpen()) start();
+      D.toggle(btn);
+    });
     render();
     var ref = bar.querySelector("[data-toggle-theme]");
-    if (ref && ref.parentNode) { ref.parentNode.insertBefore(btn, ref); ref.parentNode.insertBefore(nextBtn, ref); }
-    else { bar.appendChild(btn); bar.appendChild(nextBtn); }
+    if (ref && ref.parentNode) ref.parentNode.insertBefore(btn, ref); else bar.appendChild(btn);
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mount);
   else mount();
