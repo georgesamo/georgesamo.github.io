@@ -142,7 +142,7 @@
           if (act[i]) cls = "is-" + piece.table + (piece.kind === "change" && !created[piece.table] ? " is-pending" : "") + (piece.kind === "create" ? " is-create" : "") + " is-live";
           else if (b) cls = "is-" + b.t + (b.pending ? " is-pending" : "") + (b.create ? " is-create" : "");
           else if (ghost[i]) cls = "is-ghost";
-          if (cells[i].className !== cls) cells[i].className = cls;
+          if (cells[i].className !== cls) { if (cls) cells[i].className = cls; else cells[i].removeAttribute("class"); }
         }
       }
       function paintNext() {
