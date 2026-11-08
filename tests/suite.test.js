@@ -81,20 +81,20 @@
       expect(L().bonus.unlock("schema")).toBe(false);
       document.querySelectorAll(".ach-toast").forEach(function (el) { el.remove(); });
     });
-    it("keeps the main rotation to the five songs, even with everything unlocked", function () {
-      set({ open: { phthalo: 1 }, bonus: { sidekiq: 1, gems: 1, schema: 1, pitwall: 1 } });
+    it("rotates through the five songs only while nothing is unlocked", function () {
       var O = L().order;
       expect([0, 1, 2, 3, 4].map(function (si) { return O.next("phthalo", si); })).toEqual([1, 2, 3, 4, 0]);
       expect(O.prev("phthalo", 0)).toBe(4);
-      expect(O.next("phthalo", 5)).toBe(0);
     });
-    it("plays picked bonus tracks on through the unlocked ones, then home to Ring Zero", function () {
-      set({ bonus: { sidekiq: 1, schema: 1 } });
+    it("adds unlocked bonus tracks to the rotation after the five songs, never the director's cut", function () {
+      set({ open: { knight: 1 }, bonus: { sidekiq: 1, schema: 1 } });
       var O = L().order;
-      expect(O.next("knight", 6)).toBe(8);
-      expect(O.next("knight", 8)).toBe(0);
+      expect([0, 1, 2, 3, 4, 6, 8].map(function (si) { return O.next("knight", si); })).toEqual([1, 2, 3, 4, 6, 8, 0]);
+      expect(O.prev("knight", 0)).toBe(8);
       expect(O.prev("knight", 8)).toBe(6);
       expect(O.prev("knight", 6)).toBe(4);
+      expect(O.next("knight", 5)).toBe(0);
+      expect(O.prev("knight", 5)).toBe(4);
     });
   });
 

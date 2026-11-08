@@ -15,8 +15,8 @@
  *   8 Gem Match     somber piano, strings and low brass, hopeful (72 bpm, 5 min)
  *   9 Schema Stack  electric guitar riffs, a singing lead and a solo (150 bpm, 3 min)
  *  10 Pit Wall      a grand-prix fanfare that falls into a tribal fever dream and back (124 bpm, 4 min)
- * The main rotation is only the five songs. Tracks 6–10 play when picked in the player; bonus tracks then
- *   carry on to the next unlocked bonus track and home to Ring Zero.
+ * The main rotation is the five songs plus every unlocked bonus track (1–5, 7–10, round again). Track 6 stays out
+ *   of it: it plays only when picked in the player, then hands over to Ring Zero.
  * Every song ends with an outro that eases its tempo and tuning into the next track (or itself, when looping)
  *   and teases that track's opening, so songs hand over on the beat instead of crossfading.
  * On the site the current theme's songs play in order; switching theme crossfades to the same song.
@@ -819,8 +819,8 @@
   };
   /* ======================= bonus tracks 7–10 · one per arcade game, unlocked by finishing a run =======================
    * Same rules as the five songs: E minor, A=440, an outro that glides into whatever comes next and a foreshadow
-   * of each one's opening, so any track can hand over to any other. They never join the main rotation: picked in
-   * the player they play on through the other unlocked bonus tracks, then home to Ring Zero. */
+   * of each one's opening, so any track can hand over to any other. Once unlocked they join the main rotation
+   * after the five songs, then it goes round again to Ring Zero. */
   function noiseL(t, d) { var s = ctx.createBufferSource(); s.buffer = noiseBuf; s.loop = true; s.start(t, Math.random() * 1.5); s.stop(t + d + 0.05); return s; }
   function bigKick(o, t, v) {   // a techno kick: long dive, a click, driven, and it ducks everything
     var s = osc("sine", 190, t, t + 0.9), g = gain(0), sh = shaper(1.8);
@@ -1315,15 +1315,15 @@
   }
   window.addEventListener("samuka:game", function (e) { var d = e.detail || {}; if (d.name === "over") unlockBonus(d.game); });
   function siOpen(th, si) { return si < 5 || (si === 5 ? suiteOpen(th) : !!(TRACKS[si] && bonusOpen(TRACKS[si].game))); }
-  // the main rotation is the five songs only. The extras play when picked in the player, then flow on:
-  // a bonus track → the next unlocked bonus track → home to Ring Zero; the director's cut → Ring Zero
+  // the main rotation: the five songs, then every unlocked bonus track, then round again to Ring Zero.
+  // The director's cut stays out of it: it plays only when picked, then hands over to Ring Zero.
   function nextIdx(th, si) {
     if (si < 4) return si + 1;
-    if (si >= 6) for (var i = si + 1; i < TRACKS.length; i++) if (siOpen(th, i)) return i;
+    if (si === 4 || si >= 6) for (var i = Math.max(6, si + 1); i < TRACKS.length; i++) if (siOpen(th, i)) return i;
     return 0;
   }
   function prevIdx(th, si) {
-    if (si >= 7) for (var i = si - 1; i >= 6; i--) if (siOpen(th, i)) return i;
+    if (si === 0 || si >= 6) for (var i = si === 0 ? TRACKS.length - 1 : si - 1; i >= 6; i--) if (siOpen(th, i)) return i;
     return si === 0 || si >= 5 ? 4 : si - 1;
   }
   function lastOpen(th) { for (var i = TRACKS.length - 1; i > 4; i--) if (siOpen(th, i)) return i + 1; return 5; }
