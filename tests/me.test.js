@@ -221,7 +221,7 @@
       var root = mount(window.SamukaAccountCore.statsHtml({ ach: { n: 0, total: 3 } }));
       expect(await M.fillStats(root)).toBe(true);
       var vals = Array.prototype.map.call(root.querySelectorAll(".acct__stat b"), function (b) { return b.textContent; });
-      expect(vals).toEqual(["1/3", "7", "2,310"]);
+      expect(vals).toEqual(["1/3", "7", "#3", "🔥 2"]);
     });
     it("asks the database once per name and caches it", async function () {
       var n = 0;

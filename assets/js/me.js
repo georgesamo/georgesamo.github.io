@@ -17,10 +17,11 @@
   function ach() { var x = window.SamukaAch; return x ? C.achCount(x.list, x.has) : { n: 0, total: 0 }; }
   function ctx() {
     var a = A(), on = signedIn();
-    var name = on ? a.publicName() : "guest";
+    var name = on ? a.publicName() : "guest", streak = C.streakOf(myCard());
     return {
       enabled: !!(a && a.enabled), signedIn: on, name: name, role: a ? a.role() : "guest", ach: ach(),
-      here: on && C.isMyCard(location.pathname, location.search, name) ? "card" : ""
+      here: on && C.isMyCard(location.pathname, location.search, name) ? "card" : "",
+      streak: streak ? streak.current : 0
     };
   }
 
@@ -34,8 +35,69 @@
     if (name === "board") { if (window.SamukaBoard) window.SamukaBoard.open(); return true; }
     if (name === "admin") { if (window.SamukaAdmin) window.SamukaAdmin.open(); return true; }
     if (name === "copy") { copyCard(el); return true; }
+    if (name === "export") { exportData(el); return true; }
+    if (name === "delete") { askDelete(el); return true; }
+    if (name === "delete-cancel") { var z = el.closest("[data-me-danger]"); if (z) z.innerHTML = ""; return true; }
     return false;
   }
+
+  /* ---------- your data: download and delete ---------- */
+  function db() { var a = A(); return a && a.client && !a.mock() ? a.client() : null; }
+  function download(name, text) {
+    var url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    var link = document.createElement("a");
+    link.href = url; link.download = name; link.rel = "external";
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+  function exportData(btn) {
+    if (!signedIn()) return Promise.resolve(false);
+    var a = A(), c = db(), name = a.publicName();
+    if (btn) { btn.disabled = true; btn.textContent = "preparing…"; }
+    var p = c ? c.rpc("export_my_data").then(function (r) { if (r.error) throw r.error; return r.data; })
+      : Promise.resolve({ exported_at: new Date().toISOString(), local_test_session: true, public_name: name, profile: a.profile(), achievements: window.SamukaAch ? window.SamukaAch.list.filter(function (x) { return window.SamukaAch.has(x.key); }).map(function (x) { return x.key; }) : [] });
+    return p.then(function (data) {
+      download(C.exportFileName(name), JSON.stringify(data, null, 2));
+      if (btn) { btn.disabled = false; btn.textContent = "✓ downloaded"; }
+      return true;
+    }, function (err) {
+      if (btn) { btn.disabled = false; btn.textContent = "⬇ download my data"; }
+      dangerSay(btn, "✗ " + ((err && err.message) || "download failed") + (/function/.test((err && err.message) || "") ? " (run supabase/me.sql)" : ""));
+      return false;
+    });
+  }
+  function dangerSay(near, msg) {
+    var z = near && near.closest && near.closest(".acct__data"), box = z && z.querySelector("[data-me-danger]");
+    if (box) box.innerHTML = '<p class="acct__notice"><span class="err">' + C.esc(msg) + "</span></p>";
+  }
+  function askDelete(btn) {
+    var box = btn && btn.closest(".acct__data") && btn.closest(".acct__data").querySelector("[data-me-danger]");
+    if (!box || !signedIn()) return;
+    box.innerHTML = C.deleteConfirmHtml(A().publicName());
+    box.querySelector("input").focus();
+  }
+  function deleteAccount(form) {
+    var a = A(), c = db(), btn = form.querySelector("[type=submit]");
+    if (!C.confirmMatches(form.elements.confirm.value, a.publicName())) return Promise.resolve(false);
+    btn.disabled = true; btn.textContent = "deleting…";
+    var p = c ? c.rpc("delete_my_account").then(function (r) { if (r.error) throw r.error; }) : Promise.resolve();
+    return p.then(function () {
+      if (a.close) a.close();
+      return Promise.resolve(a.signOut()).then(function () { return true; });
+    }, function (err) {
+      btn.disabled = false; btn.textContent = "delete for good";
+      dangerSay(form, "✗ " + ((err && err.message) || "could not delete") + (/function/.test((err && err.message) || "") ? " (run supabase/me.sql)" : ""));
+      return false;
+    });
+  }
+  document.addEventListener("input", function (e) {
+    var f = e.target.closest && e.target.closest("[data-me-delete]");
+    if (f) f.querySelector("[type=submit]").disabled = !C.confirmMatches(e.target.value, A() && A().publicName());
+  });
+  document.addEventListener("submit", function (e) {
+    var f = e.target.closest && e.target.closest("[data-me-delete]");
+    if (f) { e.preventDefault(); deleteAccount(f); }
+  });
   function copyCard(btn) {
     if (!signedIn()) return Promise.resolve(false);
     var url = location.origin + C.cardHref(A().publicName());
@@ -72,6 +134,14 @@
     menu.anchor = anchor || null;
     if (anchor) { anchor.setAttribute("aria-expanded", "true"); anchor.setAttribute("aria-controls", "me-menu"); place(anchor); }
     var first = items()[0]; if (first) first.focus();
+    dismissTip();
+    // the streak in the header arrives with the player card
+    if (signedIn() && myCard() === undefined) fetchCard(A().publicName()).then(function () {
+      if (!isMenuOpen()) return;
+      var head = el.querySelector(".me-menu__head"), tmp = document.createElement("div");
+      tmp.innerHTML = C.menuHtml(ctx());
+      if (head) head.replaceWith(tmp.querySelector(".me-menu__head"));
+    });
   }
   function closeMenu(restoreFocus) {
     if (!menu.el || menu.el.hidden) return;
@@ -120,10 +190,13 @@
     if (hit && Date.now() - hit.at < CARD_TTL) return hit.promise;
     var a = A(), c = a && a.client && !a.mock() ? a.client() : null, p;
     if (c) p = c.rpc("player_card", { p_name: name }).then(function (r) { return r.error ? null : r.data || null; }, function () { return null; });
-    else p = Promise.resolve(a && a.mock && a.mock() ? { games: 7, best: { gems: 2310, sidekiq: 840 } } : null);   // local test session
+    else p = Promise.resolve(a && a.mock && a.mock() ? { games: 7, best: { gems: 2310, sidekiq: 840 }, ranks: { gems: { rank: 3, of: 12, behind: 140 } }, streak: { current: 2, best: 5 } } : null);   // local test session
+    p = p.then(function (card) { if (cards[name] && cards[name].promise === p) cards[name].card = card; return card; });
     cards[name] = { at: Date.now(), promise: p };
     return p;
   }
+  // the last loaded card of the signed-in player, if any (menu header streak)
+  function myCard() { var a = A(), hit = signedIn() && cards[a.publicName()]; return hit ? hit.card : undefined; }
   function fillStats(root) {
     var el = root && root.querySelector("[data-me-stats]");
     if (!el || !signedIn()) return Promise.resolve(false);
@@ -176,9 +249,39 @@
     if (e.target.closest && e.target.closest("[data-lb-jump]")) { e.preventDefault(); jumpToMe(); }
   });
 
+  /* ---------- one-time tip pointing at the avatar menu after the first sign-in ---------- */
+  var TIP_KEY = "samuka-tip-menu", tip = null;
+  function tipSeen() { try { return localStorage.getItem(TIP_KEY) === "1"; } catch (e) { return true; } }
+  function dismissTip() {
+    try { localStorage.setItem(TIP_KEY, "1"); } catch (e) {}
+    if (tip) { tip.remove(); tip = null; }
+  }
+  function visibleAvatar() {
+    return Array.prototype.filter.call(document.querySelectorAll("[data-account]"), function (b) { return !b.hidden && b.offsetParent !== null; })[0] || null;
+  }
+  function showTip() {
+    var a = A(), b = visibleAvatar();
+    if (tip || !signedIn() || tipSeen() || !b || (a.isOpen && a.isOpen())) return false;
+    var r = b.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+    tip = document.createElement("div");
+    tip.className = "me-tip";
+    tip.setAttribute("role", "status");
+    tip.innerHTML = "<b>Your stuff lives here</b><span>Player card, ranks, badges and settings: click your avatar any time.</span>" +
+      '<button type="button" class="btn" data-me-tip-close>got it</button>';
+    document.body.appendChild(tip);
+    tip.style.top = Math.round(r.bottom + 10) + "px";
+    tip.style.left = Math.round(Math.max(8, Math.min(r.left + r.width / 2 - tip.offsetWidth + 28, vw - tip.offsetWidth - 8))) + "px";
+    return true;
+  }
+  document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest("[data-me-tip-close]")) dismissTip(); });
+
   /* ---------- wiring ---------- */
   function paint() { paintTree(); paintSheet(); paintJump(); if (isMenuOpen()) menu.el.innerHTML = C.menuHtml(ctx()); }
-  window.addEventListener("samuka:auth", function () { if (!signedIn()) closeMenu(false); paint(); autoJump(); });
+  window.addEventListener("samuka:auth", function () {
+    if (!signedIn()) { closeMenu(false); if (tip) { tip.remove(); tip = null; } }
+    paint(); autoJump();
+    if (signedIn() && !tipSeen()) setTimeout(showTip, 1200);
+  });
   window.addEventListener("samuka:achievement", paint);
   window.addEventListener("samuka:page", function () { autoJumped = ""; paint(); autoJump(); });
   window.addEventListener("hashchange", autoJump);
@@ -188,6 +291,7 @@
     menu: { open: openMenu, close: closeMenu, toggle: toggleMenu, isOpen: isMenuOpen, el: function () { return menu.el; } },
     act: act, ctx: ctx, paint: paint, paintTree: paintTree, paintSheet: paintSheet, paintJump: paintJump,
     fillStats: fillStats, fetchCard: fetchCard, copyCard: copyCard, jumpToMe: jumpToMe, waitFor: waitFor,
+    exportData: exportData, deleteAccount: deleteAccount, showTip: showTip, dismissTip: dismissTip,
     _resetCache: function () { cards = {}; }
   };
 })();

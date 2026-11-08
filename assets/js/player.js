@@ -32,7 +32,9 @@
       card = r.data;
     } else {
       // local test session: a sample card
-      card = { name: name, role: (a && a.role()) || "user", joined: new Date().toISOString(), achievements: ["hello_world", "first_game", "pipeline"], best: { gems: 2310, sidekiq: 840 }, games: 7, me: true };
+      card = { name: name, role: (a && a.role()) || "user", joined: new Date().toISOString(), achievements: ["hello_world", "first_game", "pipeline"], best: { gems: 2310, sidekiq: 840 }, games: 7, me: true,
+        ranks: { gems: { rank: 3, of: 12, behind: 140 }, sidekiq: { rank: 7, of: 9, behind: 35 } }, streak: { current: 2, best: 5 },
+        recent: [{ game: "gems", score: 2310, mode: "free", at: new Date(Date.now() - 36e5).toISOString() }, { game: "sidekiq", score: 840, mode: "free", at: new Date(Date.now() - 864e5).toISOString() }] };
     }
     if (!card) return finder("No player called <b>" + esc(name) + "</b>. Check the spelling, or find someone else:");
     render();
@@ -56,6 +58,7 @@
         }).join("") + "</div>" +
         '<div class="pcard__foot"><span>georgesamo.github.io/u/?n=' + esc(card.name) + "</span><span>Samuka's Arcade</span></div>" +
       "</article>" +
+      (window.SamukaAccountCore ? '<div class="pcard-extra">' + window.SamukaAccountCore.cardExtrasHtml(card) + "</div>" : "") +
       '<div class="pcard-actions"><button class="btn btn--primary" type="button" data-pcard-copy>⧉ copy link</button><button class="btn" type="button" data-pcard-png>⬇ save as image</button>' +
       (card.me ? '<button class="btn" type="button" data-acct-open>edit nickname</button>' : "") + '<a class="btn" href="/leaderboards/">leaderboards</a></div>' +
       '<form class="pcard-find" data-pcard-find><input name="n" maxlength="24" placeholder="find another player" aria-label="Player nickname" required><button class="btn" type="submit">find</button></form>';

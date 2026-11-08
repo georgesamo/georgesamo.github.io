@@ -57,6 +57,23 @@
     window.dispatchEvent(new CustomEvent("samuka:game", { detail: d }));
   }
 
+  // a guest's game-over card offers to keep the score (scores.js holds it until they sign in)
+  function guestNudge(stage, score) {
+    var A = window.SamukaAuth;
+    if (!A || !A.enabled || A.user() || !(score > 0)) return;
+    var tries = 0;
+    (function attach() {   // games draw their game-over card right after best(), sometimes after an animation
+      var card = stage.isConnected && stage.querySelector(".arcade__overlay .arcade__card");
+      if (!card) { if (++tries < 40) setTimeout(attach, 100); return; }
+      if (card.querySelector(".arcade__claim")) return;
+      var p = document.createElement("p");
+      p.className = "arcade__claim";
+      p.innerHTML = "💾 <b>" + Number(score).toLocaleString("en-US") + "</b> is kept on this device. " +
+        '<button type="button" class="linklike" data-me-act="signin">Sign in</button> to put it on the leaderboards.';
+      card.appendChild(p);
+    })();
+  }
+
   function api(id, stage, opts) {
     opts = opts || {};
     return {
@@ -72,6 +89,7 @@
       best: function (score, extra) {
         var payload = { score: score }; if (extra) for (var k in extra) payload[k] = extra[k];
         emit(id, "over", payload, opts);
+        guestNudge(stage, score);
         if (opts.mode === "daily" || opts.mode === "race") return { best: score, isNew: false };
         var prev = getBest(id);
         if (score > prev) { setBest(id, score); return { best: score, isNew: true }; }
@@ -98,9 +116,9 @@
 
   function open(id, opts) {
     if (!games[id]) return false;
-    // the arcade is for signed-in visitors whenever accounts are switched on
+    // guests can play; the daily puzzle and live races need an account (one try a day, a name to race)
     var A = window.SamukaAuth;
-    if (A && A.enabled && !A.user()) { A.open({ reason: "arcade" }); return false; }
+    if (A && A.enabled && !A.user() && opts && (opts.mode === "daily" || opts.mode === "race")) { A.open({ reason: "arcade" }); return false; }
     if (!modal) build();
     if (current) teardown();
     lastFocus = document.activeElement;

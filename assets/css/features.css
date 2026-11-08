@@ -62,7 +62,7 @@
 .acct__tab.is-on { background: var(--bg-elev); color: var(--text); box-shadow: 0 0 0 1px var(--hl); }
 .acct__tab:focus-visible { outline: 2px solid var(--hl); outline-offset: 1px; }
 .acct__panel { min-height: 180px; outline: none; }
-.acct__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 14px; }
+.acct__stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin: 0 0 14px; }   /* 3 or 4 (streak) */
 .acct__stat { display: grid; gap: 2px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-soft); color: var(--text); text-align: left; text-decoration: none; font: inherit; cursor: pointer; transition: border-color 0.2s, transform 0.2s; }
 .acct__stat:hover { border-color: var(--hl); transform: translateY(-1px); text-decoration: none; }
 .acct__stat b { font: 700 18px var(--mono); color: var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -77,8 +77,6 @@
 .acct__perks small { font: 11.5px var(--mono); color: var(--muted); }
 .acct__avatar--md { width: 34px; height: 34px; font-size: 15px; flex: none; }
 @media (max-width: 520px) {
-  .acct__stats { grid-template-columns: 1fr 1fr; }
-  .acct__stats .acct__stat:last-child { grid-column: span 2; }
   .acct__tab { padding: 0 9px; }
 }
 
@@ -118,6 +116,65 @@
 .msheet__quick span { font: 11px var(--mono); color: var(--text-2); }
 .msheet__card .msheet__signin { display: grid; gap: 2px; justify-items: start; border: 1px solid var(--hl); background: var(--hl-soft); }
 .msheet__signin small { margin: 0 !important; }
+
+/* your data: export and delete */
+.btn--danger { color: var(--ruby-red); border-color: color-mix(in srgb, var(--ruby-red) 55%, transparent); }
+.btn--danger:hover:not(:disabled) { background: color-mix(in srgb, var(--ruby-red) 12%, transparent); border-color: var(--ruby-red); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.acct__data { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.acct__data h4 { margin: 0 0 6px; font: 12px var(--mono); color: var(--blue); }
+.acct__data p { font-size: 13.5px !important; }
+.acct__confirm { margin-top: 12px; padding: 12px; border: 1px solid var(--ruby-red); border-radius: 10px; }
+.acct__confirm code { color: var(--hl); }
+.acct__confirm input { flex: 1 1 160px; min-width: 0; height: 38px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line-strong); background: var(--bg-soft); color: var(--text); font: 14px var(--mono); outline: none; }
+.acct__confirm input:focus { border-color: var(--ruby-red); }
+
+/* achievements: next up + progress */
+.acct__next { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 12px; border: 1px dashed var(--hl); border-radius: 10px; background: var(--hl-soft); font-size: 13.5px !important; color: var(--text) !important; }
+.acct__next > small:first-child { width: 100%; font: 11px var(--mono); color: var(--hl); text-transform: uppercase; letter-spacing: 0.08em; }
+.acct__next small { font: 11px var(--mono); color: var(--muted); }
+.ach-bar { display: inline-block; width: 100%; max-width: 140px; height: 5px; margin-top: 4px; border-radius: 99px; background: var(--bg-hover); overflow: hidden; vertical-align: middle; }
+.ach-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--hl)); border-radius: inherit; }
+.ach .ach-bar { opacity: 1; }
+
+/* player card extras: ranks, streak, recent games */
+.pcard-extra { display: grid; gap: 12px; width: min(520px, 100%); }   /* same width as .pcard */
+.pcard-extra:empty { display: none; }
+.pcard-more { padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg-elev); }
+.pcard-more h3 { margin: 0 0 8px; font: 12px var(--mono); color: var(--blue); }
+.pcard-more h3 small { color: var(--muted); }
+.pcard-ranks, .pcard-recent { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font: 13px var(--mono); }
+.pcard-ranks li, .pcard-recent li { display: flex; align-items: baseline; gap: 10px; padding: 5px 8px; border-radius: 8px; }
+.pcard-ranks li:nth-child(odd), .pcard-recent li:nth-child(odd) { background: var(--bg-soft); }
+.pcard-ranks b { margin-left: auto; color: var(--accent); font-weight: 500; }
+.pcard-recent b { margin-left: auto; color: var(--accent); }
+.pcard-recent time { min-width: 62px; text-align: right; color: var(--muted); font-size: 11.5px; }
+.pcard-streak { margin: 0; font: 13px var(--mono); color: var(--text-2); }
+.pcard-streak b { color: var(--hl); font-size: 16px; }
+
+/* guest game-over: keep this score */
+.arcade__claim { margin: 12px 0 0; padding: 8px 10px; border: 1px dashed var(--hl); border-radius: 9px; font: 12.5px/1.5 var(--mono); color: var(--text-2); }
+.linklike { padding: 0; border: 0; background: none; color: var(--link); font: inherit; text-decoration: underline; cursor: pointer; }
+
+/* first sign-in tip */
+.me-tip { position: fixed; z-index: 125; display: grid; gap: 6px; width: 260px; padding: 12px 14px; border: 1px solid var(--hl); border-radius: 12px; background: var(--bg-elev); box-shadow: var(--shadow); font-size: 13px; color: var(--text-2); animation: termIn 0.3s var(--ease) both; }
+.me-tip::before { content: ""; position: absolute; top: -7px; right: 24px; width: 12px; height: 12px; background: inherit; border-left: 1px solid var(--hl); border-top: 1px solid var(--hl); transform: rotate(45deg); }
+.me-tip b { color: var(--text); font: 700 14px var(--sans); }
+.me-tip .btn { justify-self: end; height: 30px; padding: 0 12px; }
+
+/* "go to…" palette */
+.pal { position: fixed; inset: 0; z-index: 150; display: grid; justify-items: center; align-items: start; padding: 12vh 16px 16px; }
+.pal[hidden] { display: none; }
+.pal__backdrop { position: absolute; inset: 0; background: rgba(2, 4, 3, 0.55); backdrop-filter: blur(4px); animation: fade 0.2s both; }
+.pal__win { position: relative; width: min(560px, 100%); border: 1px solid var(--line-strong); border-radius: 14px; background: var(--bg-elev); box-shadow: var(--shadow), 0 0 0 1px var(--hl-soft); overflow: hidden; animation: termIn 0.2s var(--ease) both; }
+.pal__input { width: 100%; height: 52px; padding: 0 18px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--text); font: 16px var(--mono); outline: none; }
+.pal__list { max-height: min(50vh, 400px); margin: 0; padding: 6px; overflow: auto; list-style: none; }
+.pal__list li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: var(--text-2); font: 14px var(--mono); cursor: pointer; }
+.pal__list li.is-on { background: var(--bg-hover); color: var(--text); box-shadow: inset 2px 0 0 var(--hl); }
+.pal__list li small { margin-left: auto; color: var(--muted); font-size: 11.5px; }
+.pal__list .pal__empty { cursor: default; color: var(--muted); }
+.pal__foot { margin: 0; padding: 8px 14px; border-top: 1px solid var(--line); font: 11px var(--mono); color: var(--muted); }
+.pal__foot kbd { margin-right: 2px; }
 
 /* leaderboards: jump to me */
 .lb-jump-msg { margin-top: 10px; font: 12.5px var(--mono); }

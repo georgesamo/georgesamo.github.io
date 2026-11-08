@@ -133,13 +133,20 @@
     }
   }).observe(document.documentElement, { childList: true, subtree: true });
 
+  // numbers that locked achievements can show progress towards (see SamukaAccountCore.achProgress)
+  function progressData() {
+    var Ar = window.SamukaArcade;
+    return { retries: uid ? parseInt(store.get("samuka-retries-" + uid) || "0", 10) || 0 : 0, gems: Ar && Ar.best ? Ar.best("gems") : 0 };
+  }
   function render(compact) {
+    var C = window.SamukaAccountCore, data = progressData();
     var n = Object.keys(got).filter(function (k) { return BY[k]; }).length;
     var html = '<div class="ach-grid' + (compact ? " ach-grid--compact" : "") + '">' + LIST.map(function (a) {
-      var on = !!got[a.key], hide = a.secret && !on;
-      return '<div class="ach' + (on ? " is-on" : "") + '" title="' + esc(hide ? "secret achievement" : a.how) + '"><span class="ach__icon" aria-hidden="true">' + (hide ? "?" : esc(a.icon)) + '</span><span class="ach__txt"><b>' + esc(hide ? "???" : a.title) + "</b><small>" + esc(hide ? "secret" : a.how) + "</small></span></div>";
+      var on = !!got[a.key], hide = a.secret && !on, prog = !on && C ? C.achProgress(a.key, data) : null;
+      return '<div class="ach' + (on ? " is-on" : "") + '" title="' + esc(hide ? "secret achievement" : a.how) + '"><span class="ach__icon" aria-hidden="true">' + (hide ? "?" : esc(a.icon)) + '</span><span class="ach__txt"><b>' + esc(hide ? "???" : a.title) + "</b><small>" + esc(hide ? "secret" : a.how) + "</small>" +
+        (prog && prog.cur > 0 ? C.progressBar(prog) : "") + "</span></div>";
     }).join("") + "</div>";
-    return { count: n, total: LIST.length, html: html };
+    return { count: n, total: LIST.length, html: html, next: C ? C.nextUpHtml(C.nextUp(LIST, function (k) { return !!got[k]; }, data)) : "" };
   }
 
   // section in the account window
@@ -148,7 +155,7 @@
     A.extend(function (state) {
       if (!state.user) return "";
       var r = render(true);
-      return '<p class="acct__lead"><b>' + r.count + "/" + r.total + "</b> unlocked · secret ones show as ??? until you find them</p>" + r.html;
+      return '<p class="acct__lead"><b>' + r.count + "/" + r.total + "</b> unlocked · secret ones show as ??? until you find them</p>" + r.next + r.html;
     }, { tab: "badges" });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addToAccount); else addToAccount();

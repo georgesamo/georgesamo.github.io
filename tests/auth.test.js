@@ -84,7 +84,8 @@
       await tick(30);
       var vals = qa(w, ".acct__stat b").map(function (b) { return b.textContent; });
       expect(vals[1]).toBe("7");          // sample card in the local test session
-      expect(vals[2]).toBe("2,310");
+      expect(vals[2]).toBe("#3");         // best rank
+      expect(vals[3]).toBe("🔥 2");       // daily streak
     }));
     it("menu → Achievements opens the badges tab with the grid", local(async function () {
       var w = await load("user");
@@ -177,6 +178,109 @@
       // leaving the local test session switches accounts off entirely (there is no real backend)
       expect(q(w, '[data-me-tree] a[href^="/u/"]')).toBe(null);
       expect(q(w, "[data-me-sheet] .msheet__who")).toBe(null);
+    }));
+  });
+
+  describe("guest play and claiming scores", function () {
+    var PENDING = "samuka-scores-pending";
+    afterEach(function () { try { localStorage.removeItem(PENDING); } catch (e) {} });
+    // a tiny stand-in for Gem Match that ends right away with a score
+    function toyGame(w, score) {
+      w.SamukaArcade.register("gems", { title: "Toy", mount: function (stage, api) {
+        setTimeout(function () { api.best(score); api.overlay("<h3>game over</h3><button>again</button>"); }, 10);
+        return {};
+      } });
+    }
+    it("guests can play free games; the daily and races still ask to sign in", local(async function () {
+      var w = await load("guest");
+      toyGame(w, 1234);
+      expect(w.SamukaArcade.open("gems")).toBe(true);
+      expect(w.SamukaArcade.isOpen()).toBe(true);
+      w.SamukaArcade.close();
+      expect(w.SamukaArcade.open("gems", { mode: "daily" })).toBe(false);
+      expect(w.SamukaAuth.isOpen()).toBe(true);
+      expect(q(w, ".acct__notice").textContent).toContain("Daily puzzles and live races");
+    }));
+    it("a guest's score is kept on the device and the game-over card offers to save it", local(async function () {
+      var w = await load("guest");
+      toyGame(w, 1234);
+      w.SamukaArcade.open("gems");
+      var claim = await new Promise(function (r) { var t0 = Date.now(); (function p() { var c = q(w, ".arcade__claim"); if (c || Date.now() - t0 > 3000) return r(c); setTimeout(p, 30); })(); });
+      expect(claim).toBeTruthy();
+      expect(claim.textContent).toContain("1,234");
+      expect(w.SamukaScores.guestScores().map(function (p) { return p.row; })).toEqual([{ game: "gems", mode: "free", score: 1234 }]);
+      claim.querySelector('[data-me-act="signin"]').click();
+      expect(w.SamukaAuth.isOpen()).toBe(true);
+    }));
+    it("zero scores, dailies and races are never kept for guests", local(async function () {
+      var w = await load("guest");
+      expect(w.SamukaScores.keepGuestScore({ game: "gems", score: 0, mode: "free" })).toBe(false);
+      expect(w.SamukaScores.keepGuestScore({ game: "gems", score: 50, mode: "daily" })).toBe(false);
+      expect(w.SamukaScores.keepGuestScore({ game: "gems", score: 50, mode: "race" })).toBe(false);
+      expect(w.SamukaScores.guestScores()).toEqual([]);
+    }));
+    it("signing in moves guest scores to the account and says so", local(async function () {
+      var now = Date.now();
+      localStorage.setItem(PENDING, JSON.stringify([
+        { uid: "guest", row: { game: "gems", mode: "free", score: 900 }, t: now },
+        { uid: "guest", row: { game: "sidekiq", mode: "free", score: 70 }, t: now },
+        { uid: "guest", row: { game: "gems", mode: "free", score: 5 }, t: now - 40 * 864e5 },      // too old
+        { uid: "someone-else", row: { game: "gems", mode: "free", score: 1 }, t: now }            // another account's retry
+      ]));
+      var w = await load("user"), inserted = [];
+      var qb = { select: function () { return qb; }, eq: function () { return qb; }, neq: function () { return qb; }, order: function () { return qb; }, limit: function () { return qb; },
+        insert: function (row) { inserted.push(row); return Promise.resolve({ error: null }); } };
+      w.SamukaAuth.mock = function () { return false; };
+      w.SamukaAuth.client = function () { return { from: function () { return qb; }, rpc: function () { return Promise.resolve({ data: [] }); } }; };
+      await w.SamukaScores.flushPending();
+      expect(inserted).toEqual([{ game: "gems", mode: "free", score: 900 }, { game: "sidekiq", mode: "free", score: 70 }]);
+      expect(JSON.parse(localStorage.getItem(PENDING)).map(function (p) { return p.uid; })).toEqual(["someone-else"]);
+      expect(q(w, ".ach-toast b") && qa(w, ".ach-toast b").some(function (b) { return b.textContent === "2 guest scores moved to your account"; })).toBe(true);
+    }));
+    it("a failed claim is kept for the account and retried later", local(async function () {
+      localStorage.setItem(PENDING, JSON.stringify([{ uid: "guest", row: { game: "gems", mode: "free", score: 900 }, t: Date.now() }]));
+      var w = await load("user");
+      w.SamukaAuth.mock = function () { return false; };
+      w.SamukaAuth.client = function () { return { from: function () { return { insert: function () { return Promise.resolve({ error: { message: "offline" } }); } }; } }; };
+      await w.SamukaScores.flushPending();
+      var left = JSON.parse(localStorage.getItem(PENDING));
+      expect(left.length).toBe(1);
+      expect(left[0].uid).toBe(w.SamukaAuth.user().id);
+    }));
+  });
+
+  describe("auth.js: your data and badges", function () {
+    it("settings ends with download and delete for players", local(async function () {
+      var w = await load("user");
+      w.SamukaAuth.open({ tab: "settings" });
+      var panel = q(w, "#acct-panel");
+      expect(panel.lastElementChild.className).toBe("acct__data");
+      expect(q(w, '#acct-panel [data-me-act="export"]')).toBeTruthy();
+      expect(q(w, '#acct-panel [data-me-act="delete"]')).toBeTruthy();
+    }));
+    it("the owner can download but not delete", local(async function () {
+      var w = await load("samuka");
+      w.SamukaAuth.open({ tab: "settings" });
+      expect(q(w, '#acct-panel [data-me-act="export"]')).toBeTruthy();
+      expect(q(w, '#acct-panel [data-me-act="delete"]')).toBe(null);
+    }));
+    it("deleting from the settings tab signs you out (local test session)", local(async function () {
+      var w = await load("user");
+      w.SamukaAuth.open({ tab: "settings" });
+      q(w, '#acct-panel [data-me-act="delete"]').click();
+      var form = q(w, "#acct-panel form[data-me-delete]");
+      form.elements.confirm.value = w.SamukaAuth.publicName();
+      form.elements.confirm.dispatchEvent(new w.Event("input", { bubbles: true }));
+      form.querySelector("[type=submit]").click();
+      await tick(50);
+      expect(w.SamukaAuth.user()).toBe(null);
+      expect(w.SamukaAuth.isOpen()).toBe(false);
+    }));
+    it("the badges tab shows what to unlock next", local(async function () {
+      var w = await load("user");
+      w.SamukaAuth.open({ tab: "badges" });
+      expect(q(w, "#acct-panel .acct__next")).toBeTruthy();
+      expect(q(w, "#acct-panel .acct__next").textContent).toContain("next up");
     }));
   });
 

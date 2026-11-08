@@ -242,7 +242,6 @@
 .acct__avatar { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--phthalo); color: var(--status-ink); font: 700 11px var(--sans); box-shadow: 0 0 0 1px var(--hl); }
 .acct__avatar--lg { width: 46px; height: 46px; font-size: 20px; flex: none; }
 .acct__role { color: var(--hl); }
-[data-play].is-locked { background: transparent; color: var(--text-2); border-color: var(--line-strong); box-shadow: none; }
 
 .acct { position: fixed; inset: 0; z-index: 140; display: grid; place-items: center; padding: 16px; }
 .acct[hidden] { display: none; }

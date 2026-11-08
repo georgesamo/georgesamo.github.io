@@ -26,7 +26,8 @@
   /* ---------- saving ---------- */
   window.addEventListener("samuka:game", function (e) {
     var d = e.detail || {};
-    if (d.name !== "over" || !user() || !GAMES[d.game]) return;
+    if (d.name !== "over" || !GAMES[d.game]) return;
+    if (!user()) { keepGuestScore(d); return; }
     if (d.mode === "daily") store.set(dailyKey(d.game), JSON.stringify({ score: d.score, grid: d.game === "gems" ? grid(d.log || []) : "" }));
     var c = db();
     if (!c) { // local test session: keep a fake board in sessionStorage so the UI can be tried
@@ -52,20 +53,45 @@
       return false;
     }, function () { var u = user(), list = pendingList(); if (row.mode !== "daily") { list.push({ uid: u && u.id, row: row, t: Date.now() }); setPending(list); } return false; });
   }
+  /* guests play too: their free-play scores wait here (uid "guest") and move to the
+   * account that signs in next on this device */
+  var GUEST = "guest";
+  function keepGuestScore(d) {
+    var a = A(), score = Math.max(0, Math.min(200000, d.score | 0));
+    if (!a || !a.enabled || d.mode === "daily" || d.mode === "race" || !score) return false;
+    var list = pendingList();
+    list.push({ uid: GUEST, row: { game: d.game, mode: "free", score: score }, t: Date.now() });
+    setPending(list);
+    return true;
+  }
+  function guestScores() { return pendingList().filter(function (p) { return p.uid === GUEST; }); }
+  function notify(text) {
+    var el = document.createElement("div");
+    el.className = "ach-toast";
+    el.setAttribute("role", "status");
+    el.innerHTML = '<span class="ach-toast__icon" aria-hidden="true">💾</span><span><small>scores saved</small><b>' + esc(text) + "</b></span>";
+    document.body.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add("is-in"); });
+    setTimeout(function () { el.classList.remove("is-in"); }, 3200);
+    setTimeout(function () { el.remove(); }, 3700);
+  }
   var flushing = false;
   async function flushPending() {
     var c = db(), u = user();
     if (!c || !u || flushing) return;
-    var list = pendingList(), keep = [], sent = 0;
+    var list = pendingList(), keep = [], sent = 0, claimed = 0;
     if (!list.length) return;
     flushing = true;
     for (var k = 0; k < list.length; k++) {
-      var p = list[k];
-      if (p.uid !== u.id || Date.now() - p.t > 30 * 864e5) { if (p.uid !== u.id && Date.now() - p.t < 30 * 864e5) keep.push(p); continue; }
+      var p = list[k], guest = p.uid === GUEST, fresh = Date.now() - p.t < 30 * 864e5;
+      if (!fresh) continue;
+      if (p.uid !== u.id && !guest) { keep.push(p); continue; }   // another account's retry on this device
       var r = await c.from("scores").insert(p.row);
-      if (r.error) keep.push(p); else sent++;
+      if (r.error) keep.push(guest ? { uid: u.id, row: p.row, t: p.t } : p);
+      else { sent++; if (guest) claimed++; }
     }
     setPending(keep); flushing = false;
+    if (claimed) notify(claimed === 1 ? "1 guest score moved to your account" : claimed + " guest scores moved to your account");
     if (sent) { cache = {}; loadAll(); syncBests(); }
   }
   // your best per game from the server, so "your best" is right on every device
@@ -251,5 +277,6 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("samuka:page", boot);
 
-  window.SamukaScores = { fillMini: fillMinis, games: GAMES, dailyIntro: dailyIntro, dailyCard: dailyCard, openDaily: openDaily, board: fetchBoard, reload: function () { cache = {}; loadAll(); } };
+  window.SamukaScores = { fillMini: fillMinis, games: GAMES, dailyIntro: dailyIntro, dailyCard: dailyCard, openDaily: openDaily, board: fetchBoard, reload: function () { cache = {}; loadAll(); },
+    guestScores: guestScores, keepGuestScore: keepGuestScore, flushPending: flushPending };
 })();

@@ -62,11 +62,17 @@
       state.profile = { role: mockRole, theme: store.sget("samuka-mock-theme") || "auto", glitches: store.sget("samuka-mock-glitch") !== "off", display_name: mockRole, nickname: store.sget("samuka-mock-nick") || null };
       return;
     }
-    var res = await client.from("profiles").select("role, theme, glitches, display_name, nickname").eq("id", state.user.id).single();
+    var both = await Promise.all([
+      client.from("profiles").select("role, theme, glitches, display_name, nickname").eq("id", state.user.id).single(),
+      // "dev-xxxx" names come from an md5 the browser can't reproduce; ask (supabase/me.sql)
+      client.rpc("my_public_name").then(function (r) { return r.error ? null : r.data; }, function () { return null; })
+    ]);
+    var res = both[0];
     if (res.error) {
       console.warn("[auth] profile not found yet, using defaults", res.error.message);
       state.profile = { role: "user", theme: "auto", glitches: true, display_name: (state.user.email || "").split("@")[0] };
     } else state.profile = res.data;
+    state.profile.public_name = both[1] || null;
   }
   // a fresh sign-in (magic link / GitHub return, or a local ?as= test login) starts in dark mode
   var justSignedIn = /(^|[#&])access_token=/.test(location.hash) || (!!mockRole && /[?&]as=/.test(location.search));
@@ -93,6 +99,10 @@
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async function () {
       var res = await client.from("profiles").update(patch).eq("id", state.user.id);
+      if (!res.error && "nickname" in patch) {   // clearing a nickname falls back to the server's dev-xxxx name
+        var n = await client.rpc("my_public_name");
+        if (!n.error && state.profile) { state.profile.public_name = n.data || null; emit(); }
+      }
       if (res.error) {
         console.warn("[auth] could not save preferences", res.error.message);
         if ("nickname" in patch && /duplicate|unique/i.test(res.error.message)) {
@@ -140,15 +150,6 @@
       b.setAttribute("aria-label", state.user ? "Your account menu (" + state.role + ")" : "Sign in");
       if (state.user) b.setAttribute("aria-haspopup", "menu"); else { b.removeAttribute("aria-haspopup"); b.removeAttribute("aria-expanded"); }
     });
-    // arcade: locked for guests when accounts are on
-    var locked = enabled && !state.user;
-    document.querySelectorAll("[data-play]").forEach(function (b) {
-      b.classList.toggle("is-locked", locked);
-      if (!b.hasAttribute("data-label")) b.setAttribute("data-label", b.innerHTML);   // keep each button's own text
-      var lab = b.getAttribute("data-label");
-      b.innerHTML = locked ? lab.replace(/<span class="btn__prompt">▶<\/span>|▶/, '<span class="btn__prompt">🔒</span>') : lab;
-      b.title = locked ? "Sign in to play (free, a few seconds)" : "";
-    });
   }
 
   /* ---------- account window (tabs: profile · appearance · settings · badges · team) ---------- */
@@ -186,6 +187,7 @@
     };
     var out = {};
     C.TABS.forEach(function (t) { out[t.key] = (core[t.key] || "") + (extra[t.key] || ""); });
+    out.settings += C.dataHtml({ owner: state.role === "samuka" });   // "your data" always comes last
     return out;
   }
   function renderModal() {
@@ -223,7 +225,7 @@
     if (!modal) build();
     var wasOpen = !modal.hidden;
     if (!wasOpen) lastFocus = document.activeElement;
-    notice = opts.reason === "arcade" ? "🔒 The arcade is for signed-in visitors. It's free and takes a few seconds." : "";
+    notice = opts.reason === "arcade" ? "🔒 Daily puzzles and live races need a free account. It takes a few seconds." : "";
     tab = opts.tab || (wasOpen ? tab : "profile");
     renderModal();
     modal.hidden = false;
@@ -307,7 +309,7 @@
     refresh: function () { if (modal && !modal.hidden) renderModal(); },
     publicName: function () {
       var p = state.profile; if (!state.user) return "guest";
-      return (p && p.nickname) || "dev-" + String(state.user.id || "0000").replace(/-/g, "").slice(0, 4);
+      return (p && (p.nickname || p.public_name)) || "dev-" + String(state.user.id || "0000").replace(/-/g, "").slice(0, 4);
     }
   };
 

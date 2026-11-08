@@ -15,7 +15,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # browser tests (tests/index.html) in headless Chrome; a failure stops the deploy
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Playwright (uses the runner's Chrome, no browser download)
+        run: npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.49.1
+      - name: Serve the repo on 127.0.0.1:4100
+        run: |
+          python3 tests/serve.py 4100 > /tmp/http.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4100/tests/ > /dev/null && break; sleep 0.5; done
+      - name: Run tests
+        run: node tests/ci.mjs http://127.0.0.1:4100/tests/
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
