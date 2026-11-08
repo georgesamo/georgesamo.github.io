@@ -49,7 +49,7 @@ layout: default
       </div>
       <button type="button" class="tree__dir" data-tree-dir="about" aria-expanded="true">about</button>
       <div class="tree__group" data-tree-group="about">
-        <a href="{% if on_profile %}#hero{% else %}{{ '/samuka/' | relative_url }}{% endif %}"{% if on_profile %} data-nav="hero"{% endif %}{% if tab == "samuka" %} class="is-here"{% endif %}><i class="fi fi--rb"></i>samuka.rb <span class="tree__tag">hire me</span></a>
+        <a href="{% if on_profile %}#hero{% else %}{{ '/samuka/' | relative_url }}{% endif %}"{% if on_profile %} data-nav="hero"{% endif %}{% if tab == "samuka" %} class="is-here"{% endif %}><i class="fi fi--rb"></i>samuka.rb</a>
         {%- if on_profile %}
         <a class="tree__sub" href="#experience" data-nav="experience">career.log</a>
         <a class="tree__sub" href="#skills" data-nav="skills">Gemfile</a>

@@ -17,7 +17,6 @@
 
 /* sidebar */
 .tree__home { color: inherit; text-decoration: none; }
-.tree__tag { margin-left: 6px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--hl); color: var(--hl); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
 .tree__nav a.is-here { color: var(--text); background: var(--bg-soft); }
 .tree__nav a.is-here::before { content: ""; position: absolute; left: 8px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%; background: var(--accent); }
 .maker__avatar { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--phthalo); color: var(--status-ink); font: 800 16px var(--sans); box-shadow: 0 0 0 1px var(--hl), 0 0 18px -4px var(--hl); }

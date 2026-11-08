@@ -109,7 +109,6 @@
 .tree__nav a.tree__sub { padding-left: 40px; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .tree__nav a.tree__sub:hover, .tree__nav a.tree__sub.is-active, .tree__nav a.tree__sub.is-here { color: var(--text); }
 .tree__nav a.tree__sub.is-active::before { left: 26px; }
-.tree__nav .tree__tag { margin-left: auto; }
 
 .tree__me[hidden] { display: none; }
 .tree__me { min-height: 53px; padding: 8px; border-bottom: 1px solid var(--line); }   /* fixed spot under the header, no layout jump */

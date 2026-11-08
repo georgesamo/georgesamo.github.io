@@ -122,10 +122,13 @@
     setTimeout(function () { el.remove(); }, 9000);
   }
 
+  // full-screen takeovers are a rare treat: first after 1.5–2.5 min, then every 6–12 min (seconds)
+  var DELAYS = { first: [90, 150], next: [360, 720] };
   function schedule(first) {
     clearTimeout(timer);
     if (!on) return;
-    timer = setTimeout(function () { fire(false); schedule(false); }, (first ? rand(25, 45) : rand(110, 260)) * 1000);
+    var d = first ? DELAYS.first : DELAYS.next;
+    timer = setTimeout(function () { fire(false); schedule(false); }, rand(d[0], d[1]) * 1000);
   }
   function scheduleFly() {
     clearTimeout(flyTimer);
@@ -140,5 +143,5 @@
     if (wants !== on) { on = wants; schedule(true); scheduleFly(); }
   });
 
-  window.SamukaGlitch = { fire: fire, flyby: flyby };
+  window.SamukaGlitch = { fire: fire, flyby: flyby, delays: DELAYS };
 })();

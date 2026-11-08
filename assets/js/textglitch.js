@@ -16,7 +16,20 @@
   var GENERIC = ["WAKE_UP", "SIGNAL//LOST", "NULL_PTR", "ACCESS GRANTED", "0xDEADBEEF", "ghost.exe", "REALITY v2.0",
     "who is watching?", "SYSTEM OVERRIDE", "segfault (core dumped)", "NEON_CITY", "rm -rf /dreams", "404: self not found",
     "JACK IN", "kernel panic", "you are the bug", "LOW BATTERY", "simulation.pause()", "ERR_HUMAN", "follow the white rabbit"];
-  var TARGETS = ".hero__name [data-scramble], .section__title, .arcade-card__title, .migration__title, .hero__role, .pre .t, .code .t";
+  // headings of the page you are on come first; the smaller bits are the fallback
+  var HEADERS = "#main h1, #main h2, #main h3, .hero__name [data-scramble], .section__title";
+  var TARGETS = ".arcade-card__title, .migration__title, .hero__role, .pre .t, .code .t";
+  // short, single-line text only, so the warped overlay lines up with the heading it covers
+  function headerLike(el) {
+    var t = el.textContent.trim();
+    return t.length > 0 && t.length <= 48 && !el.closest("[hidden], .lb, .pcard, .acct, .me-menu, .pal") && lines(el) === 1;
+  }
+  function lines(el) {   // line boxes of the text itself (a block heading always reports one rect)
+    var r = document.createRange(); r.selectNodeContents(el);
+    var tops = {};
+    Array.prototype.forEach.call(r.getClientRects(), function (q) { if (q.width > 0) tops[Math.round(q.top)] = 1; });
+    return Object.keys(tops).length;
+  }
 
   function visible(el) {
     var r = el.getBoundingClientRect();
@@ -63,17 +76,22 @@
       names.forEach(function (el) { warp(el, "Batman", "bat", 480); });
       return true;
     }
-    var els = Array.prototype.filter.call(document.querySelectorAll(TARGETS), visible);
+    var heads = Array.prototype.filter.call(document.querySelectorAll(HEADERS), function (el) { return visible(el) && headerLike(el); });
+    var els = heads.length ? heads : Array.prototype.filter.call(document.querySelectorAll(TARGETS), visible);
     if (!els.length) return false;
     warp(pick(els), pick(GENERIC), "cy", 380);
     return true;
   }
 
+  // header warps are the everyday glitch: soon after a page opens, then every 15–35 s (seconds)
+  var DELAYS = { first: [5, 10], next: [15, 35] };
   function schedule(first) {
     clearTimeout(timer);
     if (!on) return;
-    timer = setTimeout(function () { fire(false); schedule(false); }, (first ? rand(14, 28) : rand(35, 80)) * 1000);
+    var d = first ? DELAYS.first : DELAYS.next;
+    timer = setTimeout(function () { fire(false); schedule(false); }, rand(d[0], d[1]) * 1000);
   }
+  window.addEventListener("samuka:page", function () { schedule(true); });   // a fresh page gets its own warp
 
   window.addEventListener("samuka:auth", function (e) {
     var d = e.detail || {};
@@ -82,5 +100,5 @@
     if (wants !== on) { on = wants; schedule(true); }
   });
 
-  window.SamukaTextGlitch = { fire: fire };
+  window.SamukaTextGlitch = { fire: fire, delays: DELAYS, _targets: function () { return Array.prototype.filter.call(document.querySelectorAll(HEADERS), function (el) { return visible(el) && headerLike(el); }); } };
 })();
