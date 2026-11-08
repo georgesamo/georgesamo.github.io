@@ -58,6 +58,9 @@
       " |___/\\__,_|_|_|_\\_,_|_\\_\\\\__,_| "
     ].map(esc).join("\n") + "</pre>");
     print('<span class="dim">samuka-shell 1.0 · ruby ' + "3.3" + " · type </span><span class=\"hl\">help</span><span class=\"dim\"> to see what I can do. Tab completes, ↑↓ walk history.</span>");
+    var role = window.SamukaAuth ? window.SamukaAuth.role() : "guest";
+    if (role === "samuka") print('<span class="hl">Welcome back, Samuka.</span> <span class="dim">The city\'s servers are quiet tonight. Try </span><span class="b">theme knight</span><span class="dim"> or </span><span class="b">glitch</span>');
+    else if (role === "nino") print('<span class="hl">annyeong, Nino 🐰</span> <span class="dim">sprint status: 🟢 · try </span><span class="b">theme golden</span><span class="dim"> or </span><span class="b">glitch</span>');
   }
   document.addEventListener("click", function (e) {
     if (e.target.closest("[data-open-terminal]")) { e.preventDefault(); open(); }
@@ -147,7 +150,8 @@
       ["resume", "download the PDF"],
       ["github", "open GitHub profile"],
       ["goto &lt;section&gt;", "scroll the page (experience, skills, ...)"],
-      ["play [sidekiq|gems]", "minigames: Sidekiq Rush, Gem Match"],
+      ["play [sidekiq|gems]", "minigames: Sidekiq Rush, Gem Match (sign-in)"],
+      ["login / logout / id", "optional account, unlocks the arcade"],
       ["theme [light|dark]", "switch colors"],
       ["ls, cat &lt;file&gt;, pwd, date, echo, history, clear, exit", ""]
     ];
@@ -220,8 +224,34 @@
     },
     cd: function (a) { return COMMANDS.goto(a.length ? [a[0].replace(/[\/.~]/g, "")] : ["top"]); },
     theme: function (a) {
-      var t = a[0] === "light" || a[0] === "dark" ? a[0] : (S.theme && S.theme() === "light" ? "dark" : "light");
-      S.setTheme && S.setTheme(t); return "theme → " + t;
+      var list = S.availableThemes ? S.availableThemes() : ["dark", "light"];
+      if (!a[0]) return "themes: " + list.map(function (t) { return t === S.theme() ? '<span class="hl">' + t + "</span>" : t; }).join("  ") + '\n<span class="dim">usage: theme &lt;name&gt;</span>';
+      var t = a[0].toLowerCase();
+      if (!S.canUseTheme || !S.canUseTheme(t)) {
+        return S.themes && S.themes[t] ? '<span class="warn">403 Forbidden</span> · theme "' + esc(t) + '" is reserved for a special role' : "unknown theme. try: " + list.join(", ");
+      }
+      S.setTheme(t, { user: true }); return "theme → " + t;
+    },
+    login: function () {
+      var A = window.SamukaAuth;
+      if (!A || !A.enabled) return '<span class="dim">accounts are not switched on yet.</span>';
+      if (A.user()) return "already signed in as " + esc(A.role()) + " · try <span class=\"b\">id</span>";
+      close(); setTimeout(function () { A.open(); }, 60); return "opening sessions#new…";
+    },
+    logout: function () {
+      var A = window.SamukaAuth;
+      if (!A || !A.user()) return "not signed in.";
+      A.signOut(); return '<span class="ok">signed out.</span> see you around.';
+    },
+    id: function () {
+      var A = window.SamukaAuth, role = A ? A.role() : "guest";
+      var groups = { guest: "guests", user: "guests,arcade", samuka: "guests,arcade,owner,knight", nino: "guests,arcade,pm,golden" };
+      return "uid=" + (A && A.user() ? "1000" : "65534") + "(" + esc(role) + ") groups=" + groups[role];
+    },
+    glitch: function () {
+      var A = window.SamukaAuth, role = A ? A.role() : "guest";
+      if (role !== "samuka" && role !== "nino") return '<span class="warn">Permission denied</span> · glitches are a perk of special roles.';
+      close(); setTimeout(function () { window.SamukaGlitch && window.SamukaGlitch.fire(true); }, 300); return "…";
     },
     ls: function (a) { return Object.keys(FILES).filter(function (f) { return a.indexOf("-a") > -1 || a.indexOf("-la") > -1 || f[0] !== "."; }).map(function (f) { return '<span class="b">' + f + "</span>"; }).join("  "); },
     cat: function (a) { var f = FILES[a[0]]; return f ? f() : "cat: " + esc(a[0] || "") + ": No such file or directory"; },
@@ -245,6 +275,7 @@
   };
   COMMANDS.hi = COMMANDS.hello;
   COMMANDS.arcade = COMMANDS.play;
+  COMMANDS.signin = COMMANDS.login; COMMANDS.signout = COMMANDS.logout;
   COMMANDS.sidekiq = function () { return COMMANDS.play(["sidekiq"]); };
 
   function sudoHire() {

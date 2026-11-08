@@ -28,6 +28,14 @@ defaults:
 # the very first submission sends a one-time activation email to this address.
 contact_endpoint: "https://formsubmit.co/ajax/giorgisamo@gmail.com"
 
+# Accounts (Supabase). Both values are public by design; leave empty to
+# disable sign-in (the arcade then stays open to everyone).
+# NEVER put the service_role / secret key here.
+supabase:
+  url: ""
+  anon_key: ""
+  github: false        # show "Sign in with GitHub" (needs the GitHub provider enabled)
+
 plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
@@ -39,5 +47,6 @@ exclude:
   - README.md
   - .github
   - scripts
+  - supabase
 
 markdown: kramdown

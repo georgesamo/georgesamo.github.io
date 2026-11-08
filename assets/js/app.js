@@ -24,18 +24,32 @@
   $$("[data-year]").forEach(function (el) { el.textContent = new Date().getFullYear(); });
 
   /* ---------- theme ---------- */
-  function currentTheme() { return document.documentElement.dataset.theme === "light" ? "light" : "dark"; }
-  function setTheme(t) {
+  // dark/light for everyone; knight (role samuka) and golden (role nino) unlock after sign-in
+  var THEMES = {
+    dark: { meta: "#07110c", label: "dark mode" },
+    light: { meta: "#f3f6f1", label: "light mode" },
+    knight: { meta: "#050506", label: "knight mode", role: "samuka" },
+    golden: { meta: "#120a1f", label: "golden mode", role: "nino" }
+  };
+  function role() { return document.documentElement.dataset.role || "guest"; }
+  function canUse(t) { return !!THEMES[t] && (!THEMES[t].role || THEMES[t].role === role()); }
+  function available() { return Object.keys(THEMES).filter(canUse); }
+  function currentTheme() { var t = document.documentElement.dataset.theme; return THEMES[t] ? t : "dark"; }
+  function nextTheme() { var a = available(), i = a.indexOf(currentTheme()); return a[(i + 1) % a.length]; }
+  function setTheme(t, opts) {
+    opts = opts || {};
+    if (!canUse(t)) t = "dark";
     document.documentElement.dataset.theme = t;
-    store.set("samuka-theme", t);
+    if (opts.persist !== false) store.set("samuka-theme", t);
     var meta = $('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", t === "light" ? "#f3f6f1" : "#07110c");
-    $$("[data-theme-label]").forEach(function (el) { el.textContent = t === "light" ? "dark mode" : "light mode"; });
-    window.dispatchEvent(new CustomEvent("samuka:theme", { detail: t }));
+    if (meta) meta.setAttribute("content", THEMES[t].meta);
+    $$("[data-theme-label]").forEach(function (el) { el.textContent = THEMES[nextTheme()].label; });
+    window.dispatchEvent(new CustomEvent("samuka:theme", { detail: { theme: t, user: !!opts.user } }));
   }
-  setTheme(currentTheme());
+  // a stored special theme waits for auth to confirm the role (auth.js re-applies it)
+  setTheme(currentTheme(), { persist: false });
   document.addEventListener("click", function (e) {
-    if (e.target.closest("[data-toggle-theme]")) setTheme(currentTheme() === "light" ? "dark" : "light");
+    if (e.target.closest("[data-toggle-theme]")) setTheme(nextTheme(), { user: true });
   });
 
   /* ---------- cursor spotlight ---------- */
@@ -387,7 +401,7 @@
   /* ---------- public API (used by terminal.js / gem.js) ---------- */
   window.Samuka = {
     data: data, years: years, reduced: reduced,
-    setTheme: setTheme, theme: currentTheme,
+    setTheme: setTheme, theme: currentTheme, themes: THEMES, availableThemes: available, canUseTheme: canUse,
     go: function (id) { var el = document.getElementById(id); if (el) el.scrollIntoView({ behavior: reduced ? "auto" : "smooth" }); },
     focusContact: function () { this.go("contact"); setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, reduced ? 0 : 650); }
   };

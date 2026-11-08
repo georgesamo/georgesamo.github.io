@@ -59,6 +59,9 @@
 
   function open(id) {
     if (!games[id]) return false;
+    // the arcade is for signed-in visitors whenever accounts are switched on
+    var A = window.SamukaAuth;
+    if (A && A.enabled && !A.user()) { A.open({ reason: "arcade" }); return false; }
     if (!modal) build();
     if (current) teardown();
     lastFocus = document.activeElement;
