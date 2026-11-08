@@ -1,0 +1,92 @@
+---
+layout: blog
+title: Pull requests
+description: Notes from Samuka on Rails, healthcare backends and building this site, written as merged pull requests.
+permalink: /blog/
+tab_file: pulls/index.md
+---
+{%- assign all_tags = "" | split: "" -%}
+{%- for post in site.posts -%}{%- for t in post.tags -%}{%- assign all_tags = all_tags | push: t -%}{%- endfor -%}{%- endfor -%}
+{%- assign all_tags = all_tags | uniq | sort -%}
+<section class="section pulls" data-file="pulls/index.md" data-icon="md">
+  <header class="section__head">
+    <p class="section__path">pulls/<b>index</b></p>
+    <h1 class="section__title">Pull requests</h1>
+    <p class="section__cmd"><span class="prompt">$</span> gh pr list --author samuka --state merged <span class="muted"># the blog, one PR per post</span></p>
+  </header>
+
+  <div class="pr-list">
+    <div class="pr-list__head">
+      <p class="pr-list__count"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M5.45 5.15A2.25 2.25 0 1 0 4 6.37v3.26a2.25 2.25 0 1 0 1.5 0V8.06a4.5 4.5 0 0 0 3.25 1.69h.26a2.25 2.25 0 1 0 0-1.5h-.26A3 3 0 0 1 5.6 5.67zM4.75 3.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m0 7.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m6.5-2.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5"/></svg><b data-pr-count>{{ site.posts.size }}</b>&nbsp;merged</p>
+      {%- if all_tags.size > 0 %}
+      <div class="pr-filter" role="toolbar" aria-label="Filter by label">
+        <button type="button" class="pr-filter__btn is-active" data-pr-filter="" aria-pressed="true">all</button>
+        {%- for t in all_tags %}
+        <button type="button" class="pr-filter__btn" data-pr-filter="{{ t | slugify }}" aria-pressed="false">{{ t | escape }}</button>
+        {%- endfor %}
+      </div>
+      {%- endif %}
+    </div>
+
+    {%- if site.posts.size == 0 %}
+    <p class="pr-list__empty muted"># no pull requests yet</p>
+    {%- endif %}
+    <ol class="pr-list__items">
+      {%- for post in site.posts %}
+      {%- assign words = post.content | strip_html | number_of_words -%}
+      {%- assign pr = post.pr | default: forloop.rindex -%}
+      {%- if post.deletions -%}{%- assign dels = post.deletions -%}{%- else -%}{%- assign dels = words | divided_by: 25 | plus: 2 -%}{%- endif -%}
+      {%- capture tag_slugs -%}{% for t in post.tags %} {{ t | slugify }}{% endfor %} {% endcapture %}
+      <li class="pr-row" data-tags="{{ tag_slugs }}">
+        <span class="pr-row__icon" aria-hidden="true"><svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M5.45 5.15A2.25 2.25 0 1 0 4 6.37v3.26a2.25 2.25 0 1 0 1.5 0V8.06a4.5 4.5 0 0 0 3.25 1.69h.26a2.25 2.25 0 1 0 0-1.5h-.26A3 3 0 0 1 5.6 5.67zM4.75 3.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m0 7.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m6.5-2.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5"/></svg></span>
+        <div class="pr-row__main">
+          <p class="pr-row__title">
+            <a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
+            {%- for t in post.tags %}
+            <span class="pr-label pr-label--{{ t | size | modulo: 6 }}" data-tag="{{ t | slugify }}">{{ t | escape }}</span>
+            {%- endfor %}
+          </p>
+          <p class="pr-row__meta">#{{ pr }} by <b>Samuka</b> was merged on <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%b %-d, %Y" }}</time></p>
+          {%- if post.excerpt %}
+          <p class="pr-row__excerpt">{{ post.excerpt | strip_html | truncatewords: 28 }}</p>
+          {%- endif %}
+        </div>
+        <span class="pr-diff pr-row__diff"><span class="pr-diff__add">+{{ words }}</span> <span class="pr-diff__del">−{{ dels }}</span></span>
+      </li>
+      {%- endfor %}
+    </ol>
+    <p class="pr-list__none muted" data-pr-none hidden># no pull requests with that label</p>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var btns = document.querySelectorAll("[data-pr-filter]");
+    var rows = document.querySelectorAll(".pr-row");
+    var count = document.querySelector("[data-pr-count]");
+    var none = document.querySelector("[data-pr-none]");
+    function apply(tag) {
+      var shown = 0;
+      Array.prototype.forEach.call(rows, function (r) {
+        var ok = !tag || (" " + r.getAttribute("data-tags") + " ").indexOf(" " + tag + " ") !== -1;
+        r.hidden = !ok;
+        if (ok) shown++;
+      });
+      Array.prototype.forEach.call(btns, function (b) {
+        var on = b.getAttribute("data-pr-filter") === tag;
+        b.classList.toggle("is-active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      if (count) count.textContent = shown;
+      if (none) none.hidden = shown > 0;
+    }
+    Array.prototype.forEach.call(btns, function (b) {
+      b.addEventListener("click", function () { apply(b.getAttribute("data-pr-filter")); });
+    });
+    // also react to clicks on a label inside a row
+    document.addEventListener("click", function (e) {
+      var l = e.target.closest && e.target.closest(".pr-row .pr-label");
+      if (l) apply(l.getAttribute("data-tag"));
+    });
+  })();
+</script>

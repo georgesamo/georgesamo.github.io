@@ -27,13 +27,39 @@
     modal.addEventListener("click", function (e) { if (e.target.closest("[data-arcade-close]")) close(); });
   }
 
-  function api(id, stage) {
+  // seeded random numbers (daily puzzle, live races): same seed, same game
+  function seeded(seed) {
+    var str = String(seed), h = 1779033703 ^ str.length;
+    for (var i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+    var a = h >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function emit(id, name, data, opts) {
+    var d = { game: id, name: name, mode: (opts && opts.mode) || "free" };
+    if (data) for (var k in data) d[k] = data[k];
+    window.dispatchEvent(new CustomEvent("samuka:game", { detail: d }));
+  }
+
+  function api(id, stage, opts) {
+    opts = opts || {};
     return {
       stage: stage,
+      opts: opts,
+      mode: opts.mode || "free",
+      rng: opts.seed != null ? seeded(opts.seed) : Math.random,
+      emit: function (name, data) { emit(id, name, data, opts); },
       reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       hud: function (html) { modal.querySelector("[data-hud]").innerHTML = html; },
       foot: function (html) { modal.querySelector("[data-foot]").innerHTML = html; },
-      best: function (score) {
+      best: function (score, extra) {
+        var payload = { score: score }; if (extra) for (var k in extra) payload[k] = extra[k];
+        emit(id, "over", payload, opts);
+        if (opts.mode === "daily" || opts.mode === "race") return { best: score, isNew: false };
         var key = "samuka-best-" + id, prev = parseInt(store.get(key) || "0", 10) || 0;
         if (score > prev) { store.set(key, String(score)); return { best: score, isNew: true }; }
         return { best: prev, isNew: false };
@@ -57,7 +83,7 @@
     };
   }
 
-  function open(id) {
+  function open(id, opts) {
     if (!games[id]) return false;
     // the arcade is for signed-in visitors whenever accounts are switched on
     var A = window.SamukaAuth;
@@ -67,7 +93,7 @@
     lastFocus = document.activeElement;
     modal.hidden = false;
     document.documentElement.style.overflow = "hidden";
-    modal.querySelector("#arcade-title").textContent = games[id].title;
+    modal.querySelector("#arcade-title").textContent = games[id].title + (opts && opts.mode && opts.mode !== "free" ? " · " + opts.mode : "");
     modal.querySelector("[data-hud]").innerHTML = "";
     modal.querySelector("[data-foot]").innerHTML = "";
     modal.dataset.game = id;
@@ -75,11 +101,15 @@
     stage.innerHTML = "";
     stage.className = "arcade__stage arcade__stage--" + id;
     currentId = id;
-    current = games[id].mount(stage, api(id, stage)) || {};
+    current = games[id].mount(stage, api(id, stage, opts)) || {};
     stage.focus({ preventScroll: true });
     return true;
   }
-  function teardown() { if (current && current.destroy) current.destroy(); current = null; currentId = null; }
+  function teardown() {
+    if (current && current.destroy) current.destroy();
+    if (currentId) window.dispatchEvent(new CustomEvent("samuka:game", { detail: { game: currentId, name: "closed" } }));
+    current = null; currentId = null;
+  }
   function showBests() {
     document.querySelectorAll("[data-best]").forEach(function (el) {
       var v = parseInt(store.get("samuka-best-" + el.getAttribute("data-best")) || "0", 10);
@@ -104,7 +134,7 @@
   document.addEventListener("visibilitychange", function () { if (document.hidden && current && current.pause) current.pause(); });
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-play]");
-    if (b) { e.preventDefault(); open(b.getAttribute("data-play")); }
+    if (b) { e.preventDefault(); open(b.getAttribute("data-play"), b.hasAttribute("data-mode") ? { mode: b.getAttribute("data-mode") } : null); }
   });
 
   window.SamukaArcade = {
@@ -112,6 +142,8 @@
     open: open, close: close,
     list: function () { return Object.keys(games).map(function (k) { return { id: k, title: games[k].title, blurb: games[k].blurb }; }); },
     isOpen: function () { return !!(modal && !modal.hidden); },
+    current: function () { return currentId; },
+    seeded: seeded,
     _debug: function () { return current && current._debug; } // used by automated playtests only
   };
 })();

@@ -1,0 +1,71 @@
+---
+layout: blog
+---
+{%- assign words = content | strip_html | number_of_words -%}
+{%- if page.pr -%}
+  {%- assign pr = page.pr -%}
+{%- else -%}
+  {%- assign pr = 1 -%}
+  {%- assign chrono = site.posts | reverse -%}
+  {%- for p in chrono -%}{%- if p.url == page.url -%}{%- assign pr = forloop.index -%}{%- endif -%}{%- endfor -%}
+{%- endif -%}
+{%- if page.commits -%}
+  {%- assign commits = page.commits -%}
+{%- else -%}
+  {%- assign commits = words | divided_by: 120 -%}
+  {%- if commits < 1 -%}{%- assign commits = 1 -%}{%- endif -%}
+{%- endif -%}
+{%- if page.deletions -%}
+  {%- assign dels = page.deletions -%}
+{%- else -%}
+  {%- assign dels = words | divided_by: 25 | plus: 2 -%}
+{%- endif -%}
+{%- assign mins = words | plus: 199 | divided_by: 200 -%}
+{%- if mins < 1 -%}{%- assign mins = 1 -%}{%- endif -%}
+{%- assign branch = page.branch | default: page.slug -%}
+<article class="pr" aria-labelledby="pr-title">
+  <header class="pr__head">
+    <p class="section__path">pulls/<b>{{ pr }}</b></p>
+    <h1 class="pr__title" id="pr-title">{{ page.title | escape }} <span class="pr__num">#{{ pr }}</span></h1>
+    <div class="pr__state">
+      <span class="pr-badge"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M5.45 5.15A2.25 2.25 0 1 0 4 6.37v3.26a2.25 2.25 0 1 0 1.5 0V8.06a4.5 4.5 0 0 0 3.25 1.69h.26a2.25 2.25 0 1 0 0-1.5h-.26A3 3 0 0 1 5.6 5.67zM4.75 3.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m0 7.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5m6.5-2.5a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5"/></svg>Merged</span>
+      <p class="pr__line"><b>Samuka</b> merged {{ commits }} commit{% if commits != 1 %}s{% endif %} into <code class="pr__ref">main</code> from <code class="pr__ref">{{ branch }}</code> <span class="muted">on <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%b %-d, %Y" }}</time></span></p>
+    </div>
+    <div class="pr__bar">
+      {%- if page.tags.size > 0 %}
+      <ul class="pr-labels" aria-label="Labels">
+        {%- for t in page.tags %}
+        <li class="pr-label pr-label--{{ t | size | modulo: 6 }}" data-tag="{{ t | slugify }}">{{ t | escape }}</li>
+        {%- endfor %}
+      </ul>
+      {%- endif %}
+      <p class="pr__stats"><span class="pr-diff"><span class="pr-diff__add">+{{ words }}</span> <span class="pr-diff__del">−{{ dels }}</span><span class="pr-diff__blocks" aria-hidden="true"><i class="a"></i><i class="a"></i><i class="a"></i><i class="a"></i><i class="d"></i></span></span><span class="muted">{{ mins }} min read</span></p>
+    </div>
+  </header>
+
+  <div class="pr-tabs" role="presentation">
+    <span class="pr-tabs__tab is-active">Conversation</span>
+    <span class="pr-tabs__tab">Commits <b>{{ commits }}</b></span>
+    <span class="pr-tabs__tab">Files changed <b>1</b></span>
+  </div>
+
+  <div class="pr-thread">
+    <div class="pr-comment">
+      <div class="pr-comment__avatar" aria-hidden="true">{% include ruby.svg %}</div>
+      <div class="pr-comment__card">
+        <p class="pr-comment__bar"><b>Samuka</b> <span class="muted">commented on <time datetime="{{ page.date | date_to_xmlschema }}">{{ page.date | date: "%b %-d, %Y" }}</time></span><span class="pr-comment__role">Owner</span></p>
+        <div class="pr-comment__body prose">
+          {{ content }}
+        </div>
+      </div>
+    </div>
+    <p class="pr-event"><span class="pr-event__dot" aria-hidden="true"></span><b>Samuka</b>&nbsp;merged commit <code>{{ page.date | date: "%y%m%d" }}{{ pr }}</code> into <code class="pr__ref">main</code></p>
+  </div>
+
+  <footer class="pr__foot">
+    <a class="btn" href="{{ '/blog/' | relative_url }}"><span class="btn__prompt">←</span> all pull requests</a>
+    {%- if page.next %}
+    <a class="btn btn--ghost" href="{{ page.next.url | relative_url }}">newer: {{ page.next.title | escape }} <span aria-hidden="true">→</span></a>
+    {%- endif %}
+  </footer>
+</article>

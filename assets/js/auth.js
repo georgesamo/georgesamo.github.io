@@ -32,7 +32,7 @@
   var enabled = !!(mockRole || (cfg.url && cfg.anon_key && window.supabase && window.supabase.createClient));
   var state = { user: null, profile: null, role: "guest", ready: false };
   var providers = { github: !!cfg.github }; // refreshed from Supabase at boot, so enabling a provider needs no deploy
-  var saveTimer = 0, modal = null, notice = "";
+  var saveTimer = 0, modal = null, notice = "", extras = [];
 
   /* ---------- state ---------- */
   function applyRole(role) {
@@ -46,7 +46,8 @@
     // the account remembers the style (skin); dark/light stays a per-device choice
     if (state.profile) {
       var p = state.profile.theme;
-      S.setSkin(p === "knight" || p === "golden" ? p : "phthalo", { persist: true });
+      if (p === "crt") store.set("samuka-konami", "1"); // unlocked on another device
+      S.setSkin(p === "knight" || p === "golden" || p === "crt" ? p : "phthalo", { persist: true });
     } else {
       S.setSkin(store.get("samuka-skin") || "phthalo", { persist: false });
     }
@@ -58,10 +59,10 @@
   }
   async function loadProfile() {
     if (mockRole) {
-      state.profile = { role: mockRole, theme: store.sget("samuka-mock-theme") || "auto", glitches: store.sget("samuka-mock-glitch") !== "off", display_name: mockRole };
+      state.profile = { role: mockRole, theme: store.sget("samuka-mock-theme") || "auto", glitches: store.sget("samuka-mock-glitch") !== "off", display_name: mockRole, nickname: store.sget("samuka-mock-nick") || null };
       return;
     }
-    var res = await client.from("profiles").select("role, theme, glitches, display_name").eq("id", state.user.id).single();
+    var res = await client.from("profiles").select("role, theme, glitches, display_name, nickname").eq("id", state.user.id).single();
     if (res.error) {
       console.warn("[auth] profile not found yet, using defaults", res.error.message);
       state.profile = { role: "user", theme: "auto", glitches: true, display_name: (state.user.email || "").split("@")[0] };
@@ -86,6 +87,7 @@
     if (mockRole) {
       if ("theme" in patch) store.sset("samuka-mock-theme", patch.theme);
       if ("glitches" in patch) store.sset("samuka-mock-glitch", patch.glitches ? "on" : "off");
+      if ("nickname" in patch) store.sset("samuka-mock-nick", patch.nickname);
       emit(); return;
     }
     clearTimeout(saveTimer);
@@ -154,8 +156,8 @@
   }
   function themeOptions() {
     var S = window.Samuka; if (!S) return "";
-    var names = { phthalo: "Phthalo", knight: "Dark Knight", golden: "Golden" };
-    var notes = { phthalo: "green & gold · everyone", knight: "samuka only · noir & signal gold", golden: "nino only · purple & gold" };
+    var names = { phthalo: "Phthalo", knight: "Dark Knight", golden: "Golden", crt: "CRT" };
+    var notes = { phthalo: "green & gold · everyone", knight: "samuka only · black & crimson", golden: "nino only · purple & gold", crt: "secret · phosphor terminal" };
     var skin = S.skin(), mode = S.mode();
     var modes = '<div class="acct__modes" role="radiogroup" aria-label="mode">' + ["dark", "light"].map(function (m) {
       return '<label class="acct__mode' + (m === mode ? " is-on" : "") + '"><input type="radio" name="mode" value="' + m + '"' + (m === mode ? " checked" : "") + '><span>' + (m === "dark" ? "☾ dark" : "☀ light") + "</span></label>";
@@ -186,8 +188,11 @@
       '<p class="acct__kicker">$ current_user.inspect</p>' +
       '<div class="acct__who"><span class="acct__avatar acct__avatar--lg">' + esc(initial()) + "</span><div><h3>" + esc((state.profile && state.profile.display_name) || "friend") + '</h3><p class="muted">' + esc(state.user.email || "") + ' · <span class="acct__badge acct__badge--' + state.role + '">' + esc(ROLE_LABEL[state.role] || state.role) + "</span></p></div></div>" +
       '<fieldset class="acct__themes"><legend>theme</legend>' + themeOptions() + "</fieldset>" +
-      (special ? '<label class="acct__toggle"><input type="checkbox" name="glitches"' + (state.profile.glitches ? " checked" : "") + '><span>Occasional glitch easter eggs</span></label>' +
-        '<button class="btn acct__preview" type="button" data-acct-glitch>⚡ preview glitch</button>' : "") +
+      '<label class="acct__nick"><span>public nickname <small class="muted">· shown on leaderboards, the wall and live cursors</small></span>' +
+        '<input name="nickname" maxlength="24" autocomplete="nickname" placeholder="anonymous dev" value="' + esc(state.profile.nickname || "") + '"></label>' +
+      '<label class="acct__toggle"><input type="checkbox" name="glitches"' + (state.profile.glitches ? " checked" : "") + '><span>Occasional glitch easter eggs</span></label>' +
+        '<button class="btn acct__preview" type="button" data-acct-glitch>⚡ preview glitch</button>' +
+      extras.map(function (fn) { try { return fn(state) || ""; } catch (e) { return ""; } }).join("") +
       '<div class="acct__actions"><button class="btn" type="button" data-acct-out>sign out</button>' + (mockRole ? '<span class="muted">local test session</span>' : "") + "</div>";
   }
   function open(opts) {
@@ -223,12 +228,25 @@
     if (e.target.name === "skin" && S) S.setSkin(e.target.value, { user: true });
     if (e.target.name === "mode" && S) S.setMode(e.target.value, { user: true });
     if (e.target.name === "glitches") savePrefs({ glitches: e.target.checked });
+    if (e.target.name === "nickname") {
+      var v = e.target.value.trim().replace(/[^A-Za-z0-9 ._\-]/g, "").slice(0, 24);
+      e.target.value = v;
+      if (v.length === 1) return;
+      savePrefs({ nickname: v || null });
+    }
   }
+  function isSpecial() { return state.role === "samuka" || state.role === "nino"; }
   function onModalClick(e) {
     if (e.target.closest("[data-acct-close]")) return close();
     if (e.target.closest("[data-acct-github]")) return signInGitHub();
     if (e.target.closest("[data-acct-out]")) { signOut(); return close(); }
-    if (e.target.closest("[data-acct-glitch]")) { close(); setTimeout(function () { window.SamukaGlitch && window.SamukaGlitch.fire(true); }, 250); }
+    if (e.target.closest("[data-acct-glitch]")) {
+      close();
+      setTimeout(function () {
+        if (isSpecial()) { if (window.SamukaGlitch) window.SamukaGlitch.fire(true); }
+        else if (window.SamukaTextGlitch) window.SamukaTextGlitch.fire(true);
+      }, 250);
+    }
   }
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-account]");
@@ -243,7 +261,16 @@
     role: function () { return state.role; },
     profile: function () { return state.profile; },
     ready: function () { return state.ready; },
-    open: open, close: close, signOut: signOut, savePrefs: savePrefs
+    open: open, close: close, signOut: signOut, savePrefs: savePrefs,
+    client: function () { return client; },
+    mock: function () { return mockRole; },
+    // other modules add sections to the account window: fn(state) -> html
+    extend: function (fn) { extras.push(fn); if (modal && !modal.hidden) renderModal(); },
+    refresh: function () { if (modal && !modal.hidden) renderModal(); },
+    publicName: function () {
+      var p = state.profile; if (!state.user) return "guest";
+      return (p && p.nickname) || "dev-" + String(state.user.id || "0000").replace(/-/g, "").slice(0, 4);
+    }
   };
 
   /* ---------- boot (after all deferred scripts, so window.Samuka exists) ---------- */

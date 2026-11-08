@@ -1,0 +1,56 @@
+/* =========================================================
+   Projects · repo cards pulled from the GitHub API
+   ========================================================= */
+.projects { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+.projects__loading, .projects__fallback { grid-column: 1 / -1; margin: 0; font: 13px var(--mono); }
+.projects__fallback a { color: var(--link); }
+.projects__loading::after { content: "▍"; margin-left: 4px; color: var(--accent); animation: blink 1s steps(1) infinite; }
+
+.repo {
+  position: relative; display: flex; flex-direction: column; gap: 10px; min-width: 0;
+  padding: 18px 20px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-elev);
+  font: 13px/1.5 var(--mono);
+  opacity: 0; transform: translateY(14px);
+  transition: opacity 0.7s var(--ease), transform 0.7s var(--ease), border-color 0.25s, box-shadow 0.25s;
+  transition-delay: var(--rd, 0s), var(--rd, 0s), 0s, 0s;
+}
+.repo.is-in { opacity: 1; transform: none; }
+.repo:hover { border-color: var(--line-strong); box-shadow: 0 18px 40px -26px var(--accent); }
+.repo::before { content: ""; position: absolute; left: 20px; right: 20px; top: -1px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--hl), transparent); opacity: 0; transition: opacity 0.25s; }
+.repo:hover::before { opacity: 1; }
+.repo p { margin: 0; }
+.repo__file { color: var(--muted); font-size: 11.5px; }
+.repo__name { margin: -6px 0 0; font: 600 16.5px/1.3 var(--sans); letter-spacing: -0.015em; overflow-wrap: anywhere; }
+.repo__name a { color: var(--text); }
+.repo__name a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; } /* whole card is the link */
+.repo__name a:hover { color: var(--accent-2); text-decoration: none; }
+.repo__name a:focus-visible { outline: none; }
+.repo:focus-within { outline: 2px solid var(--accent); outline-offset: 3px; }
+.repo__desc { flex: 1; color: var(--text-2); font: 14px/1.55 var(--sans); overflow-wrap: anywhere; }
+.repo__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; color: var(--muted); font-size: 12px; }
+.repo__lang { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); }
+.repo__lang i { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 1px var(--line-strong); }
+.repo__stars { color: var(--gold); }
+
+/* 52-week commit activity: bars grow in once data is ready and the card is in view */
+.repo__graph {
+  position: relative; display: grid; grid-template-columns: repeat(52, minmax(0, 1fr)); gap: 2px; align-items: end;
+  height: 40px; padding-bottom: 1px; border-bottom: 1px solid var(--line);
+}
+.repo__graph i {
+  display: block; height: var(--h, 0%); min-height: 1px; border-radius: 1px 1px 0 0;
+  background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 45%, transparent));
+  transform: scaleY(0); transform-origin: bottom;
+  transition: transform 0.6s var(--ease); transition-delay: calc(var(--i, 0) * 14ms);
+}
+.repo.is-in .repo__graph.is-ready i { transform: scaleY(1); }
+/* placeholder while GitHub computes the stats (202) or when they are unavailable */
+.repo__graph.is-pending i, .repo__graph.is-flat i { height: 2px; transform: none; background: var(--line-strong); }
+.repo__graph.is-pending i { animation: repoPulse 1.4s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 20ms); }
+@keyframes repoPulse { 50% { opacity: 0.35; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .repo { opacity: 1; transform: none; }
+  .repo__graph i { transition: none; }
+  .repo__graph.is-pending i { animation: none; }
+}

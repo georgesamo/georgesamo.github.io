@@ -23,6 +23,11 @@ defaults:
       path: ""
     values:
       image: /assets/og-image.png
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: post
 
 # Contact form: FormSubmit forwards messages by email. No account needed;
 # the very first submission sends a one-time activation email to this address.

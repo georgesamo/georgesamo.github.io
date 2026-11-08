@@ -15,14 +15,17 @@
   };
   var MAX_QUEUE = 6, MAX_WORKERS = 4, BACKLOG_SAFE = 8;
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
-  var pick = function (a) { return a[(Math.random() * a.length) | 0]; };
-  var jid = function () { return Math.random().toString(16).slice(2, 8); };
+  var rng = Math.random;
+  var pick = function (a) { return a[(rng() * a.length) | 0]; };
+  var jid = function () { return rng().toString(16).slice(2, 8); };
 
   window.SamukaArcade.register("sidekiq", {
     title: "sidekiq-rush.rb",
     blurb: "Route jobs to the right queue before Redis runs out of memory.",
     mount: function (stage, api) {
       var S, raf = 0, last = 0, running = false, paused = false;
+      rng = api.rng;
+      var race = api.mode === "race" && api.opts.race, raceTick = 0;
 
       stage.innerHTML =
         '<div class="sr">' +
@@ -126,9 +129,9 @@
       function finish(laneId, wk) {
         var job = wk.job; wk.job = null;
         if (job.el) job.el.remove();
-        if (Math.random() < 0.06 && !job.wrong) {           // the job raised: Sidekiq retries it
+        if (rng() < 0.06 && !job.wrong) {           // the job raised: Sidekiq retries it
           if (job.retries >= 2) { S.dead++; S.score = Math.max(0, S.score - 20); api.toast(job.klass + " → DeadSet (-20)", "err"); return; }
-          S.retries++;
+          S.retries++; api.emit("retry");
           spawn(job.type, job.retries + 1, job.klass);
           api.toast(job.klass + " raised · retrying", "warn");
           return;
@@ -149,9 +152,9 @@
         // spawn rate ramps up over time
         S.spawnIn -= dt;
         var interval = Math.max(0.42, 1.45 - S.t * 0.011);
-        if (S.spawnIn <= 0) { spawn(); S.spawnIn = interval * (0.6 + Math.random() * 0.8); }
+        if (S.spawnIn <= 0) { spawn(); S.spawnIn = interval * (0.6 + rng() * 0.8); }
         if (S.t >= S.nextSpike) {
-          S.nextSpike += 30 + Math.random() * 10;
+          S.nextSpike += 30 + rng() * 10;
           api.toast("⚡ traffic spike: Monday-morning bookings", "warn");
           for (var i = 0; i < 5; i++) spawn(i < 3 ? "critical" : null);
         }
@@ -162,7 +165,7 @@
             if (!wk.job && L.queue.length) {
               wk.job = L.queue.shift();
               wk.t = 0;
-              wk.dur = l.dur * (wk.job.wrong ? 2.3 : 1) * (0.85 + Math.random() * 0.3);
+              wk.dur = l.dur * (wk.job.wrong ? 2.3 : 1) * (0.85 + rng() * 0.3);
               if (wk.job.el) wk.job.el.remove();
             }
             if (wk.job) { wk.t += dt; if (wk.t >= wk.dur) finish(l.id, wk); }
@@ -182,6 +185,7 @@
         memPct.textContent = Math.min(100, Math.round(S.memory)) + "%";
         memEl.parentElement.classList.toggle("is-hot", S.memory > 60);
         if (S.memory >= 100) return over();
+        if (race && S.t - raceTick > 0.5) { raceTick = S.t; race.tick(S.score, S.done, S.memory); }
         // HUD (throughput over the last 10 s)
         S.history = S.history.filter(function (x) { return S.t - x < 10; });
         api.hud('<span>score <b>' + S.score + '</b></span><span>jobs <b>' + S.done + '</b></span><span class="hide-sm">' + (S.history.length / Math.min(10, Math.max(1, S.t))).toFixed(1) + ' jobs/s</span><span>tokens <b>' + S.tokens + "</b></span>");
@@ -208,12 +212,18 @@
       function over() {
         running = false;
         cancelAnimationFrame(raf);
-        var b = api.best(S.score);
+        var b = api.best(S.score, { done: S.done });
+        if (race) {
+          race.over(S.score, S.done);
+          api.overlay('<p class="arcade__err">Redis::OutOfMemoryError</p><dl class="arcade__stats"><dt>your score</dt><dd>' + S.score + "</dd><dt>processed</dt><dd>" + S.done + '</dd></dl><div class="race-result" data-race-result><p class="muted">waiting for your opponent…</p></div>');
+          return;
+        }
         api.overlay(
           '<p class="arcade__err">Redis::OutOfMemoryError</p>' +
           '<p class="muted">OOM command not allowed when used memory &gt; \'maxmemory\'</p>' +
           '<dl class="arcade__stats"><dt>score</dt><dd>' + S.score + (b.isNew ? ' <span class="arcade__new">new best!</span>' : "") + "</dd>" +
           "<dt>best</dt><dd>" + b.best + "</dd><dt>processed</dt><dd>" + S.done + "</dd><dt>misrouted</dt><dd>" + S.misrouted + "</dd><dt>retries · dead</dt><dd>" + S.retries + " · " + S.dead + "</dd><dt>uptime</dt><dd>" + Math.floor(S.t) + "s</dd></dl>" +
+          '<div class="lb-mini" data-lb-mini="sidekiq"></div>' +
           '<button class="btn btn--primary" type="button" data-sr-start>↻ bundle exec sidekiq</button>'
         );
       }
@@ -246,7 +256,7 @@
         if (lane) route(lane.getAttribute("data-lane"));
       }
       stage.addEventListener("click", onClick);
-      intro();
+      if (race) { intro(); start(); } else intro();
 
       return {
         key: function (e) {
@@ -256,15 +266,18 @@
           if ((e.key === "Enter" || e.key === " ") && focusedLane && !e.target.closest("button")) { e.preventDefault(); route(focusedLane.getAttribute("data-lane")); }
           else if (l && !e.shiftKey) { e.preventDefault(); route(l.id); }
           else if (e.shiftKey && /^Digit[123]$/.test(e.code)) { e.preventDefault(); hire(LANES[+e.code.slice(5) - 1].id); }
-          else if (e.key === "p" || e.key === "P") { paused = !paused; api.toast(paused ? "paused (P to resume)" : "resumed"); }
+          else if ((e.key === "p" || e.key === "P") && !race) { paused = !paused; api.toast(paused ? "paused (P to resume)" : "resumed"); }
           else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
             e.preventDefault();
             var i = S.incoming.indexOf(current()) + (e.key === "ArrowDown" ? 1 : -1);
             if (S.incoming[i]) { S.selected = S.incoming[i]; markSelected(); }
           }
         },
-        pause: function () { if (running && !paused) { paused = true; api.toast("paused (P to resume)"); } },
-        destroy: function () { running = false; cancelAnimationFrame(raf); stage.removeEventListener("click", onClick); }
+        pause: function () { if (running && !paused && !race) { paused = true; api.toast("paused (P to resume)"); } },
+        destroy: function () {
+          if (race && running) race.over(S.score, S.done, true); // closing the window forfeits
+          running = false; cancelAnimationFrame(raf); stage.removeEventListener("click", onClick);
+        }
       };
     }
   });

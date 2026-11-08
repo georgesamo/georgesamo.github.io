@@ -1,0 +1,71 @@
+---
+layout: default
+---
+{%- comment -%}
+  Editor chrome for the blog pages (index.html carries its own chrome).
+  Pages set `tab_file` (e.g. "pulls/index.md") for the tab, breadcrumbs and status bar.
+{%- endcomment -%}
+{%- if page.tab_file -%}
+  {%- assign tab_file = page.tab_file -%}
+{%- elsif page.slug -%}
+  {%- assign tab_file = "pulls/" | append: page.slug | append: ".md" -%}
+{%- else -%}
+  {%- assign tab_file = "pulls" -%}
+{%- endif -%}
+{%- assign tab_parts = tab_file | split: "/" -%}
+<div class="spotlight" aria-hidden="true"></div>
+
+<div class="ide">
+  <aside class="tree" aria-label="Site">
+    <div class="tree__head">
+      <span class="tree__logo">{% include ruby.svg %}</span>
+      <a class="blog-tree__home" href="{{ '/' | relative_url }}">samuka</a>
+      <span class="tree__branch">⎇ main</span>
+    </div>
+    <nav class="tree__nav">
+      <p class="tree__dir">▾ ~</p>
+      <a href="{{ '/' | relative_url }}"><i class="fi fi--rb"></i>samuka.rb</a>
+      <a href="{{ '/#experience' | relative_url }}"><i class="fi fi--log"></i>career.log</a>
+      <a href="{{ '/#skills' | relative_url }}"><i class="fi fi--gem"></i>Gemfile</a>
+      <a href="{{ '/#arcade' | relative_url }}"><i class="fi fi--log"></i>arcade</a>
+      <a href="{{ '/#contact' | relative_url }}"><i class="fi fi--rb"></i>routes.rb</a>
+      <p class="tree__dir">▾ pulls</p>
+      <a href="{{ '/blog/' | relative_url }}"{% if page.url == "/blog/" %} class="is-active"{% endif %}><i class="fi fi--pr"></i>all pull requests</a>
+      {%- for p in site.posts limit: 12 %}
+      <a href="{{ p.url | relative_url }}" class="blog-tree__post{% if p.url == page.url %} is-active{% endif %}"><i class="fi fi--md"></i>{{ p.title | escape }}</a>
+      {%- endfor %}
+    </nav>
+    <div class="tree__foot">
+      <button class="tree__btn" data-toggle-theme type="button"><span class="theme-ico" aria-hidden="true"></span> <span data-theme-label>light mode</span></button>
+    </div>
+  </aside>
+
+  <div class="editor">
+    <div class="tabs" role="presentation">
+      <div class="tabs__tab"><i class="fi fi--md"></i><span>{{ tab_parts | last }}</span><span class="tabs__dot"></span></div>
+      <div class="tabs__crumbs"><a class="blog-crumb" href="{{ '/' | relative_url }}">samuka</a>&nbsp;›&nbsp;{{ tab_parts | join: " › " }}</div>
+      <div class="tabs__actions">
+        <button type="button" class="acct-btn" data-account hidden>sign in</button>
+        <a class="icon-btn" href="{{ '/' | relative_url }}" aria-label="Back to the homepage">~</a>
+        <button type="button" class="icon-btn" data-toggle-theme aria-label="Toggle light and dark theme"><span class="theme-ico"></span></button>
+      </div>
+    </div>
+
+    <main id="main" class="blog">
+      {{ content }}
+      <footer class="foot">
+        <p><span class="c-comment"># built with Jekyll, vanilla JS and a lot of</span> <span class="ruby-word">♦</span> <span class="c-comment">· © <span data-year>2026</span> Samuka</span></p>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<div class="status" aria-hidden="true">
+  <span class="status__item status__item--accent">⎇ main</span>
+  <span class="status__item">✓ merged</span>
+  <span class="status__item status__hide-sm">{{ tab_file }}</span>
+  <span class="status__spacer"></span>
+  <span class="status__item" data-status-pos>Ln 1, Col 1</span>
+  <span class="status__item status__hide-sm">UTF-8</span>
+  <span class="status__item status__hide-sm">Markdown</span>
+</div>

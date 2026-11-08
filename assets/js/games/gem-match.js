@@ -29,8 +29,10 @@
     blurb: "Match three gems from the Gemfile. Power-ups: Pipeline, Force push, Bundle.",
     mount: function (stage, api) {
       var T = api.reduced ? 0.01 : 1;  // animation time scale
+      var rng = api.rng, daily = api.mode === "daily";
+      var MOVES_RUN = daily ? 20 : MOVES, moveLog = [], moveStart = 0;
       var board = [], cells = [], sel = -1, focusI = 0, busy = false, alive = false;
-      var score = 0, moves = MOVES, best = api.peekBest(), hintTimer = 0, uid = 0, combo = 0;
+      var score = 0, moves = MOVES_RUN, best = api.peekBest(), hintTimer = 0, uid = 0, combo = 0;
 
       stage.innerHTML = '<div class="gm"><div class="gm__board" data-board role="grid" aria-label="Gem board"></div></div>';
       var boardEl = stage.querySelector("[data-board]");
@@ -44,7 +46,7 @@
       api.foot("<span>Swap neighbours to line up 3+. <b>4</b> = Pipeline (row/column) · <b>L/T</b> = Force push (3×3) · <b>5</b> = Bundle (clears a kind). Swap two power-ups for a combo. Click, swipe, or <kbd>←↑↓→</kbd> + <kbd>Enter</kbd>.</span>");
 
       /* ---------- board helpers ---------- */
-      var rnd = function () { return (Math.random() * TYPES.length) | 0; };
+      var rnd = function () { return (rng() * TYPES.length) | 0; };
       var R = function (i) { return Math.floor(i / N); }, C = function (i) { return i % N; };
       function gem(t, sp) { return { t: t, id: ++uid, sp: sp || null }; }
       function sameType(i, j) { return board[i] && board[j] && board[i].t !== COLOR && board[i].t === board[j].t; }
@@ -56,7 +58,7 @@
           board.push(gem(t));
         }
         if (!findMove()) return fill();
-        board[(Math.random() * N * N) | 0].sp = "bomb"; // one Force push to discover the mechanic
+        board[(rng() * N * N) | 0].sp = "bomb"; // one Force push to discover the mechanic
       }
       function specialsOnBoard() { return board.filter(function (g) { return g && g.sp; }).length; }
 
@@ -173,8 +175,8 @@
       }
       function ofType(t) { var o = []; board.forEach(function (g, i) { if (g && g.t === t) o.push(i); }); return o; }
       function effect(i, g) {   // returns cells hit, and plays the visual
-        if (g.sp === "h") { beam(i, "h"); return row(R(i)); }
-        if (g.sp === "v") { beam(i, "v"); return col(C(i)); }
+        if (g.sp === "h") { beam(i, "h"); api.emit("pipeline"); return row(R(i)); }
+        if (g.sp === "v") { beam(i, "v"); api.emit("pipeline"); return col(C(i)); }
         if (g.sp === "bomb") { shock(i, 1); shake(4); return area(i, 1); }
         if (g.t === COLOR) { var t = mostCommonType(); zap(ofType(t)); return ofType(t); }
         return [];
@@ -214,7 +216,7 @@
           }
           for (var rr = write; rr >= 0; rr--) {
             var sp = null;
-            if (randomLeft > 0 && Math.random() < RANDOM_SPECIAL) { sp = ["h", "v", "bomb", "bomb"][(Math.random() * 4) | 0]; randomLeft--; }
+            if (randomLeft > 0 && rng() < RANDOM_SPECIAL) { sp = ["h", "v", "bomb", "bomb"][(rng() * 4) | 0]; randomLeft--; }
             board[rr * N + c] = gem(rnd(), sp);
             fall[rr * N + c] = write + 1;
           }
@@ -268,7 +270,7 @@
             if (combo === 1 && run.cells.length === 3) float(TYPES[run.t].done, mid);
           });
           plan.creations.forEach(function (cr) {
-            if (cr.kind === "bundle") { score += 150; float("Bundle ✦ created", cr.i, "mega"); }
+            if (cr.kind === "bundle") { score += 150; float("Bundle ✦ created", cr.i, "mega"); api.emit("bundle"); }
             else if (cr.kind === "bomb") { score += 80; float("Force push 💥 armed", cr.i, "big"); }
             else { score += 50; float("Pipeline ⇶ ready", cr.i, "big"); }
           });
@@ -286,13 +288,13 @@
         if (x.t === COLOR && y.t === COLOR) {
           for (var i = 0; i < N * N; i++) set[i] = true;
           zap(Object.keys(set)); shake(9); shock(b, 4);
-          api.toast("bundle exec rails db:reset · board cleared!", "ok"); score += 500;
+          api.toast("bundle exec rails db:reset · board cleared!", "ok"); score += 500; api.emit("db_reset");
         } else if (x.t === COLOR || y.t === COLOR) {
           var other = x.t === COLOR ? y : x;
           var targets = ofType(other.t);
           if (other.sp) {
             // every gem of that kind becomes the same power-up, then they all fire
-            targets.forEach(function (j) { if (!board[j].sp) board[j].sp = other.sp === "bomb" ? "bomb" : (Math.random() < 0.5 ? "h" : "v"); });
+            targets.forEach(function (j) { if (!board[j].sp) board[j].sp = other.sp === "bomb" ? "bomb" : (rng() < 0.5 ? "h" : "v"); });
             paint(); zap(targets);
             api.toast("bundle update " + TYPES[other.t].name + " --all", "ok");
             await wait(420 * T);
@@ -331,7 +333,8 @@
       }
       async function trySwap(a, b) {
         if (busy || !alive || !adjacent(a, b)) return;
-        busy = true; sel = -1; clearHint();
+        busy = true; sel = -1; clearHint(); moveStart = score;
+        var hadPower = !!(board[a] && (board[a].sp || board[a].t === COLOR)) || !!(board[b] && (board[b].sp || board[b].t === COLOR));
         await animateSwap(a, b);
         swap(a, b); paint();
         if (swapActivates(a, b)) {
@@ -348,6 +351,7 @@
           busy = false; armHint(); return;
         }
         busy = false;
+        moveLog.push({ pts: score - moveStart, power: hadPower });
         if (moves <= 0) return over();
         if (!findMove()) { api.toast("no moves left · bundle update (shuffle)", "warn"); fill(); paint(); }
         armHint();
@@ -368,22 +372,29 @@
         return '<span class="gm__cell gm__cell--static ' + cls + '"><span class="gm__gem"><i></i><em>' + em + "</em></span></span><span>" + label + "</span>";
       }
       function start() {
-        score = 0; moves = MOVES; sel = -1; alive = true; busy = false;
+        score = 0; moves = MOVES_RUN; sel = -1; alive = true; busy = false; moveLog = [];
+        if (daily) rng = window.SamukaArcade.seeded(api.opts.seed); // everyone gets the same board
         fill(); paint(); hud(); api.clearOverlay(); armHint();
         cells[focusI].focus();
       }
       function over() {
         alive = false; clearHint();
-        var b = api.best(score); best = b.best;
+        var b = api.best(score, { log: moveLog }); best = b.best;
+        if (daily) { api.overlay(window.SamukaScores ? window.SamukaScores.dailyCard(score, moveLog) : "<h3>" + score + "</h3>"); return; }
         api.overlay(
           '<p class="arcade__kicker">$ bundle exec rspec</p>' +
           "<h3>" + (score >= 4000 ? "Gemfile.lock: perfection" : score >= 2000 ? "All green" : "Done") + "</h3>" +
           '<dl class="arcade__stats"><dt>score</dt><dd>' + score + (b.isNew ? ' <span class="arcade__new">new best!</span>' : "") + "</dd><dt>best</dt><dd>" + b.best + "</dd><dt>moves</dt><dd>" + MOVES + "</dd></dl>" +
+          '<div class="lb-mini" data-lb-mini="gems"></div>' +
           '<button class="btn btn--primary" type="button" data-gm-start>↻ play again</button>'
         );
       }
       function intro() {
         fill(); paint(); hud();
+        if (daily) {
+          api.overlay(window.SamukaScores ? window.SamukaScores.dailyIntro(MOVES_RUN) : '<button class="btn btn--primary" type="button" data-gm-start>▶ start</button>');
+          return;
+        }
         api.overlay(
           '<p class="arcade__kicker">$ gem install match-three</p>' +
           "<h3>Gem Match</h3>" +

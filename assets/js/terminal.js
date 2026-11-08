@@ -90,9 +90,27 @@
     "skills.rb": function () { return skills([]); },
     "career.log": function () { return gitlog(); },
     "contact.txt": function () { return contact(); },
+    "resume.rb": function () { return resumeRb(); },
     ".secret": function () { return '<span class="dim"># You found it.</span>\n<span class="hl">Rubies are formed under pressure. So are good backends.</span>'; }
   };
 
+  function ach(k) { if (window.SamukaAch) window.SamukaAch.unlock(k); }
+  function resumeRb() {
+    var k = function (s) { return '<span class="k">' + s + "</span>"; }, str = function (s) { return '<span class="ok">"' + esc(s) + '"</span>'; };
+    var lines = [
+      k("class") + ' <span class="hl">Samuka</span> &lt; Engineer',
+      "  role       " + str(p.role),
+      "  based_in   " + str(p.location),
+      "",
+      "  " + k("def") + " experience",
+      "    ["
+    ];
+    jobs.forEach(function (j) { lines.push("      { company: " + str(j.company) + ", role: " + str(j.role) + ", since: " + str(j.start) + " },"); });
+    lines.push("    ]", "  " + k("end"), "", "  " + k("def") + " skills");
+    groups.forEach(function (g) { lines.push("    " + esc(g.group) + ": %w[" + g.gems.map(esc).join(" ") + "],"); });
+    lines.push("  " + k("end"), "", "  " + k("def") + " hire!", "    Contact.deliver(" + str(p.email) + ")", "  " + k("end"), k("end"));
+    return lines.join("\n") + '\n\n<span class="dim"># the PDF: </span><span class="b">resume</span>';
+  }
   function about() {
     return '<span class="hl">' + esc(p.handle) + "</span> <span class=\"dim\">(" + esc(p.full_name) + ")</span>\n" +
       esc(p.role) + " · " + esc(p.location) + "\n" +
@@ -153,10 +171,16 @@
       ["play [sidekiq|gems]", "minigames: Sidekiq Rush, Gem Match (sign-in)"],
       ["login / logout / id", "optional account, unlocks the arcade"],
       ["theme [light|dark]", "switch colors"],
+      ["leaderboard [game] [week|daily]", "top scores"],
+      ["daily / race", "daily Gem Match · live 1v1 Sidekiq Rush"],
+      ["achievements", "what you've unlocked"],
+      ["wall / blog / projects", "visitor commits · pull requests · repos"],
+      ["music [on|off]", "generated lo-fi that follows the theme"],
+      ["who / cursors [on|off]", "who's online · ghost cursors"],
       ["ls, cat &lt;file&gt;, pwd, date, echo, history, clear, exit", ""]
     ];
     return rows.map(function (r) {
-      var pad = Math.max(1, 26 - r[0].replace(/&[a-z]+;/g, "x").length);
+      var pad = Math.max(1, 34 - r[0].replace(/&[a-z]+;/g, "x").length);
       return '  <span class="b">' + r[0] + "</span>" + " ".repeat(pad) + '<span class="dim">' + r[1] + "</span>";
     }).join("\n") + '\n\n<span class="dim">…and a few things that aren\'t listed. Rubyists know where to look.</span>';
   }
@@ -182,7 +206,7 @@
     education: education, "db:migrate": education,
     rails: function (a) {
       if (a[0] === "db:migrate") return education();
-      if (a[0] === "console" || a[0] === "c") { mode = "irb"; return '<span class="dim">Loading production environment (Rails 8.0)</span>\nType <span class="b">exit</span> to leave. Try: <span class="b">Samuka.skills.count</span>, <span class="b">Samuka.experience.first</span>, <span class="b">Samuka.hire!</span>'; }
+      if (a[0] === "console" || a[0] === "c") { mode = "irb"; ach("rails_c"); return '<span class="dim">Loading production environment (Rails 8.0)</span>\nType <span class="b">exit</span> to leave. Try: <span class="b">Samuka.skills.count</span>, <span class="b">Samuka.experience.first</span>, <span class="b">Samuka.hire!</span>'; }
       if (a[0] === "routes") return "  Prefix Verb URI Pattern     Controller#Action\n    root GET  /               portfolio#show\n contact POST /contact        samuka#inbox\n  resume GET  /resume.pdf     portfolio#resume";
       if (a[0] === "s" || a[0] === "server") return '<span class="ok">=> Already running.</span> You\'re looking at it.';
       return "usage: rails console | rails routes | rails db:migrate";
@@ -208,7 +232,7 @@
     },
     github: function () { window.open(p.github, "_blank", "noopener"); return "opening " + esc(p.github) + " …"; },
     goto: function (a) {
-      var map = { hero: "hero", top: "hero", home: "hero", experience: "experience", career: "experience", skills: "skills", gemfile: "skills", education: "education", languages: "languages", contact: "contact" };
+      var map = { hero: "hero", top: "hero", home: "hero", experience: "experience", career: "experience", skills: "skills", gemfile: "skills", education: "education", languages: "languages", projects: "projects", repos: "projects", arcade: "arcade", wall: "wall", contact: "contact" };
       var id = map[(a[0] || "").toLowerCase()];
       if (!id) return "usage: goto " + Object.keys(map).join(" | ");
       close(); S.go && S.go(id); return "→ " + id;
@@ -254,8 +278,14 @@
     },
     glitch: function () {
       var A = window.SamukaAuth, role = A ? A.role() : "guest";
-      if (role !== "samuka" && role !== "nino") return '<span class="warn">Permission denied</span> · glitches are a perk of special roles.';
+      if (!A || !A.user()) return '<span class="warn">Permission denied</span> · sign in first: <span class="b">login</span>';
+      if (role !== "samuka" && role !== "nino") { close(); setTimeout(function () { window.SamukaTextGlitch && window.SamukaTextGlitch.fire(true); }, 300); return "…"; }
       close(); setTimeout(function () { window.SamukaGlitch && window.SamukaGlitch.fire(true); }, 300); return "…";
+    },
+    warp: function () {
+      var A = window.SamukaAuth;
+      if (!A || !A.user()) return '<span class="warn">Permission denied</span> · sign in first: <span class="b">login</span>';
+      close(); setTimeout(function () { window.SamukaTextGlitch && window.SamukaTextGlitch.fire(true); }, 300); return "…";
     },
     ls: function (a) { return Object.keys(FILES).filter(function (f) { return a.indexOf("-a") > -1 || a.indexOf("-la") > -1 || f[0] !== "."; }).map(function (f) { return '<span class="b">' + f + "</span>"; }).join("  "); },
     cat: function (a) { var f = FILES[a[0]]; return f ? f() : "cat: " + esc(a[0] || "") + ": No such file or directory"; },
@@ -267,13 +297,69 @@
     exit: function () { close(); return null; },
     sudo: function (a) {
       if (a.join(" ").indexOf("hire") === 0) return sudoHire();
+      ach("sudo");
+      if (a.join(" ") === "make me a sandwich") return "Okay. 🥪";
       if (a.join(" ") === "rm -rf /") return '<span class="warn">Nice try.</span> This résumé is immutable.';
       return "visitor is not in the sudoers file. This incident will be reported. <span class=\"dim\">(just kidding)</span>";
     },
     rm: function () { return '<span class="warn">rm: refusing to remove anything.</span> Production data is sacred.'; },
-    vim: function () { return "You are now stuck in vim forever. <span class=\"dim\">(type :q! … no wait, wrong terminal. You're fine.)</span>"; },
+    vim: function () { ach("vim"); return "You are now stuck in vim forever. <span class=\"dim\">(type :q! … no wait, wrong terminal. You're fine.)</span>"; },
     coffee: function () { return '<span class="warn">418 I\'m a teapot</span> · but Samuka runs on coffee anyway.'; },
     ruby: function (a) { return a[0] === "-v" ? "ruby 3.3.6 (2024-11-05) [samuka-linux]" : "usage: ruby -v · or try rails console"; },
+    achievements: function () {
+      var t = window.SamukaAch && window.SamukaAch.text();
+      return t || 'sign in to collect achievements: <span class="b">login</span>';
+    },
+    leaderboard: function (a) {
+      var game = /^(gem|gems|match)/.test(a[0] || "") ? "gems" : /^(sidekiq|rush)/.test(a[0] || "") ? "sidekiq" : "gems";
+      var period = (a.indexOf("week") > -1 || a.indexOf("--week") > -1) ? "week" : (a.indexOf("daily") > -1 || a.indexOf("today") > -1) ? "daily" : "all";
+      if (!window.SamukaScores) return "leaderboards are not loaded";
+      var el = print('<span class="dim">SELECT * FROM leaderboard(\'' + game + "', '" + period + "') …</span>");
+      window.SamukaScores.board(game, period, 10).then(function (rows) {
+        el.innerHTML = (rows.length ? rows.map(function (r) {
+          return String(r.rank).padStart(3) + "  " + (r.me ? '<span class="hl">' : "") + esc(r.name).padEnd(24) + (r.me ? "</span>" : "") + "  " + '<span class="ok">' + String(r.score).padStart(7) + "</span>" + (r.role === "samuka" || r.role === "nino" ? ' <span class="dim">' + r.role + "</span>" : "");
+        }).join("\n") : '<span class="dim">no scores yet</span>') + '\n<span class="dim">usage: leaderboard [sidekiq|gems] [week|daily]</span>';
+      }, function () { el.innerHTML = '<span class="warn">leaderboard offline</span>'; });
+      return null;
+    },
+    daily: function () {
+      if (!window.SamukaScores) return "not loaded";
+      close(); setTimeout(function () { window.SamukaScores.openDaily(); }, 60); return "rails gems:daily …";
+    },
+    race: function () {
+      if (!window.SamukaRace) return "not loaded";
+      close(); setTimeout(function () { window.SamukaRace.open(); }, 60); return "bundle exec sidekiq --race …";
+    },
+    wall: function () { close(); S.go && S.go("wall"); return "→ wall (git log of visitors)"; },
+    board: function () {
+      var A = window.SamukaAuth, r = A && A.user() ? A.role() : "guest";
+      if (!window.SamukaBoard || (r !== "samuka" && r !== "nino")) return '<span class="warn">404</span> · no board here.';
+      close(); setTimeout(function () { window.SamukaBoard.open(); }, 60); return "opening our board…";
+    },
+    admin: function () {
+      var A = window.SamukaAuth;
+      if (!A || !A.user() || A.role() !== "samuka") return '<span class="warn">403 Forbidden</span>';
+      close(); setTimeout(function () { window.SamukaAdmin && window.SamukaAdmin.open(); }, 60); return "rails admin …";
+    },
+    music: function (a) {
+      var L = window.SamukaLofi; if (!L) return "audio not available in this browser";
+      if (a[0] === "off" || a[0] === "stop") { L.stop(); return "♪ off"; }
+      if (a[0] === "on" || a[0] === "play" || !L.isOn()) { L.start(); return '♪ playing generated lo-fi <span class="dim">(follows your theme · music off to stop)</span>'; }
+      L.stop(); return "♪ off";
+    },
+    cursors: function (a) {
+      var P = window.SamukaPresence; if (!P) return "presence not loaded";
+      if (a[0] === "off") { P.cursors(false); return "live cursors hidden"; }
+      if (a[0] === "on") { P.cursors(true); return "live cursors visible"; }
+      return "live cursors are " + (P.cursors() ? "on" : "off") + ' · <span class="dim">cursors on|off</span>';
+    },
+    who: function () {
+      var P = window.SamukaPresence; if (!P) return "you";
+      var peers = P.peers();
+      return "you" + (peers.length ? "\n" + peers.map(function (x) { return esc(x.name) + ' <span class="dim">(' + esc(x.role) + ")</span>"; }).join("\n") : '\n<span class="dim">nobody else right now</span>');
+    },
+    blog: function () { location.href = "/blog/"; return "→ /blog/"; },
+    projects: function () { close(); S.go && S.go("projects"); return "→ projects"; },
     hello: function () { return 'გამარჯობა! <span class="dim">(gamarjoba: hello in Georgian)</span>'; },
     gamarjoba: function () { return COMMANDS.hello(); }
   };
@@ -358,7 +444,7 @@
     if (mode !== "sh" || !v) return;
     var parts = v.split(/\s+/);
     var pool = parts.length > 1
-      ? (parts[0] === "cat" ? Object.keys(FILES) : parts[0] === "goto" ? ["experience", "skills", "education", "languages", "contact", "top"] : parts[0] === "show" ? jobs.map(function (j) { return j.id; }) : parts[0] === "skills" ? groups.map(function (g) { return g.group; }) : parts[0] === "play" ? ["sidekiq", "gems"] : [])
+      ? (parts[0] === "cat" ? Object.keys(FILES) : parts[0] === "goto" ? ["experience", "skills", "education", "languages", "contact", "top"] : parts[0] === "show" ? jobs.map(function (j) { return j.id; }) : parts[0] === "skills" ? groups.map(function (g) { return g.group; }) : parts[0] === "play" ? ["sidekiq", "gems"] : parts[0] === "leaderboard" ? ["sidekiq", "gems", "week", "daily"] : parts[0] === "music" || parts[0] === "cursors" ? ["on", "off"] : [])
       : Object.keys(COMMANDS);
     var last = parts[parts.length - 1];
     var hits = pool.filter(function (c) { return c.indexOf(last) === 0; });

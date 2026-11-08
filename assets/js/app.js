@@ -32,11 +32,16 @@
   var SKINS = {
     phthalo: { meta: { dark: "#07110c", light: "#f3f6f1" } },
     knight: { meta: { dark: "#050506", light: "#f2efe6" }, role: "samuka" },
-    golden: { meta: { dark: "#120a1f", light: "#f6f1ff" }, role: "nino" }
+    golden: { meta: { dark: "#120a1f", light: "#f6f1ff" }, role: "nino" },
+    crt: { meta: { dark: "#020703", light: "#ece4cf" }, secret: "samuka-konami" }
   };
   var root = document.documentElement;
   function role() { return root.dataset.role || "guest"; }
-  function canUseSkin(s) { return !!SKINS[s] && (!SKINS[s].role || SKINS[s].role === role()); }
+  function canUseSkin(s) {
+    var k = SKINS[s]; if (!k) return false;
+    if (k.secret) return store.get(k.secret) === "1";
+    return !k.role || k.role === role();
+  }
   function availableSkins() { return Object.keys(SKINS).filter(canUseSkin); }
   function currentMode() { return root.dataset.theme === "light" ? "light" : "dark"; }
   function currentSkin() { var s = root.dataset.skin; return SKINS[s] ? s : "phthalo"; }

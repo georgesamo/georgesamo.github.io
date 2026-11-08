@@ -309,3 +309,90 @@
   :root[data-skin="golden"] .ide::after { animation: none; opacity: 0.7; }
   .glx, .glx-fly { display: none !important; }
 }
+
+/* ---------- text warp easter egg (textglitch.js) ---------- */
+.tg-host { visibility: hidden; animation: tg-shake var(--ms, 380ms) steps(6) both; }
+
+.tg-ghost {
+  position: absolute; left: 0; top: 0; z-index: 3; white-space: nowrap; pointer-events: none; visibility: visible;
+  color: var(--accent); -webkit-text-fill-color: currentColor;
+  text-shadow: -2px 0 #00f0ff, 2px 0 #ff2bd6;
+  animation: tg-warp var(--ms, 380ms) steps(8) both;
+}
+.tg-ghost::before, .tg-ghost::after {
+  content: attr(data-tg); position: absolute; left: 0; top: 0; white-space: nowrap;
+}
+.tg-ghost::before { color: #00f0ff; clip-path: inset(10% 0 58% 0); transform: translateX(-4px); animation: tg-slice-a var(--ms, 380ms) steps(5) both; mix-blend-mode: screen; }
+.tg-ghost::after  { color: #ff2bd6; clip-path: inset(62% 0 8% 0);  transform: translateX(4px);  animation: tg-slice-b var(--ms, 380ms) steps(5) both; mix-blend-mode: screen; }
+.tg-ghost--jk { color: #c9a6ff; text-shadow: -2px 0 #7b2ff7, 2px 0 #ffd479, 0 0 18px rgba(185, 140, 255, .7); }
+.tg-ghost--jk::before { color: #ffd479; }
+.tg-ghost--jk::after { color: #7b2ff7; }
+.tg-ghost--bat { color: #e5383b; text-shadow: -2px 0 #000, 2px 0 #9aa3ad; }
+.tg-ghost--bat::before { color: #9aa3ad; }
+.tg-ghost--bat::after { color: #000; }
+:root[data-theme="light"] .tg-ghost::before, :root[data-theme="light"] .tg-ghost::after { mix-blend-mode: multiply; }
+@keyframes tg-warp {
+  0%   { opacity: 0; transform: skewX(-18deg) scaleX(1.3); filter: blur(2px); }
+  12%  { opacity: 1; transform: skewX(10deg) translateX(3px); filter: none; }
+  30%  { transform: skewX(-4deg) translateX(-2px); clip-path: inset(0 0 40% 0); }
+  45%  { transform: none; clip-path: inset(30% 0 0 0); }
+  60%  { clip-path: none; }
+  85%  { opacity: 1; transform: translateX(1px); }
+  100% { opacity: 0; transform: skewX(14deg) scaleX(.85); }
+}
+@keyframes tg-slice-a { 0% { clip-path: inset(0 0 80% 0); } 40% { clip-path: inset(40% 0 30% 0); transform: translateX(-7px); } 100% { clip-path: inset(70% 0 0 0); } }
+@keyframes tg-slice-b { 0% { clip-path: inset(80% 0 0 0); } 40% { clip-path: inset(20% 0 55% 0); transform: translateX(7px); } 100% { clip-path: inset(0 0 75% 0); } }
+@keyframes tg-shake { 0%, 100% { transform: none; } 20% { transform: translateX(-2px); } 40% { transform: translateX(2px) skewX(3deg); } 60% { transform: translateX(-1px); } }
+@media (prefers-reduced-motion: reduce) { .tg-ghost { display: none; } .tg-host { visibility: visible; animation: none; } }
+
+/* =========================================================
+   CRT (secret skin, unlocked with the Konami code)
+   dark: green phosphor on black · light: amber-ink on warm terminal paper
+   ========================================================= */
+:root[data-skin="crt"]:not([data-theme="light"]) {
+  --phthalo: #0b3d1a; --on-phthalo: #b6ffcb;
+  --bg: #020703; --bg-elev: #04100a; --bg-soft: #06160d; --bg-hover: #0a2214;
+  --line: #0c2a17; --line-strong: #154226;
+  --text: #b6ffcb; --text-2: #6fe08f; --muted: #3f9a5c;
+  --accent: #39ff7a; --accent-2: #9dffbd; --accent-soft: rgba(57, 255, 122, 0.12);
+  --gold: #ffb000; --gold-soft: rgba(255, 176, 0, 0.14);
+  --blue: #7cf2c8; --blue-soft: rgba(124, 242, 200, 0.1);
+  --green: #c8ff8a; --green-soft: rgba(200, 255, 138, 0.07);
+  --amber: #ffb000; --violet: #8affd0; --cyan: #66ffe0; --link: #9dffbd; --ruby-red: #ff5f56;
+  --hl: #ffb000; --hl-soft: rgba(255, 176, 0, 0.15);
+  --chrome: #010402; --code-bg: #020904; --status-ink: #ffcf66;
+  --dot: rgba(57, 255, 122, 0.06);
+  --shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9);
+  --glass: rgba(1, 4, 2, 0.85);
+  --page-glow: radial-gradient(1200px 800px at 50% 30%, rgba(20, 90, 40, 0.35), transparent 70%), linear-gradient(180deg, #030a05, #010402);
+  color-scheme: dark;
+}
+:root[data-skin="crt"][data-theme="light"] {
+  --phthalo: #6b4a00; --on-phthalo: #fff4d6;
+  --bg: #ece4cf; --bg-elev: #f5efdd; --bg-soft: #e2d8bd; --bg-hover: #d9cdae;
+  --line: #d3c6a3; --line-strong: #bba984;
+  --text: #2b2108; --text-2: #574618; --muted: #84723f;
+  --accent: #8a5a00; --accent-2: #b07400; --accent-soft: rgba(138, 90, 0, 0.1);
+  --gold: #8a5a00; --gold-soft: rgba(138, 90, 0, 0.12);
+  --blue: #1d5c4a; --blue-soft: rgba(29, 92, 74, 0.09);
+  --green: #3c6b12; --green-soft: rgba(60, 107, 18, 0.07);
+  --amber: #8a5a00; --violet: #5c3d8a; --cyan: #1d6b6b; --link: #8a5a00; --ruby-red: #b3261e;
+  --hl: #1d6b33; --hl-soft: rgba(29, 107, 51, 0.13);
+  --chrome: color-mix(in srgb, #f5efdd 88%, transparent); --code-bg: #f8f3e4; --status-ink: #ffe7a6;
+  --dot: rgba(43, 33, 8, 0.07);
+  --shadow: 0 30px 70px -35px rgba(60, 40, 0, 0.35);
+  --glass: rgba(236, 228, 207, 0.86);
+  --page-glow: radial-gradient(1200px 800px at 50% 20%, rgba(255, 220, 140, 0.35), transparent 70%), linear-gradient(180deg, #efe8d4, #e6dcc2);
+  color-scheme: light;
+}
+/* scanlines + soft phosphor glow (static, no flicker) */
+:root[data-skin="crt"] body::after {
+  content: ""; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+:root[data-skin="crt"][data-theme="light"] body::after { background: repeating-linear-gradient(180deg, rgba(60, 40, 0, 0.06) 0 1px, transparent 1px 3px); }
+:root[data-skin="crt"]:not([data-theme="light"]) body { text-shadow: 0 0 6px rgba(57, 255, 122, 0.25); }
+:root[data-skin="crt"] .hero__name, :root[data-skin="crt"] .section__title { font-family: var(--mono); letter-spacing: -0.02em; }
+.acct__theme--crt .acct__swatch i:first-child { background: #020703; box-shadow: inset 0 0 0 2px #39ff7a; }
+.acct__theme--crt .acct__swatch i:last-child { background: #ece4cf; box-shadow: inset 0 0 0 2px #8a5a00; }

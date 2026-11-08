@@ -1,0 +1,26 @@
+/* Generated lo-fi music toggle (assets/js/lofi.js) */
+.icon-btn.lofi-btn { display: inline-flex; font-size: 14px; line-height: 1; }
+.icon-btn.lofi-btn[hidden] { display: none; }
+.icon-btn.lofi-btn.is-on { color: var(--accent); border-color: var(--accent); }
+.icon-btn.lofi-btn.is-on:hover { color: var(--hl); border-color: var(--hl); }
+
+.lofi-eq { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+.lofi-eq i {
+  display: block; width: 2px; height: 100%; border-radius: 1px; background: currentColor;
+  transform-origin: 50% 100%; transform: scaleY(0.4);
+  animation: lofi-eq 0.9s ease-in-out infinite;
+}
+.lofi-eq i:nth-child(2) { animation-duration: 0.7s; animation-delay: -0.3s; }
+.lofi-eq i:nth-child(3) { animation-duration: 1.1s; animation-delay: -0.6s; }
+
+@keyframes lofi-eq {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lofi-eq i { animation: none; }
+  .lofi-eq i:nth-child(1) { transform: scaleY(0.5); }
+  .lofi-eq i:nth-child(2) { transform: scaleY(0.9); }
+  .lofi-eq i:nth-child(3) { transform: scaleY(0.65); }
+}

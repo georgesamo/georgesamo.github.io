@@ -32,8 +32,14 @@ title: Samuka · Senior Ruby on Rails Engineer
       <a href="#education" data-nav="education"><i class="fi fi--rb"></i>schema.rb</a>
       <p class="tree__dir">▾ config/locales</p>
       <a href="#languages" data-nav="languages"><i class="fi fi--yml"></i>languages.yml</a>
+      <p class="tree__dir">▾ app</p>
+      <a href="#projects" data-nav="projects"><i class="fi fi--log"></i>repos</a>
+      <p class="tree__dir">▾ pulls</p>
+      <a href="{{ '/blog/' | relative_url }}"><i class="fi fi--pr"></i>pull requests</a>
       <p class="tree__dir">▾ bin</p>
       <a href="#arcade" data-nav="arcade"><i class="fi fi--log"></i>arcade</a>
+      <p class="tree__dir">▾ log</p>
+      <a href="#wall" data-nav="wall"><i class="fi fi--log"></i>visitors.log</a>
       <p class="tree__dir">▾ config</p>
       <a href="#contact" data-nav="contact"><i class="fi fi--rb"></i>routes.rb</a>
     </nav>
@@ -221,6 +227,18 @@ title: Samuka · Senior Ruby on Rails Engineer
         </div>
       </section>
 
+      <!-- ================= PROJECTS ================= -->
+      <section class="section" id="projects" data-file="app/repos" data-icon="log">
+        <header class="section__head reveal">
+          <p class="section__path">app/<b>repos</b></p>
+          <h2 class="section__title">Projects</h2>
+          <p class="section__cmd"><span class="prompt">$</span> gh repo list georgesamo <span class="muted"># live from the GitHub API</span></p>
+        </header>
+        <div class="projects" data-projects>
+          <p class="projects__loading muted"># fetching repos from github.com/georgesamo</p>
+        </div>
+      </section>
+
       <!-- ================= ARCADE ================= -->
       <section class="section" id="arcade" data-file="bin/arcade" data-icon="log">
         <header class="section__head reveal">
@@ -239,6 +257,7 @@ title: Samuka · Senior Ruby on Rails Engineer
               <p class="arcade-card__text">Hospital jobs pour into Redis. Route claims, imports and reminders to the right queue, hire workers, survive the Monday-morning spike.</p>
               <div class="arcade-card__row">
                 <button class="btn btn--primary" type="button" data-play="sidekiq"><span class="btn__prompt">▶</span> play</button>
+                <button class="btn" type="button" data-race title="Live 1v1 against a friend">⚔ 1v1</button>
                 <span class="arcade-card__best" data-best="sidekiq"></span>
               </div>
             </div>
@@ -256,11 +275,23 @@ title: Samuka · Senior Ruby on Rails Engineer
               <p class="arcade-card__text">Match three gems from the Gemfile. Build power-ups: <b>Pipeline</b> clears a line, <b>Force push</b> blasts 3×3, <b>Bundle</b> wipes a whole kind. Swap two together for combos.</p>
               <div class="arcade-card__row">
                 <button class="btn btn--primary" type="button" data-play="gems"><span class="btn__prompt">▶</span> play</button>
+                <button class="btn" type="button" data-daily title="Same board for everyone today">📅 daily</button>
                 <span class="arcade-card__best" data-best="gems"></span>
               </div>
             </div>
           </article>
         </div>
+        <div class="lb reveal" data-leaderboard aria-live="polite"></div>
+      </section>
+
+      <!-- ================= WALL ================= -->
+      <section class="section" id="wall" data-file="log/visitors.log" data-icon="log">
+        <header class="section__head reveal">
+          <p class="section__path">log/<b>visitors.log</b></p>
+          <h2 class="section__title">Commit wall</h2>
+          <p class="section__cmd"><span class="prompt">$</span> git log --oneline visitors <span class="muted"># leave a line, say hi</span></p>
+        </header>
+        <div class="wall reveal" data-wall><p class="muted">loading…</p></div>
       </section>
 
       <!-- ================= CONTACT ================= -->
