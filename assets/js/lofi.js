@@ -177,7 +177,9 @@
     // electro: funky, distorted, syncopated
     { 0: [0, 0.28, 1], 3: [0, 0.2, 1], 4: [12, 0.2, 0.8], 6: [0, 0.28, 1], 8: [0, 0.28, 1], 10: [10, 0.2, 0.9], 11: [12, 0.2, 0.7], 14: [7, 0.28, 1] },
     // techno: rolling off-beat bass
-    { 2: [0, 0.2, 1], 3: [0, 0.14, 0.8], 6: [0, 0.2, 1], 7: [0, 0.14, 0.8], 10: [0, 0.2, 1], 11: [0, 0.14, 0.8], 14: [0, 0.2, 1], 15: [12, 0.14, 0.6] }
+    { 2: [0, 0.2, 1], 3: [0, 0.14, 0.8], 6: [0, 0.2, 1], 7: [0, 0.14, 0.8], 10: [0, 0.2, 1], 11: [0, 0.14, 0.8], 14: [0, 0.2, 1], 15: [12, 0.14, 0.6] },
+    // cold sequenced pulse (thriller-score feel)
+    { 0: [0, 0.3, 1], 2: [0, 0.3, 1], 4: [0, 0.3, 1], 6: [0, 0.3, 1], 8: [0, 0.3, 1], 10: [0, 0.3, 1], 12: [0, 0.3, 1], 14: [0, 0.3, 1] }
   ];
   // per-track flavours, shared by every skin (each skin weights them differently)
   // pad: saw | tri | ep (electric piano) | choir | wob (vapor wobble)   melody: lead | piano | bells
@@ -197,16 +199,26 @@
     // French-electro feel: distorted funky bass, chopped chord stabs, heavy pump, claps
     electro: { grooves: [10], supersaw: 0.3, stabs: 0, leadEarly: 0.3, bassVol: 0.8, bpmAbs: [118, 124], lead: [0.35, 0.5], drums: "electro", piano: 0, pad: "chop", dist: true, swing: 0.04, arpMul: 0.5 },
     // dark underground techno: four-on-the-floor, rolling bass, resonant acid line, echoing stabs
-    techno: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0, bassVol: 0.75, bpmAbs: [126, 132], lead: [0.2, 0.3], drums: "techno", piano: 0, pad: "darkstab", acid: true, swing: 0, arpMul: 1.1 }
+    techno: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0, bassVol: 0.75, bpmAbs: [126, 132], lead: [0.2, 0.3], drums: "techno", piano: 0, pad: "darkstab", acid: true, swing: 0, arpMul: 1.1 },
+    // melodic techno: rolling bass, wide pads, minor arpeggio, slow lead
+    melodic: { grooves: [11, 11, 4], supersaw: 0.6, stabs: 0, leadEarly: 0.9, bassVol: 0.7, bpmAbs: [120, 126], lead: [0.45, 0.6], drums: "techno", piano: 0, pad: "saw", swing: 0, arpMul: 1 },
+    // industrial: harder and faster, distorted rolling bass, acid line, dark stabs
+    industrial: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0, bassVol: 0.8, bpmAbs: [130, 136], lead: [0.2, 0.3], drums: "techno", piano: 0, pad: "darkstab", dist: true, acid: true, swing: 0, arpMul: 0.9 },
+    // minimal: stripped back and hypnotic
+    // cold, tense thriller score: steady pulse bass, cold arp, slow pads, heartbeat kick, lonely piano
+    robot: { grooves: [12], supersaw: 0, stabs: 0, leadEarly: 0.35, bassVol: 0.55, bpmAbs: [96, 108], lead: [0.25, 0.4], drums: "robot", piano: 0.6, pad: "tri", swing: 0, arpMul: 1.1 },
+    minimal: { grooves: [11], supersaw: 0, stabs: 0, leadEarly: 0.2, bassVol: 0.7, bpmAbs: [123, 127], lead: [0.25, 0.35], drums: "techno", piano: 0, pad: "darkstab", acid: true, swing: 0.03, arpMul: 0.6 }
   };
+  // Rotation is techno-only for now: chill styles (drive, noir, dream, calm, hop, vapor, musicbox, choir)
+  // are still defined above; add their names back to a skin's `flavors` list to bring them back.
   var MOODS = {
-    phthalo: { flavors: ["noir", "noir", "dream", "calm", "calm", "hop", "vapor", "musicbox", "choir", "drive", "electro", "techno"], modes: ["minor", "dorian", "minor"], bpm: [72, 84], keys: [45, 47, 48, 50, 52], pad: [900, 1400], arp: [1500, 2400], arpWaves: ["square", "triangle", "sawtooth"], leadWaves: ["triangle", "sine"],
+    phthalo: { flavors: ["robot", "robot", "melodic", "melodic", "minimal", "minimal", "techno", "electro", "industrial"], modes: ["minor", "dorian", "minor"], bpm: [72, 84], keys: [45, 47, 48, 50, 52], pad: [900, 1400], arp: [1500, 2400], arpWaves: ["square", "triangle", "sawtooth"], leadWaves: ["triangle", "sine"],
       words: [["Neon", "Phthalo", "Midnight", "Glass", "Velvet", "Subway", "Rooftop", "Emerald", "Afterglow", "Jade", "Chrome", "Low-light", "Holo", "Mint", "Ivy", "Hologram"], ["Drive", "Signal", "Grid", "Avenue", "Afterhours", "Overpass", "Transit", "Circuit", "District", "Arcade", "Monorail", "Terrace", "Garden", "Frequency", "Boulevard", "Tunnel", "Rave", "Afterparty", "Megablock"]] },
-    knight: { flavors: ["noir", "noir", "noir", "choir", "choir", "calm", "dream", "drive", "hop", "techno", "techno", "electro", "electro"], modes: ["minor", "minor", "dorian"], bpm: [74, 86], keys: [45, 46, 48, 50], pad: [900, 1400], arp: [1800, 2800], arpWaves: ["sawtooth", "square"], leadWaves: ["sawtooth", "square", "triangle"], fb: 0.46, tone: 2600, bassCut: 420,
+    knight: { flavors: ["robot", "robot", "industrial", "industrial", "techno", "techno", "melodic", "electro", "minimal"], modes: ["minor", "minor", "dorian"], bpm: [74, 86], keys: [45, 46, 48, 50], pad: [900, 1400], arp: [1800, 2800], arpWaves: ["sawtooth", "square"], leadWaves: ["sawtooth", "square", "triangle"], fb: 0.46, tone: 2600, bassCut: 420,
       words: [["Crimson", "Iron", "Shadow", "Midnight", "Gargoyle", "Steel", "Harbor", "Cold", "Silent", "Obsidian", "Ashen", "Scarlet", "Rain-slick", "Last", "Hollow"], ["Watch", "Patrol", "Signal", "Alley", "Vigil", "Lantern", "Skyline", "Rooftops", "Precinct", "Searchlight", "Pursuit", "Bridge", "Cathedral", "Oath", "Night Shift", "Ledger", "Overdrive", "Undercity", "Warehouse"]] },
-    golden: { flavors: ["dream", "dream", "calm", "calm", "vapor", "musicbox", "hop", "choir", "electro"], modes: ["major", "major", "lydian"], bpm: [76, 88], keys: [48, 50, 52, 53, 55], pad: [1400, 2000], arp: [2400, 3400], arpWaves: ["triangle", "square"], leadWaves: ["triangle", "sine"], arpUp: true, swing: 0.08,
+    golden: { flavors: ["robot", "robot", "melodic", "melodic", "melodic", "electro", "electro", "minimal", "techno", "industrial"], modes: ["major", "major", "lydian"], bpm: [76, 88], keys: [48, 50, 52, 53, 55], pad: [1400, 2000], arp: [2400, 3400], arpWaves: ["triangle", "square"], leadWaves: ["triangle", "sine"], arpUp: true, swing: 0.08,
       words: [["Lavender", "Golden", "Starlight", "Candy", "Moonlit", "Sugar", "Cloud", "Purple", "Sunset", "Bunny", "Lilac", "Glitter", "Ribbon", "Peach", "Velvet", "Cotton"], ["Hour", "Dream", "Parade", "Bloom", "Glow", "Letters", "Stage", "Confetti", "Daydream", "Encore", "Postcard", "Carousel", "Lightstick", "Promise", "Diary", "Balloon"]] },
-    crt: { flavors: ["noir", "noir", "calm", "dream", "hop", "musicbox", "techno", "techno", "electro"], modes: ["minor", "dorian"], bpm: [76, 88], keys: [45, 48, 50], pad: [800, 1100], arp: [2000, 2800], arpWaves: ["pulse"], leadWaves: ["square", "pulse"], arpDensity: 0.82,
+    crt: { flavors: ["robot", "robot", "techno", "techno", "minimal", "minimal", "industrial", "electro"], modes: ["minor", "dorian"], bpm: [76, 88], keys: [45, 48, 50], pad: [800, 1100], arp: [2000, 2800], arpWaves: ["pulse"], leadWaves: ["square", "pulse"], arpDensity: 0.82,
       words: [["8-bit", "Phosphor", "Cathode", "Pixel", "Scanline", "Terminal", "Bitwise", "Raster", "Amber", "Floppy", "Modem", "Sprite", "Vector", "Sector", "Overflow", "Null"], ["Boot", "Loop", "Dreams", "Prompt", "Cursor", "Kernel", "Daemon", "Cache", "Uplink", "Checksum", "Level 2", "High Score", "Interrupt", "Handshake", "Buffer", "Sector", "Firewall", "Breach", "Netrun"]] }
   };
   STYLES = MOODS;
@@ -253,6 +265,7 @@
     lastFlavor = flName;
     var fl = FLAVORS[flName];
     var mode = pick(m.modes); if (!PROGS[mode]) mode = "minor";
+    if (/^(robot|techno|industrial|minimal)$/.test(flName) && (mode === "major" || mode === "lydian")) mode = "minor";   // dark styles stay dark, even on Golden
     var key = pick(m.keys);
     var pa = pick(PROGS[mode]), pb = pick(PROGS[mode]);
     for (var guard = 0; pb === pa && guard < 5; guard++) pb = pick(PROGS[mode]);
@@ -445,6 +458,9 @@
         else if (st % 2 === 1 && chance(0.6)) hat(t, 0.35);
         if (st === 12 && bar % 2 === 1) { snare(t, 0.8); snare(t + 0.014, 0.4); }
         if ((st === 7 || st === 15) && chance(0.35)) rim(t, 0.5);
+      } else if (d === "robot") {
+        if (st % 4 === 2 && chance(0.7)) rim(t, 0.35);
+        if (st === 12 && bar % 4 === 3) snare(t, 0.45);
       } else if (d === "chip") {
         if (st % 2 === 0) hat(t, st % 4 === 0 ? 0.7 : 0.45);
         if (st === 4 || st === 12) chipSnare(t, 1);
@@ -459,6 +475,7 @@
         case "vapor": return st === 0 || (st === 9 && chance(0.5));
         case "chip": return st === 0 || st === 8;
         case "electro": return st % 4 === 0;
+        case "robot": return st === 0 || (st === 3 && chance(0.6));   // heartbeat
         case "techno": return st % 4 === 0;
         default: return st === 0 || (st === 11 && chance(0.4));
       }
