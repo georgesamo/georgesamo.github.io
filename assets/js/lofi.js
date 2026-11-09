@@ -1514,7 +1514,7 @@
   var SONG_QUEUE = {
     mood: "Sidekiq Rush · a hybrid-orchestral rush, three drops", bpm: 132, bars: 112,
     part: function (bar) { return DQ.sec(bar).id; },
-    level: { phthalo: 0, knight: 0, golden: 0 },
+    level: { phthalo: -1.9, knight: -2.6, golden: -1.4 },
     init: function (o, t) { o.sub = makeSub(o, t); o.sky = makeSky(o, t, 600); },
     play: function (o, t, st, bar) {
       var sec = DQ.sec(bar), root = DQ.roots[Math.floor(bar / 2) % 4], tri = DQ.chords[root], up = tri.map(function (m) { return m + 12; }), six = o.six, hush = sec.gap && st >= 8;
