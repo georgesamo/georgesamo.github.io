@@ -26,9 +26,10 @@
 
 /* preview: Sidekiq lanes */
 .pv-sr { position: absolute; inset: 18px 18px; display: grid; grid-template-rows: repeat(3, 1fr); gap: 8px; }
-.pv-sr__lane { position: relative; border-radius: 8px; border: 1px dashed var(--line-strong); overflow: hidden; }
+.pv-sr__lane { position: relative; border-radius: 8px; border: 1px dashed var(--line-strong); overflow: hidden; container-type: inline-size; }
 .pv-sr__lane::before { content: attr(data-q); position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font: 11px var(--mono); color: var(--muted); }
-.pv-sr__lane i { position: absolute; top: 5px; bottom: 5px; width: 54px; border-radius: 5px; left: -60px; animation: pvJob 3.2s linear infinite; }
+/* the bars travel on the compositor: animating `left` relaid out all seven of them every frame */
+.pv-sr__lane i { position: absolute; top: 5px; bottom: 5px; left: 0; width: 54px; border-radius: 5px; animation: pvJob 3.2s linear infinite; }
 .pv-sr__lane:nth-child(1) i { background: var(--sr-critical); }
 .pv-sr__lane:nth-child(2) i { background: var(--sr-default); }
 .pv-sr__lane:nth-child(3) i { background: var(--sr-mailers); }
@@ -36,12 +37,25 @@
 .pv-sr__lane i:nth-child(3) { animation-delay: -2.2s; }
 .pv-sr__lane:nth-child(2) i { animation-duration: 4.1s; }
 .pv-sr__lane:nth-child(3) i { animation-duration: 2.6s; }
-@keyframes pvJob { from { left: -60px; } to { left: 100%; } }
+@keyframes pvJob { from { transform: translateX(-60px); } to { transform: translateX(calc(100cqw + 6px)); } }
 
 /* preview: gem grid */
 .pv-gm { position: absolute; inset: 0; display: grid; place-content: center; grid-template-columns: repeat(7, 34px); gap: 6px; }
 .pv-gm .gm__cell { width: 34px; height: 34px; animation: pvGem 4s var(--ease) infinite; animation-delay: calc(var(--d) * 0.12s); }
+/* 21 of these bob at once; a per-gem drop-shadow filter would re-run a blur pass on each one every
+   frame, so the decorative copies trade it for a flat shade (the real board keeps its shadow) */
+.pv-gm .gm__gem i { filter: none; }
 @keyframes pvGem { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(-5px) scale(1.08); } }
+
+/* While a game is open the window covers the viewport, so nothing in the page behind it can be seen.
+   The previews are the only things still animating there: seven lane bars and twenty-one gems, each
+   costing style and paint on every frame of a game nobody can look away from. Drop the subtrees out
+   of rendering (content-visibility) and stop their clocks (play-state) for browsers without it.
+   Measured on a 20x-throttled phone: Gem Match 15.6 -> 58.5 fps, Schema Stack 16.1 -> 59.3 fps. */
+:root.is-arcade .arcade-card__preview { content-visibility: hidden; }
+:root.is-arcade .arcade-card__preview * { animation-play-state: paused; }
+/* same for the header's "online" dot: its pulse animates box-shadow, a repaint on every frame */
+:root.is-arcade .online i { animation-play-state: paused; }
 
 /* ---------- the window ---------- */
 .arcade { position: fixed; inset: 0; z-index: 130; display: grid; place-items: center; padding: 16px; }
@@ -64,11 +78,16 @@
 .arcade__hud b { color: var(--text); font-weight: 500; }
 .arcade__hud b.low { color: var(--ruby-red); }
 .arcade__x { border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 1px 8px; font: 11px var(--mono); color: var(--muted); cursor: pointer; }
-.arcade__stage { position: relative; flex: 1; min-height: 0; padding: 16px; outline: none; overflow: hidden; }
+/* The stage is the coordinate system every game sizes itself against. It is a size container so a
+   board can be laid out in cq units: vh/vw measure the browser window, which is the wrong box once
+   the game lives inside a 1000x740 panel, and was why boards ran off the bottom of a phone. */
+.arcade__stage { position: relative; flex: 1; min-height: 0; padding: 16px; outline: none; overflow: hidden; container-type: size; container-name: stage; }
 .arcade__foot { padding: 10px 16px; border-top: 1px solid var(--line); background: var(--bg-elev); font: 12px/1.6 var(--mono); color: var(--muted); }
 .arcade__foot b { color: var(--text-2); font-weight: 500; }
 
-.arcade__overlay { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: 16px; background: color-mix(in srgb, var(--bg) 70%, transparent); backdrop-filter: blur(5px); animation: fade 0.3s both; }
+/* a deeper flat tint instead of backdrop-filter: blur(), for the reason given at .arcade__backdrop;
+   the card animates in over it and a blur would be recomputed on each of those frames */
+.arcade__overlay { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; padding: 16px; background: color-mix(in srgb, var(--bg) 84%, transparent); animation: fade 0.3s both; }
 .arcade__card { width: min(520px, 100%); max-height: 100%; overflow: auto; padding: 24px 26px; border-radius: 16px; border: 1px solid var(--line-strong); background: var(--bg-elev); box-shadow: var(--shadow); animation: termIn 0.4s var(--ease) both; }
 .arcade__card h3 { margin: 6px 0 10px; font: 800 30px/1.1 var(--sans); letter-spacing: -0.03em; }
 .arcade__card p { margin: 0 0 12px; color: var(--text-2); font-size: 14.5px; }
@@ -116,7 +135,8 @@
 
 .sr__mem { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; margin-top: 10px; font: 11px var(--mono); color: var(--muted); }
 .sr__bar { height: 8px; border-radius: 99px; background: var(--bg-soft); overflow: hidden; border: 1px solid var(--line); }
-.sr__bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--gold)); transition: width 0.2s linear; }
+/* scaled, not resized: a width transition relaid out the inbox ten times a second */
+.sr__bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); transform: scaleX(0); transform-origin: left center; transition: transform 0.2s linear; }
 .sr__bar.is-hot i { background: linear-gradient(90deg, var(--gold), var(--ruby-red)); animation: hot 0.6s ease-in-out infinite alternate; }
 @keyframes hot { to { filter: brightness(1.35); } }
 
@@ -135,10 +155,13 @@
 .sr__lane-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font: 12.5px var(--mono); color: var(--text-2); }
 .sr__lane-head b { color: var(--c); font-weight: 500; }
 .sr__lane-cap { color: var(--muted); font-size: 11px; }
-.sr__hire { margin-left: auto; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line-strong); background: transparent; color: var(--accent); font: 11px var(--mono); cursor: pointer; }
+.sr__hire { position: relative; margin-left: auto; padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line-strong); background: transparent; color: var(--accent); font: 11px var(--mono); cursor: pointer; }
 .sr__hire:disabled { opacity: 0.35; cursor: default; }
-.sr__hire:not(:disabled) { border-color: var(--accent); animation: hirePulse 1.2s ease-in-out infinite alternate; }
-@keyframes hirePulse { to { box-shadow: 0 0 12px -2px var(--accent); } }
+/* the glow is drawn once and faded with opacity (compositor) instead of animating box-shadow,
+   which repainted up to three buttons every frame for as long as a token was unspent */
+.sr__hire:not(:disabled) { border-color: var(--accent); }
+.sr__hire:not(:disabled)::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; box-shadow: 0 0 12px -2px var(--accent); opacity: 0; pointer-events: none; animation: hirePulse 1.2s ease-in-out infinite alternate; }
+@keyframes hirePulse { to { opacity: 1; } }
 .sr__workers { display: grid; gap: 5px; }
 .sr__worker { display: grid; gap: 4px; padding: 6px 8px; border-radius: 7px; background: var(--bg-soft); font: 10.5px var(--mono); color: var(--muted); }
 .sr__worker.is-busy { color: var(--text-2); }
@@ -168,7 +191,8 @@
 
 /* ---------- Gem Match ---------- */
 .gm { display: grid; place-items: center; height: 100%; }
-.gm__board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; width: min(100%, calc(88vh - 258px), 560px); aspect-ratio: 1; padding: 8px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-elev); touch-action: none; user-select: none; }
+/* square, as large as the stage allows once the booster row (30px + 10px gap) is set aside */
+.gm__board { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; width: min(100%, 100cqh - 40px, 560px); aspect-ratio: 1; padding: 8px; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-elev); touch-action: none; user-select: none; }
 .gm__cell {
   --g: var(--accent);
   position: relative; display: grid; place-items: center; padding: 0; border: 0; border-radius: 9px; cursor: pointer;
@@ -184,7 +208,7 @@
     linear-gradient(155deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.08) 38%, rgba(0,0,0,0.0) 55%, rgba(0,0,0,0.28) 100%), var(--g);
   filter: drop-shadow(0 3px 6px color-mix(in srgb, var(--g) 45%, transparent));
 }
-.gm__gem em { position: relative; font: 700 clamp(8px, 1.4vw, 10.5px) var(--mono); font-style: normal; color: rgba(255,255,255,0.92); text-shadow: 0 1px 2px rgba(0,0,0,0.45); letter-spacing: 0.02em; }
+.gm__gem em { position: relative; font: 700 clamp(7px, min(100cqw, 100cqh - 40px) / 45, 10.5px) var(--mono); font-style: normal; color: rgba(255,255,255,0.92); text-shadow: 0 1px 2px rgba(0,0,0,0.45); letter-spacing: 0.02em; }
 .gm--rb { --g: #ff4d6d; } .gm--rb .gm__gem i { clip-path: polygon(22% 8%, 78% 8%, 100% 36%, 50% 96%, 0 36%); }
 .gm--pg { --g: #4f9bff; } .gm--pg .gm__gem i { clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0 50%); }
 .gm--sk { --g: #e3b44f; } .gm--sk .gm__gem i { border-radius: 50%; }
@@ -284,12 +308,14 @@
   .sr__lane-head { font-size: 11.5px; }
   .sr__lane-cap { display: none; }
   .sr__hire { margin-left: 0; }
-  .gm__board { width: min(100%, calc(100vh - 220px)); gap: 3px; padding: 5px; }
+  .gm__board { gap: 3px; padding: 5px; }
   .gm__legend { grid-template-columns: repeat(2, 34px minmax(0, 1fr)); }
 }
 /* Gem Match boosters */
 .gm { grid-template-rows: auto auto; align-content: center; gap: 10px; }
 .gm__boost { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 8px; font: 12px var(--mono); }
+/* on a narrow stage the booster row wraps onto two lines (66px) */
+@container stage (max-width: 520px) { .gm__board { width: min(100%, 100cqh - 76px, 560px); } }
 .gm__meter { position: relative; width: 110px; height: 8px; border-radius: 99px; background: var(--bg-soft); border: 1px solid var(--line); overflow: hidden; }
 .gm__meter i { position: absolute; inset: 0; background: linear-gradient(90deg, var(--accent), var(--gold)); transform: scaleX(0); transform-origin: left center; transition: transform 0.35s var(--ease); }
 .gm__charges { min-width: 1.6em; padding: 1px 6px; border-radius: 6px; background: var(--gold-soft); color: var(--gold); text-align: center; }

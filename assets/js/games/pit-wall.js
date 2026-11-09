@@ -477,10 +477,19 @@
           else if (!c.finished && lead.lap - c.lap >= 1 && progress(c) < progress(lead)) gap = "+" + (lead.lap - c.lap) + " lap";
           else gap = fmtGap(Math.max(0, (c.finished ? c.finishT : c.lapStart) - (lead.finished ? lead.finishT : lead.lapStart)));
           var pit = c.pitLossNow && progress(c) < PIT_U + 0.03 && !c.finished;
-          var html = "<b>" + (k + 1) + '</b><i style="background:' + c.color + '"></i><span class="pw__code">' + c.code + '</span><span class="pw__gap">' + (pit ? "<em>PIT</em>" : gap) + '</span><span class="pw__ty pw__ty--' + c.tyre + '">' + c.tyre + '</span><span class="pw__age">' + c.age + "</span>";
+          // each row is built once; after that only the fields that changed are written (usually just
+          // the gap), instead of re-parsing all six cells of all eleven rows four times a second
           var li = rows[c.code];
-          if (!li) { li = rows[c.code] = document.createElement("li"); tower.appendChild(li); }
-          if (li.__h !== html) { li.innerHTML = html; li.__h = html; }
+          if (!li) {
+            li = rows[c.code] = document.createElement("li");
+            li.innerHTML = '<b></b><i style="background:' + c.color + '"></i><span class="pw__code">' + c.code + '</span><span class="pw__gap"></span><span class="pw__ty"></span><span class="pw__age"></span>';
+            li.__f = li.children; tower.appendChild(li);
+          }
+          var f = li.__f, gapHtml = pit ? "<em>PIT</em>" : gap;
+          if (li.__pos !== k) { li.__pos = k; f[0].textContent = k + 1; }
+          if (li.__gap !== gapHtml) { li.__gap = gapHtml; f[3].innerHTML = gapHtml; }
+          if (li.__ty !== c.tyre) { li.__ty = c.tyre; f[4].className = "pw__ty pw__ty--" + c.tyre; f[4].textContent = c.tyre; }
+          if (li.__age !== c.age) { li.__age = c.age; f[5].textContent = c.age; }
           var cls = (c.i === 0 ? "is-me" : "") + (c.out ? " is-out" : "") + (k % 2 ? "" : " is-odd");
           if (li.className !== cls) li.className = cls;
           if (!rowH && li.offsetHeight) rowH = li.offsetHeight + 2;

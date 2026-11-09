@@ -247,7 +247,7 @@
         if (S.uiT < 0.1) return;
         S.uiT = 0;
         var mp = Math.min(100, Math.round(S.memory));
-        if (memPct.__v !== mp) { memPct.__v = mp; memEl.style.width = mp + "%"; memPct.textContent = mp + "%"; memEl.parentElement.classList.toggle("is-hot", S.memory > 60); }
+        if (memPct.__v !== mp) { memPct.__v = mp; memEl.style.transform = "scaleX(" + mp / 100 + ")"; memPct.textContent = mp + "%"; memEl.parentElement.classList.toggle("is-hot", S.memory > 60); }
         S.history = S.history.filter(function (x) { return S.t - x < 10; });
         var fx = Object.keys(S.active).filter(function (k) { return S.active[k] > S.t; }).map(function (k) { return '<span class="sr__fx">' + POWERS[k].icon + " " + Math.ceil(S.active[k] - S.t) + "s</span>"; }).join("");
         api.hud('<span>score <b>' + S.score + '</b></span><span>jobs <b>' + S.done + '</b></span><span class="hide-sm">' + (S.history.length / Math.min(10, Math.max(1, S.t))).toFixed(1) + ' jobs/s</span><span>tokens <b>' + S.tokens + "</b></span>" + fx);

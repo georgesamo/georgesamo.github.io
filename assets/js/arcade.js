@@ -100,7 +100,9 @@
         var o = stage.querySelector(".arcade__overlay");
         if (!o) { o = document.createElement("div"); o.className = "arcade__overlay"; stage.appendChild(o); }
         o.innerHTML = '<div class="arcade__card">' + html + "</div>";
-        var btn = o.querySelector("button"); if (btn) setTimeout(function () { btn.focus(); }, 30);
+        // focus without scrolling: on a short screen the card scrolls, and a plain focus() jumped it to
+        // the button at the bottom, so the game's title and rules opened out of view
+        var btn = o.querySelector("button"); if (btn) setTimeout(function () { btn.focus({ preventScroll: true }); }, 30);
         return o;
       },
       clearOverlay: function () { var o = stage.querySelector(".arcade__overlay"); if (o) o.remove(); },
@@ -124,6 +126,9 @@
     lastFocus = document.activeElement;
     modal.hidden = false;
     document.documentElement.style.overflow = "hidden";
+    // the window covers the viewport, so the page behind it is only burning frames: is-arcade
+    // lets the CSS drop the card previews out of rendering while a game runs
+    document.documentElement.classList.add("is-arcade");
     modal.querySelector("#arcade-title").textContent = games[id].title + (opts && opts.mode && opts.mode !== "free" ? " · " + opts.mode : "");
     modal.querySelector("[data-hud]").innerHTML = "";
     modal.querySelector("[data-foot]").innerHTML = "";
@@ -157,6 +162,7 @@
     showBests();
     modal.hidden = true;
     document.documentElement.style.overflow = "";
+    document.documentElement.classList.remove("is-arcade");
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 

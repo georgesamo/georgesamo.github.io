@@ -6,8 +6,15 @@
 :root[data-theme="light"] { --ms-users: #127a4c; --ms-orders: #a06d00; --ms-invoices: #6d3fc4; --ms-rollback: #c8102e; }
 
 /* ---------- Schema Stack ---------- */
-.ms { display: grid; grid-template-columns: auto minmax(150px, 220px); gap: 18px; justify-content: center; align-items: start; padding: 10px; }
-.ms__board { display: grid; grid-template-columns: repeat(10, var(--msc, 24px)); grid-template-rows: repeat(18, var(--msc, 24px)); gap: 2px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--code-bg); box-shadow: inset 0 0 40px -20px var(--accent); }
+/* The board is sized from the stage, not the viewport: --msc is the largest cell that fits both the
+   width left over by the side panel and the full 18 rows of height. A board is 10 cells + 9 gaps +
+   padding + border wide (10c + 32) and 18 cells + 17 gaps + the same trim tall (18c + 48). */
+.ms { display: grid; grid-template-columns: auto minmax(150px, 220px); gap: 18px; justify-content: center; align-items: start; padding: 10px; height: 100%; }
+.ms__board {
+  --msc: max(9px, min(24px, (100cqw - 270px) / 10, (100cqh - 68px) / 18));
+  display: grid; grid-template-columns: repeat(10, var(--msc)); grid-template-rows: repeat(18, var(--msc));
+  gap: 2px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--code-bg); box-shadow: inset 0 0 40px -20px var(--accent);
+}
 .ms__board i, .ms__next i { border-radius: 4px; background: color-mix(in srgb, var(--line) 45%, transparent); }
 .ms__board i[class]:not([class=""]):not(.is-ghost), .ms__next i[class]:not([class=""]) { background: var(--c, var(--accent)); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.25), inset 0 2px 0 rgba(255, 255, 255, 0.18); }
 .ms .is-users, .ms-dot.is-users, .ms__tables .is-users i { --c: var(--ms-users); }
@@ -42,11 +49,38 @@
 .ms__pad [data-k="down"] { grid-column: 1 / 2; }
 .ms__pad [data-k="drop"] { grid-column: 2 / 4; }
 @media (hover: hover) and (pointer: fine) { .ms__pad { opacity: 0.6; } }
-@media (max-width: 640px) {
-  .ms { grid-template-columns: auto; justify-items: center; }
-  .ms__board { --msc: min(20px, calc((100vw - 80px) / 11)); }
-  .ms__side { grid-template-columns: 1fr 1fr; width: 100%; }
-  .ms__pad { grid-column: 1 / -1; }
+
+/* Two fallbacks off the desktop layout, both keyed to the stage rather than the browser window.
+   The D-pad is the only way to play on a touch screen, so every branch has to leave room for it. */
+
+/* Shared compact side strip. The aside reads label / preview / label / preview / label / list, so
+   hiding the three migration captions leaves six items that a two-row column flow pairs up: each
+   label lands directly above the thing it names. The explicit tracks are what let the pad below
+   span `1 / -1` — with an implicit grid there is no column to span to. */
+@container stage (max-width: 700px), stage ((max-height: 520px) and (min-width: 560px)) {
+  .ms__side { grid-auto-flow: column; grid-template-columns: auto auto minmax(0, 1fr); grid-template-rows: auto auto; align-items: center; gap: 2px 14px; font-size: 11px; }
+  .ms__mig { display: none; }                      /* the migration name is written on the block itself */
+  .ms__label { margin: 0; }
+  .ms__next { grid-template-columns: repeat(4, 13px); grid-template-rows: repeat(4, 13px); }
+  .ms__tables { gap: 2px; }
+}
+/* a narrow stage (phone held upright): board on top, the strip and the pad below it */
+@container stage (max-width: 700px) {
+  .ms { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; justify-items: center; align-items: center; gap: 8px; padding: 4px; }
+  /* what is left for the board after the strip (~76px) and the pad (~130px) below it */
+  .ms__board { --msc: max(9px, min(24px, (100cqw - 40px) / 10, (100cqh - 266px) / 18)); }
+  .ms__side { width: 100%; }
+  .ms__pad { grid-column: 1 / -1; grid-row: 3; margin-top: 2px; }
+}
+/* a short stage (phone on its side): the strip and the pad move beside the board instead, where
+   there is width to spare — stacked, the pad would be pushed off the bottom again */
+@container stage ((max-height: 520px) and (min-width: 560px)) {
+  .ms { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); align-items: center; gap: 10px; padding: 6px; }
+  .ms__board { --msc: max(9px, min(24px, (100cqw - 260px) / 10, (100cqh - 60px) / 18)); }
+  .ms__side { grid-template-columns: auto auto minmax(0, 1fr) auto; align-content: center; column-gap: 10px; }
+  .ms__tables li { white-space: nowrap; }
+  .ms__pad { grid-column: 4; grid-row: 1 / -1; align-self: center; width: 156px; margin-top: 0; }
+  .ms__pad button { height: 36px; }
 }
 /* card preview */
 .pv-ms { position: absolute; inset: 14px; display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(7, 1fr); gap: 3px; width: 190px; margin: auto; }
@@ -59,7 +93,11 @@
 /* ---------- Pit Wall ---------- */
 :root { --pw-S: #ff4d5e; --pw-M: #f2c14e; --pw-H: #e8ecef; --pw-I: #3ad08f; --pw-W: #4aa3f0; }
 :root[data-theme="light"] { --pw-S: #c8102e; --pw-M: #a06d00; --pw-H: #5c6773; --pw-I: #127a4c; --pw-W: #1d5fb0; }
-.pw { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr); grid-template-areas: "main tower" "ctrl ctrl"; gap: 12px; padding: 12px 14px 16px; }
+/* .pw fills the stage and the radio takes whatever height is left, so a short desktop window
+   shrinks the radio instead of clipping it. When even that can't fit (a phone: track, controls,
+   radio and an 11-row tower are ~900px), .pw scrolls. It's .pw that scrolls rather than the stage,
+   so the race-over overlay, a sibling on the stage, still covers exactly what is on screen. */
+.pw { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(220px, 1fr); grid-template-rows: auto 1fr; grid-template-areas: "main tower" "ctrl ctrl"; gap: 10px 12px; padding: 6px 8px 8px; height: 100%; overflow-y: auto; overscroll-behavior: contain; }
 .pw__main { grid-area: main; position: relative; min-width: 0; border: 1px solid var(--line); border-radius: 14px; background: radial-gradient(500px circle at 50% 40%, var(--accent-soft), transparent 70%), var(--code-bg); }
 .pw__track { display: block; width: 100%; height: auto; }
 .pw__kerb { fill: none; stroke: #e5383b; stroke-width: 19; stroke-linejoin: round; stroke-dasharray: 6 6; opacity: 0.45; }
@@ -85,6 +123,9 @@
 .pw__trackname { position: absolute; left: 10px; bottom: 6px; margin: 0; font: 11px var(--mono); color: var(--muted); pointer-events: none; }
 .pw__wx { position: absolute; left: 10px; right: 10px; top: 8px; display: flex; flex-wrap: wrap; gap: 6px 14px; font: 11.5px var(--mono); color: var(--text-2); pointer-events: none; }
 .pw__wx b { color: var(--text); }
+/* cars on a top straight run right under this line; a flat backing keeps it readable over them
+   (a flat colour, not a blur: the cars move every frame and a backdrop-filter would re-run with them) */
+.pw__wx > span, .pw__trackname { padding: 1px 5px; border-radius: 5px; background: color-mix(in srgb, var(--code-bg) 78%, transparent); }
 .pw__sc { padding: 0 6px; border-radius: 4px; background: #f2c14e; color: #1b1404; font-weight: 700; }
 .pw__fc { letter-spacing: 2px; }
 .pw__tower { grid-area: tower; list-style: none; margin: 0; padding: 6px; border: 1px solid var(--line); border-radius: 14px; background: var(--code-bg); font: 12.5px var(--mono); align-self: start; }
@@ -143,7 +184,7 @@
 .pw__ty--H { color: var(--pw-H); border-color: var(--pw-H); }
 .pw__ty--I { color: var(--pw-I); border-color: var(--pw-I); }
 .pw__ty--W { color: var(--pw-W); border-color: var(--pw-W); }
-.pw__ctrl { grid-area: ctrl; display: grid; gap: 10px; }
+.pw__ctrl { grid-area: ctrl; display: grid; grid-template-rows: auto auto 1fr; gap: 10px; }
 .pw__row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .pw__lbl { font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .pw__tyres, .pw__modes { display: inline-flex; gap: 6px; }
@@ -165,7 +206,7 @@
 .pw__modes button, .pw__speed { height: 32px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--text-2); font: 12px var(--mono); cursor: pointer; }
 .pw__modes button.is-on { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
 .pw__speed { margin-left: auto; }
-.pw__radio { height: 9.6em; overflow-y: auto; overscroll-behavior: contain; padding: 6px 8px; border-radius: 10px; background: var(--code-bg); border: 1px solid var(--line-strong); font: 13.5px/1.45 var(--mono); }
+.pw__radio { height: auto; min-height: 5.8em; max-height: 9.6em; overflow-y: auto; overscroll-behavior: contain; padding: 6px 8px; border-radius: 10px; background: var(--code-bg); border: 1px solid var(--line-strong); font: 13.5px/1.45 var(--mono); }
 .pw__msg { display: flex; gap: 8px; margin: 0; padding: 3px 4px; border-radius: 6px; color: var(--text); }
 .pw__msg span { flex: none; min-width: 2.6em; color: var(--muted); }
 .pw__msg:first-child { background: var(--bg-soft); font-weight: 600; animation: pwIn 0.35s ease; }
@@ -187,7 +228,9 @@
 .pw__start-tyres { display: flex; gap: 8px; justify-content: center; margin-top: 6px; }
 .pw .arcade__overlay ul.sr__legend .pw__ty { margin-right: 6px; }
 @media (max-width: 760px) {
-  .pw { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "ctrl" "tower"; }
+  .pw { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "main" "ctrl" "tower"; padding: 4px 2px 12px; }
+  .pw__ctrl { grid-template-rows: none; }
+  .pw__radio { height: 6.4em; min-height: 0; }
   .pw__tower { max-height: none; }
   .pw__tyre { width: 36px; height: 36px; }
   .pw__box { flex: 1 1 100%; }
