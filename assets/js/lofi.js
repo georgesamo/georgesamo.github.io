@@ -29,7 +29,7 @@
   "use strict";
 
   var AC = window.AudioContext || window.webkitAudioContext;
-  var MASTER = 0.55, LOOK = 0.12, TICK = 25;
+  var MASTER = 0.55, LOOK = 0.3, TICK = 25;   // LOOK: how far ahead notes are queued, in seconds
   var ctx = null, master = null, analyser = null, noiseBuf = null, verbBuf = null, verbBuf2 = null;
   var on = false, timer = null, cur = null, token = 0, btn = null, nextBtn = null, pinned = null;
 
@@ -46,7 +46,10 @@
 
   function ensureCtx() {
     if (ctx) return true;
-    try { ctx = new AC(); graph(); return true; } catch (e) { ctx = null; return false; }
+    // "playback" asks for the larger audio buffers meant for music: the default ("interactive") runs on
+    // ~10 ms of headroom, and any CPU spike past that is a dropout - heard as a click on the busy drum parts
+    try { ctx = new AC({ latencyHint: "playback" }); } catch (e) { try { ctx = new AC(); } catch (e2) { ctx = null; return false; } }
+    graph(); return true;
   }
   function graph() {   // master bus, analyser, noise and reverb buffers for the current ctx
     var comp = ctx.createDynamicsCompressor();
@@ -1987,7 +1990,9 @@
   function tick() {
     if (!ctx || !cur) return;
     var now = ctx.currentTime, horizon = now + (document.hidden ? 3 : LOOK);   // hidden tabs get timers less often
-    if (cur.next < now - 0.25) cur.next = now + 0.02;
+    // never schedule into the past: a note that starts late begins mid-envelope, and a short drum hit is
+    // left as a bare click. If the timer fell behind, slip the timeline a few ms instead.
+    if (cur.next < now + 0.005) cur.next = now + 0.03;
     while (cur && cur.next < horizon) {
       if (cur.s >= (cur.song.bars + cur.song.outroBars) * 16) {
         var o = cur; handoff(o, o.tgt ? o.tgt.si : o.loop ? o.si : nextIdx(o.theme, o.si), o.loop); continue;
