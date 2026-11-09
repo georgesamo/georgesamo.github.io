@@ -22,7 +22,7 @@
       L().catalog().forEach(function (th) {
         expect(th.songs).toHaveLength(10);
         var s = th.songs[5];
-        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(300);
+        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(310);
       });
     });
     it("is a full-length piece: about as long as all five songs together", function () {
@@ -36,10 +36,14 @@
     });
     it("marks where each chapter of the director's cut starts, in order", function () {
       var m = L().suite.marks("golden");
-      expect(m).toHaveLength(9);
+      expect(m).toHaveLength(10);
       expect(m[0].at).toBe(0);
       expect(m.every(function (x, i) { return !i || x.at > m[i - 1].at; })).toBe(true);
-      expect(m[0].name).toBe("cold open"); expect(m[8].name).toBe("dawn");
+      expect(m[0].name).toBe("cold open"); expect(m[9].name).toBe("dawn");
+    });
+    it("gives each palette's cut a chapter of its own", function () {
+      expect(["phthalo", "knight", "golden"].map(function (th) { return L().suite.marks(th)[4].name; })).toEqual(["the monologue", "the warehouse", "the dance break"]);
+      expect(L().suite.marks("phthalo")[3].name).toBe(L().suite.marks("knight")[3].name);
     });
     it("exposes player controls", function () {
       ["pause", "resume", "prev", "next", "seekTime", "skip", "setLoop", "volume"].forEach(function (k) { expect(typeof L()[k]).toBe("function"); });
