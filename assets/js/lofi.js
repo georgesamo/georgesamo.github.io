@@ -34,7 +34,7 @@
 
   var AC = window.AudioContext || window.webkitAudioContext;
   var MASTER = 0.55, LOOK = 0.3, TICK = 25;   // LOOK: how far ahead notes are queued, in seconds
-  var ctx = null, master = null, analyser = null, noiseBuf = null, verbBuf = null, verbBuf2 = null;
+  var ctx = null, master = null, mixOut = null, analyser = null, noiseBuf = null, verbBuf = null, verbBuf2 = null;
   var on = false, timer = null, cur = null, token = 0, btn = null, nextBtn = null, pinned = null;
 
   var THEMES = {
@@ -62,9 +62,12 @@
     // its make-up gain lifts them, which is how a peak used to reach full scale and clip
     var lim = ctx.createDynamicsCompressor();
     lim.threshold.value = -2; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.1;
-    master = ctx.createGain(); master.gain.value = 0;
-    master.connect(comp); comp.connect(lim); lim.connect(ctx.destination);
-    analyser = ctx.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.8; lim.connect(analyser);
+    // master: where the synth goes in, at a fixed level, so it always hits the compressor the same way.
+    // mixOut: volume, fades and pause, after the limiter - the pre-rendered songs join here, already mastered.
+    master = ctx.createGain(); master.gain.value = MASTER;
+    mixOut = ctx.createGain(); mixOut.gain.value = 0;
+    master.connect(comp); comp.connect(lim); lim.connect(mixOut); mixOut.connect(ctx.destination);
+    analyser = ctx.createAnalyser(); analyser.fftSize = 256; analyser.smoothingTimeConstant = 0.8; mixOut.connect(analyser);
     var sr = ctx.sampleRate, i, len = sr * 2, d;
     noiseBuf = ctx.createBuffer(1, len, sr); d = noiseBuf.getChannelData(0);
     for (i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
@@ -2113,9 +2116,122 @@
   }
   function lastOpen(th) { for (var i = TRACKS.length - 1; i > 4; i--) if (siOpen(th, i)) return i + 1; return 5; }
 
+  /* ---------- pre-rendered tracks ----------
+   * Live synthesis depends on the listener's machine: when the audio thread misses a deadline, short drum
+   * hits come out as clicks. So the five songs, the director's cut and the Sidekiq Rush bonus track play
+   * from files rendered offline by this same engine (SamukaLofi.render, via soundtrack-lab/publish-audio.sh).
+   * Each track is cut into 30-second MP3 pieces (assets/audio/<theme>-<n>-<k>.mp3, listed in index.json)
+   * that overlap by 0.1 s and crossfade there, so only the piece playing and the next one are in memory
+   * and a track starts as soon as its first piece arrives.
+   * The step clock keeps running exactly as it does for the synth - position, seeking, theme switches,
+   * "heard", outros and handoffs all work the same way - it just doesn't make the sound; the files do.
+   * If a file can't be loaded, the track falls back to the synth where it is. */
+  var FILE_TRACKS = [0, 1, 2, 3, 4, 5, 6];
+  var AUDIO_BASE = (function () { try { return new URL("../audio/", document.currentScript.src).href; } catch (e) { return null; } })();
+  var manifest = null, manifestP = null;
+  function loadManifest() {
+    if (!manifestP) {
+      manifestP = fetch(AUDIO_BASE + "index.json").then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then(function (m) { manifest = m; return m; });
+      manifestP.catch(function () { manifestP = null; });   // try again next time
+    }
+    return manifestP;
+  }
+  var pieces = {}, ready = {}, pieceOrder = [];   // by "theme-n-k": loading (promises) and decoded; the six most recent kept
+  function loadPiece(name, k) {
+    var key = name + "-" + k, i = pieceOrder.indexOf(key);
+    if (i >= 0) pieceOrder.splice(i, 1);
+    pieceOrder.push(key);
+    if (!pieces[key]) {
+      var p = pieces[key] = fetch(AUDIO_BASE + key + ".mp3")
+        .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
+        .then(function (ab) { return new Promise(function (res, rej) { var q = ctx.decodeAudioData(ab, res, rej); if (q && q.catch) q.catch(rej); }); })
+        .then(function (buf) { if (pieces[key] === p) ready[key] = buf; return buf; });
+      p.catch(function () { if (pieces[key] === p) delete pieces[key]; });
+    }
+    while (pieceOrder.length > 6) { var x = pieceOrder.shift(); delete pieces[x]; delete ready[x]; }
+    return pieces[key];
+  }
+  // where each step falls in a track's file: the render's own timing - its tempo map, and the outro's glide
+  // into the next track (a render has nothing unlocked, so that is the next of the five songs, or Ring Zero)
+  var fileStepCache = {};
+  function fileSteps(theme, si) {
+    var key = theme + ":" + si; if (fileStepCache[key]) return fileStepCache[key];
+    var P = THEMES[theme], song = TRACKS[si], N = song.outroBars, body = song.bars * 16, n = body + N * 16;
+    var base = 60 / (song.bpm * P.bpm) / 4, six1 = 60 / (TRACKS[si < 4 ? si + 1 : 0].bpm * P.bpm) / 4, six0 = base;
+    var at = new Float64Array(n + 1), dur = new Float64Array(n), t = 0.05;   // a render's first step is at 0.05 s
+    for (var s = 0; s < n; s++) {
+      var d;
+      if (s < body) { d = song.tempo ? 60 / (song.tempo(Math.floor(s / 16) + (s % 16) / 16) * P.bpm) / 4 : base; six0 = d; }
+      else { var f = (s - body + 1) / (N * 16); d = six0 + (six1 - six0) * f * f * (3 - 2 * f); }
+      at[s] = t; dur[s] = d; t += d;
+    }
+    at[n] = t;
+    return (fileStepCache[key] = { at: at, dur: dur });
+  }
+  function useFile(si, sp) { return FILE_TRACKS.indexOf(si) >= 0 && !!AUDIO_BASE && !!window.fetch && !(sp && sp.synth); }
+  function createFile(theme, si, fade, loop, sp) {
+    var P = THEMES[theme], song = TRACKS[si], t = ctx.currentTime, fs = fileSteps(theme, si), n = fs.dur.length, name = theme + "-" + (si + 1);
+    var o = { P: P, song: song, theme: theme, si: si, s: (sp && sp.s) || 0, six: fs.dur[0], dur: fs.dur[0], next: t + 0.08, nodes: [], loop: !!loop,
+              ref: song.ref || 440, bpm: Math.round(song.bpm * P.bpm), file: true, T0: null, started: {}, live: [], restart: false };
+    o.bus = gain(0.0001); o.bus.gain.linearRampToValueAtTime(1, t + fade); o.bus.connect(mixOut);
+    function fail() {   // no file: the synth takes over from this step
+      if (cur !== o || o.done) return;
+      cur = create(theme, si, 0.3, o.loop, { s: o.s, synth: true }); cur.next = Math.max(cur.next, o.next);
+      retire(o, 0.3); nowPlaying();
+    }
+    function count() { return manifest && manifest.tracks[name]; }
+    function pieceAt(ft) { var C = manifest.chunk; return Math.max(0, Math.min(count() - 1, Math.floor(ft / C))); }
+    loadManifest().then(function () { if (!count()) fail(); }, fail);
+    // the clock waits for this: the piece under the current step is decoded
+    o.isReady = function () {
+      if (!count()) return false;
+      var k = pieceAt(fs.at[Math.min(o.s, n - 1)]);
+      if (ready[name + "-" + k]) return true;
+      loadPiece(name, k).catch(fail); return false;
+    };
+    function startPiece(k, tt) {
+      var C = manifest.chunk, X = manifest.overlap, last = k === count() - 1;
+      var buf = ready[name + "-" + k], when = o.T0 + k * C, src = ctx.createBufferSource(), g = gain(1);
+      src.buffer = buf; src.connect(g); g.connect(o.bus);
+      if (when >= tt) {   // on time: fade in across the overlap (the previous piece fades out across the same 0.1 s)
+        if (k > 0) { g.gain.setValueAtTime(0, when); g.gain.linearRampToValueAtTime(1, when + X); }
+        src.start(when);
+      } else {            // joining mid-piece (a seek, a theme switch, a late download): a short fade in
+        g.gain.setValueAtTime(0, tt); g.gain.linearRampToValueAtTime(1, tt + 0.01);
+        src.start(tt, tt - when);
+      }
+      if (!last) { var e = o.T0 + (k + 1) * C; g.gain.setValueAtTime(1, Math.max(e, tt + 0.01)); g.gain.linearRampToValueAtTime(0, Math.max(e, tt + 0.01) + X); src.stop(Math.max(e, tt + 0.01) + X + 0.02); }
+      var entry = { src: src, g: g };
+      o.started[k] = true; o.live.push(entry); o.nodes.push(src);
+      src.onended = function () { var i = o.live.indexOf(entry); if (i >= 0) o.live.splice(i, 1); };
+    }
+    o.play = function (tt, s) {
+      if (Math.floor(s / 16) >= song.bars && !o.tgt) {   // the outro: decide where it hands over, as the synth does
+        o.tgt = { si: o.loop ? si : nextIdx(theme, si), six: fs.dur[n - 1], ref: o.ref, six0: fs.dur[0], ref0: o.ref };
+      }
+      o.six = o.dur = fs.dur[Math.min(s, n - 1)];
+      if (!count()) return;
+      if (o.T0 == null || o.restart) {   // (re)anchor the file to the clock at this step
+        o.live.forEach(function (p) { try { p.g.gain.cancelScheduledValues(tt); p.g.gain.setValueAtTime(p.g.gain.value, tt); p.g.gain.linearRampToValueAtTime(0, tt + 0.015); p.src.stop(tt + 0.03); } catch (e) {} });
+        o.live = []; o.started = {}; o.T0 = tt - fs.at[s]; o.restart = false;
+      }
+      // pieces due in the next second; at the last step, everything left (the tail rings on after the handoff)
+      var C = manifest.chunk, ft = tt - o.T0, k0 = pieceAt(ft), k1 = s >= n - 1 ? count() - 1 : pieceAt(ft + 1);
+      for (var k = k0; k <= k1; k++) if (!o.started[k] && ready[name + "-" + k]) startPiece(k, tt);
+      if (k0 + 1 < count() && ft > (k0 + 1) * C - 20) quiet(loadPiece(name, k0 + 1));   // the next piece, 20 s ahead
+      if (ft > fs.at[n] - 20) {   // and the next track's first piece, for the handoff
+        var nx = o.tgt ? o.tgt.si : o.loop ? si : nextIdx(theme, si);
+        if (FILE_TRACKS.indexOf(nx) >= 0 && manifest.tracks[theme + "-" + (nx + 1)]) quiet(loadPiece(theme + "-" + (nx + 1), 0));
+      }
+    };
+    return o;
+  }
+
   /* ---------- engine ---------- */
   // si 0–4 are the songs, si 5 the director's cut; sp = { s: step } starts somewhere other than the top
   function create(theme, si, fade, loop, sp) {
+    if (useFile(si, sp)) return createFile(theme, si, fade, loop, sp);
     var P = THEMES[theme], song = TRACKS[si], bpm = song.bpm * P.bpm, six = 60 / bpm / 4, t = ctx.currentTime;
     var o = { P: P, song: song, theme: theme, si: si, s: (sp && sp.s) || 0, six: six, dur: six, next: t + 0.08, nodes: [], loop: !!loop, ref: song.ref || 440, bpm: Math.round(bpm), cut: 800, duckDepth: song.duckDepth };
     o.bus = gain(0.0001); o.bus.gain.linearRampToValueAtTime(1, t + fade); if (!song.v2) o.bus.connect(master);
@@ -2195,6 +2311,7 @@
     // left as a bare click. If the timer fell behind, slip the timeline a few ms instead.
     if (cur.next < now + 0.005) cur.next = now + 0.03;
     while (cur && cur.next < horizon) {
+      if (cur.file && !cur.isReady()) { cur.next = Math.max(cur.next, now + 0.05); break; }   // hold the clock until the file is there
       if (cur.s >= (cur.song.bars + cur.song.outroBars) * 16) {
         var o = cur; handoff(o, o.tgt ? o.tgt.si : o.loop ? o.si : nextIdx(o.theme, o.si), o.loop); continue;
       }
@@ -2204,7 +2321,8 @@
   }
   function run() { if (on && !timer) timer = setInterval(tick, TICK); tick(); }
   function halt() { if (timer) clearInterval(timer); timer = null; }
-  function ramp(to, dur) { var t = ctx.currentTime, g = master.gain; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(to, t + dur); }
+  // volume and fades act after the limiter (levels are given as before, on the MASTER scale)
+  function ramp(to, dur) { var t = ctx.currentTime, g = mixOut.gain; to /= MASTER; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(to, t + dur); }
 
   /* ---------- time: where we are in seconds, and seeking by seconds ---------- */
   var stepCache = {};
@@ -2232,7 +2350,9 @@
       while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (a[mid] <= sec) lo = mid; else hi = mid - 1; }
       s = lo;
     } else s = Math.min(n - 1, Math.floor(sec / trackSecs(cur.theme, cur.si) * n));
-    unTarget(cur); cur.s = s; scheduleDyn(cur, Math.max(ctx.currentTime, cur.next)); emit();   // the level curve follows the jump
+    unTarget(cur); cur.s = s;
+    if (cur.file) cur.restart = true; else scheduleDyn(cur, Math.max(ctx.currentTime, cur.next));   // the file, or the level curve, follows the jump
+    emit();
   }
 
   function info() {
@@ -2247,10 +2367,10 @@
   function emit() { try { window.dispatchEvent(new CustomEvent("samuka:lofi", { detail: { on: on, paused: paused, track: on && cur ? info().name : null, info: on && cur ? info() : null } })); } catch (e) {} }
   function nowPlaying() {
     var i = info(); if (!i) return;
-    if (btn) btn.title = "♪ " + i.name + " · " + i.themeName + " · " + i.bpm + " bpm (synthesized live)";
+    if (btn) btn.title = "♪ " + i.name + " · " + i.themeName + " · " + i.bpm + " bpm" + (cur.file ? "" : " (synthesized live)");
     if (nextBtn) nextBtn.title = "Next: " + cur.P.titles[nextIdx(cur.theme, cur.si)];
     var ms = navigator.mediaSession;
-    try { if (ms && window.MediaMetadata) ms.metadata = new MediaMetadata({ title: i.name, artist: "Samuka's Arcade", album: i.themeName + " soundtrack · synthesized live" }); } catch (e) {}
+    try { if (ms && window.MediaMetadata) ms.metadata = new MediaMetadata({ title: i.name, artist: "Samuka's Arcade", album: i.themeName + " soundtrack" + (cur.file ? "" : " · synthesized live") }); } catch (e) {}
     emit();
   }
   function render() {
@@ -2341,13 +2461,13 @@
     rendering = true;
     rate = rate || 44100;
     var song = TRACKS[si], n = (song.bars + song.outroBars) * 16, secs = trackSecs(theme, si) + 5;
-    var live = { ctx: ctx, master: master, analyser: analyser, noiseBuf: noiseBuf, verbBuf: verbBuf, verbBuf2: verbBuf2 };
+    var live = { ctx: ctx, master: master, mixOut: mixOut, analyser: analyser, noiseBuf: noiseBuf, verbBuf: verbBuf, verbBuf2: verbBuf2 };
     var off = new OAC(2, Math.ceil(secs * rate), rate), CH = 4, o;
     function swapIn() { ctx = off; master = rs.master; analyser = rs.analyser; noiseBuf = rs.noiseBuf; verbBuf = rs.verbBuf; verbBuf2 = rs.verbBuf2; }
-    function swapOut() { ctx = live.ctx; master = live.master; analyser = live.analyser; noiseBuf = live.noiseBuf; verbBuf = live.verbBuf; verbBuf2 = live.verbBuf2; }
-    ctx = off; graph(); master.gain.value = MASTER;
+    function swapOut() { ctx = live.ctx; master = live.master; mixOut = live.mixOut; analyser = live.analyser; noiseBuf = live.noiseBuf; verbBuf = live.verbBuf; verbBuf2 = live.verbBuf2; }
+    ctx = off; graph(); mixOut.gain.value = 1;
     var rs = { master: master, analyser: analyser, noiseBuf: noiseBuf, verbBuf: verbBuf, verbBuf2: verbBuf2 };
-    o = create(theme, si, 0.02, false); o.next = 0.05;
+    o = create(theme, si, 0.02, false, { synth: true }); o.next = 0.05;
     function feed(until) { swapIn(); while (o.s < n && o.next < until) { o.play(o.next, o.s); o.s++; o.next += o.dur; } swapOut(); }
     feed(CH * 2);
     for (var t = CH; t < secs; t += CH) (function (at) { off.suspend(at).then(function () { feed(at + CH * 2); off.resume(); }); })(t);
@@ -2376,7 +2496,7 @@
     },
     // play a track in the normal rotation (it carries on to the next one when it ends)
     play: function (theme, si) { pinned = null; start(THEMES[theme] ? theme : themeId(), si | 0, false); },
-    seek: function (bar) { if (!cur) return; unTarget(cur); cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; scheduleDyn(cur, Math.max(ctx.currentTime, cur.next)); },
+    seek: function (bar) { if (!cur) return; unTarget(cur); cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; if (cur.file) cur.restart = true; else scheduleDyn(cur, Math.max(ctx.currentTime, cur.next)); },
     track: function () { return on ? info() : null; },
     analyser: function () { return on ? analyser : null; },
     theme: themeId,
