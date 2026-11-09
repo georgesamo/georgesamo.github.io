@@ -552,9 +552,13 @@
   }
   function rollHit(o, t, v) { if (o.P.style === "mrrobot") percT(o, t, "clap", v, 0); else snare(o, t, v); }
   // K-pop's chopped-vocal hook, played by a stab an octave up on the syncopations
+  // (one square per note, not a full stab: on top of a K-pop drop every oscillator counts - measured, the stab version crackled)
   function chop(o, t, st, notes) {
     if (o.P.style !== "kpop" || [3, 6, 11, 14].indexOf(st) < 0) return;
-    stb(o, t, notes.map(function (m) { return m + 12; }), 0.5, o.six * 0.6, st % 2 ? 0.5 : -0.5);
+    var dest = inlet(o, "stabIn", 2600), g = gain(0), l = o.six * 0.6, stop = t + l + 0.2;
+    env(g, t, 0.002, l + 0.08, 0.05);
+    notes.forEach(function (m) { osc("square", F(o, m + 12), t, stop).connect(g); });
+    g.connect(seat(o, dest, st % 2 ? 0.5 : -0.5));
   }
   // high sines swelling in and out, far away: atmosphere, not a part
   function glass(o, t, notes, len, vol) {
