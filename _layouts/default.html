@@ -2,7 +2,18 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    // iPhone / iPad: let the page reach the screen edges, and use the safe-area insets (home indicator, notch).
+    // Not on Android: Chrome and Firefox there can report the system button bar as a bottom inset while
+    // drawing the page above it anyway, which left an empty bar's height of black under the bottom menu.
+    (function () {
+      var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (!ios) return;
+      document.documentElement.classList.add("ios");
+      var m = document.querySelector('meta[name="viewport"]'); if (m) m.content += ", viewport-fit=cover";
+    })();
+  </script>
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#07110c">
   <script>

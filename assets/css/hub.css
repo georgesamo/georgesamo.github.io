@@ -234,6 +234,9 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 /* =========================================================
    Phones and small tablets: compact top bar + app-style bottom navigation
    ========================================================= */
+/* the safe-area insets, used only where they are real (iOS: the layout's head script adds .ios) */
+:root { --safe-t: 0px; --safe-r: 0px; --safe-b: 0px; --safe-l: 0px; }
+:root.ios { --safe-t: env(safe-area-inset-top, 0px); --safe-r: env(safe-area-inset-right, 0px); --safe-b: env(safe-area-inset-bottom, 0px); --safe-l: env(safe-area-inset-left, 0px); }
 .tabs__brand, .mnav, .msheet { display: none; }
 .acct-btn { white-space: nowrap; }
 @media (max-width: 860px) {
@@ -255,7 +258,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   /* the frame is pinned to the visible screen edges: no leftover area can show below the bar */
   body { position: fixed; inset: 0; display: flex; flex-direction: column; height: auto; overflow: hidden; background-attachment: scroll, scroll;
-    padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }   /* clear of the notch in landscape */
+    padding-left: var(--safe-l); padding-right: var(--safe-r); }   /* clear of the notch in landscape */
   .ide { flex: 1 1 auto; min-height: 0; height: auto; grid-template-rows: minmax(0, 1fr); }
   .editor {
     min-height: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -264,7 +267,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   .mnav {
     position: relative; z-index: 45; flex: none;
     display: grid; grid-template-columns: repeat(6, 1fr);
-    height: calc(var(--mnav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
+    height: calc(var(--mnav-h) + var(--safe-b)); padding-bottom: var(--safe-b);
     background: var(--chrome); border-top: 1px solid var(--line);
     touch-action: manipulation;
   }
@@ -276,7 +279,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   .msheet:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 46; }
   .msheet__backdrop { position: absolute; inset: 0; background: rgba(2, 4, 3, 0.55); animation: fade 0.2s both; }
   .msheet__card {
-    position: absolute; left: 10px; right: 10px; bottom: calc(var(--mnav-h) + 10px + env(safe-area-inset-bottom));
+    position: absolute; left: 10px; right: 10px; bottom: calc(var(--mnav-h) + 10px + var(--safe-b));
     display: grid; gap: 2px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--bg-elev); box-shadow: var(--shadow);
     animation: termIn 0.25s var(--ease) both;
   }
@@ -284,7 +287,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   .msheet__card a:hover, .msheet__card button:hover { background: var(--bg-hover); }
   .msheet__card small { margin-left: auto; color: var(--muted); }
   .msheet__card [hidden] { display: none; }
-  .ach-toast { bottom: calc(var(--mnav-h) + 14px + env(safe-area-inset-bottom)); right: 10px; left: 10px; }
+  .ach-toast { bottom: calc(var(--mnav-h) + 14px + var(--safe-b)); right: 10px; left: 10px; }
   .arcade__toast { top: auto; bottom: 16px; }   /* moved to the bottom on phones: "top" must go, or it stretches top to bottom */
   .lobby { padding-top: 28px; gap: 20px; }
   .lobby__title { font-size: clamp(48px, 15vw, 72px); }

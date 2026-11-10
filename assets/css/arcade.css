@@ -302,7 +302,7 @@
 /* ---------- small screens ---------- */
 @media (max-width: 760px) {
   .arcade-cards { grid-template-columns: minmax(0, 1fr); }
-  .arcade { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: var(--bg-elev); }   /* full screen, clear of the notch and home indicator */
+  .arcade { padding: var(--safe-t) var(--safe-r) var(--safe-b) var(--safe-l); background: var(--bg-elev); }   /* full screen, clear of the notch and home indicator */
   .arcade__win { width: 100%; height: 100%; border-radius: 0; }
   .arcade__stage { padding: 10px; }
   .arcade__foot { font-size: 11px; }
