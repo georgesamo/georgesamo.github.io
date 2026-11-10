@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # rebuild every 3 hours so /news/ stays fresh (the feeds are fetched at build time, not committed)
+  schedule:
+    - cron: "23 */3 * * *"
 
 permissions:
   contents: read
@@ -44,6 +47,24 @@ jobs:
           bundler-cache: true
       - id: pages
         uses: actions/configure-pages@v5
+      # the last run's news/videos, so stories and reviews pile up across runs (feeds only list the newest few)
+      - name: Restore the last run's feeds
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            _data/news.json
+            _data/videos.json
+          key: feeds-${{ github.run_id }}
+          restore-keys: feeds-
+      - name: Fetch news feeds and YouTube channels
+        run: bundle exec ruby scripts/fetch_news.rb || echo "::warning::feed fetch failed, building with the last copy"
+      - name: Keep the feeds for the next run
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            _data/news.json
+            _data/videos.json
+          key: feeds-${{ github.run_id }}
       - name: Build with Jekyll
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:

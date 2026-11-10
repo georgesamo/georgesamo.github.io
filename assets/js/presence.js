@@ -3,6 +3,8 @@
  * ghost cursors (Samuka's is a tiny bat, Nino's a bunny). Positions are sent
  * relative to the section under the pointer, so they line up across screen sizes.
  * Nothing is stored. Visitors can switch cursors off (account window / `cursors off`).
+ * Everyone joins the channel (so the count is real), but the count and the names are only
+ * shown to the team (Samuka and Nino); for everyone else the badge stays hidden.
  */
 (function () {
   "use strict";
@@ -28,6 +30,7 @@
     return id;
   }
   function client() { var A = window.SamukaAuth; return A && A.client && !A.mock() ? A.client() : null; }
+  function team() { var A = window.SamukaAuth; return !!(A && A.user() && (A.role() === "samuka" || A.role() === "nino")); }
   function identity() {
     var A = window.SamukaAuth, role = A && A.user() ? A.role() : "guest";
     return { id: tabId(), name: role === "guest" ? "guest" : A.publicName(), role: role };
@@ -42,6 +45,7 @@
       badge.setAttribute("role", "status");
       host.insertBefore(badge, host.firstChild);
     }
+    badge.hidden = !team();
     var names = Object.keys(peers).map(function (k) { return peers[k].name; });
     badge.title = count > 1 ? "Here now: you, " + names.join(", ") : "Just you right now";
     badge.innerHTML = '<i aria-hidden="true"></i>' + count + '<span class="online__txt"> online</span>';
@@ -149,7 +153,7 @@
     layer.hidden = !on;
     if (!on) Object.keys(ghosts).forEach(dropGhost);
   }
-  window.addEventListener("samuka:auth", function (e) { if (e.detail && "user" in e.detail) setTimeout(join, 50); });
+  window.addEventListener("samuka:auth", function (e) { paintBadge(); if (e.detail && "user" in e.detail) setTimeout(join, 50); });
   document.addEventListener("visibilitychange", function () {
     if (!channel) return;
     if (document.hidden) channel.untrack(); else channel.track({ name: me.name, role: me.role });
@@ -157,6 +161,7 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 
   window.SamukaPresence = {
+    visible: team,   // may this visitor see who's online? (team only)
     count: function () { return count; },
     peers: function () { return Object.keys(peers).map(function (k) { return peers[k]; }); },
     cursors: function (on) { if (on != null) setCursors(!!on); return cursorsOn(); }

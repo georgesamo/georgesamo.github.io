@@ -12,13 +12,14 @@
   function paintStats() {
     var A = window.SamukaAuth, Ach = window.SamukaAch, P = window.SamukaPresence;
     set("[data-hub-daily]", '<a href="#" data-daily>daily #' + dailyNo() + "</a>");
-    if (P) set("[data-hub-online]", String(P.count()));
+    var seeOnline = !!(P && P.visible && P.visible());
+    if (seeOnline) set("[data-hub-online]", String(P.count()));
     if (A && A.user() && Ach) {
       var n = Ach.list.filter(function (a) { return Ach.has(a.key); }).length;
       set("[data-hub-ach]", '<a href="/u/">' + n + " / " + Ach.list.length + "</a>");
     } else if (A && A.enabled) set("[data-hub-ach]", '<a href="#" data-acct-open>sign in</a>');
     var box = $("[data-hub-players]");
-    if (box && P) {
+    if (box && seeOnline) {
       var peers = P.peers(), me = A && A.user() ? A.publicName() : "guest";
       box.innerHTML = '<p class="hub-card__title">online now · ' + P.count() + "</p>" +
         '<ul class="players"><li><i></i><b>you</b> <span class="muted">(' + esc(me) + ")</span></li>" +

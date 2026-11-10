@@ -1,0 +1,66 @@
+# Feeds for /news/. scripts/fetch_news.rb reads this list and writes _data/news.json.
+# The site only shows the headline, a one-line teaser and a link back to the original story.
+#   section: tech | gaming | dev   (the filter tabs on /news/)
+#   limit:   how many recent stories to take from the feed (default 10)
+#   teaser:  false to show only the headline (for feeds whose description is a whole issue)
+- name: The Verge
+  section: tech
+  home: https://www.theverge.com
+  feed: https://www.theverge.com/rss/index.xml
+- name: Ars Technica
+  section: tech
+  home: https://arstechnica.com
+  feed: https://feeds.arstechnica.com/arstechnica/index
+- name: TechCrunch
+  section: tech
+  home: https://techcrunch.com
+  feed: https://techcrunch.com/feed/
+- name: Hacker News
+  section: tech
+  home: https://news.ycombinator.com
+  feed: https://hnrss.org/frontpage?points=300
+  limit: 12
+
+- name: Polygon
+  section: gaming
+  home: https://www.polygon.com
+  feed: https://www.polygon.com/rss/index.xml
+- name: Eurogamer
+  section: gaming
+  home: https://www.eurogamer.net
+  feed: https://www.eurogamer.net/feed
+- name: PC Gamer
+  section: gaming
+  home: https://www.pcgamer.com
+  feed: https://www.pcgamer.com/rss/
+- name: VGC
+  section: gaming
+  home: https://www.videogameschronicle.com
+  feed: https://www.videogameschronicle.com/feed/
+
+- name: Ruby on Rails
+  section: dev
+  home: https://rubyonrails.org/blog
+  feed: https://rubyonrails.org/feed.xml
+  limit: 5
+- name: GitHub Blog
+  section: dev
+  home: https://github.blog
+  feed: https://github.blog/feed/
+  limit: 6
+- name: Ruby Weekly
+  section: dev
+  home: https://rubyweekly.com
+  feed: https://rubyweekly.com/rss/
+  limit: 4
+  teaser: false
+- name: Ruby
+  section: dev
+  home: https://www.ruby-lang.org/en/news/
+  feed: https://www.ruby-lang.org/en/feeds/news.rss
+  limit: 4
+- name: Pragmatic Engineer
+  section: dev
+  home: https://newsletter.pragmaticengineer.com
+  feed: https://newsletter.pragmaticengineer.com/feed
+  limit: 5

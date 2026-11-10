@@ -1,0 +1,635 @@
+{
+  "generated_at": "2026-11-10T13:22:49Z",
+  "channels": [
+    {
+      "name": "PlayStation",
+      "kind": "trailers",
+      "url": "https://www.youtube.com/channel/UC-2Y8dQb0S6DtpxNgAKoJKA",
+      "ok": true,
+      "count": 10
+    },
+    {
+      "name": "Xbox",
+      "kind": "trailers",
+      "url": "https://www.youtube.com/channel/UCjBp_7RuDBUYbd1LegWEJ8g",
+      "ok": true,
+      "count": 10
+    },
+    {
+      "name": "Nintendo of America",
+      "kind": "trailers",
+      "url": "https://www.youtube.com/channel/UCGIY_O-8vW4rfX98KlMkvRg",
+      "ok": true,
+      "count": 10
+    },
+    {
+      "name": "The Game Awards",
+      "kind": "trailers",
+      "url": "https://www.youtube.com/channel/UCqDS7KWjAPKv-7ZSlro9OiQ",
+      "ok": true,
+      "count": 10
+    },
+    {
+      "name": "Ubisoft",
+      "kind": "trailers",
+      "url": "https://www.youtube.com/channel/UC0KU8F9jJqSLS11LRXvFWmg",
+      "ok": true,
+      "count": 4
+    },
+    {
+      "name": "Rockstar Games",
+      "kind": "trailers",
+      "url": "https://www.youtube.com/channel/UC6VcWc1rAoWdBCM0JxrRQ3A",
+      "ok": true,
+      "count": 4
+    },
+    {
+      "name": "IGN",
+      "kind": "reviews",
+      "url": "https://www.youtube.com/playlist?list=PLraFbwCoisJBTl0oXn8UoUam5HXWUZ7ES",
+      "ok": true,
+      "count": 10
+    },
+    {
+      "name": "GameSpot",
+      "kind": "both",
+      "url": "https://www.youtube.com/channel/UCbu2SsF-Or3Rsn3NxqODImw",
+      "ok": true,
+      "count": 1
+    },
+    {
+      "name": "GamesRadar",
+      "kind": "both",
+      "url": "https://www.youtube.com/channel/UCk2ipH2l8RvLG0dr-rsBiZw",
+      "ok": true,
+      "count": 2
+    },
+    {
+      "name": "Digital Foundry",
+      "kind": "reviews",
+      "url": "https://www.youtube.com/channel/UC9PBzalIcEQCsiIkq36PyUA",
+      "ok": true,
+      "count": 5
+    },
+    {
+      "name": "Skill Up",
+      "kind": "reviews",
+      "url": "https://www.youtube.com/channel/UCZ7AeeVbyslLM_8-nVy2B8Q",
+      "ok": true,
+      "count": 7
+    },
+    {
+      "name": "ACG",
+      "kind": "reviews",
+      "url": "https://www.youtube.com/channel/UCK9_x1DImhU-eolIay5rb2Q",
+      "ok": true,
+      "count": 9
+    }
+  ],
+  "videos": [
+    {
+      "id": "CC4UYBpF4Ns",
+      "title": "Project Motor Racing - World Endurance Pack Launch Trailer | PS5 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-10T13:00:22Z",
+      "views": 277
+    },
+    {
+      "id": "OuklilOy5hk",
+      "title": "Aeterna Lucis - Lore Trailer | PS5 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-10T11:00:04Z",
+      "views": 2947
+    },
+    {
+      "id": "JqtQk3Rt4CM",
+      "title": "Tanuki: Pon's Summer - Launch Trailer | PS5 & PS4 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-10T10:15:36Z",
+      "views": 8367
+    },
+    {
+      "id": "1_ZrPLCMMF8",
+      "title": "Warhammer Survivors - Launch Trailer | PS5 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-10T10:00:38Z",
+      "views": 9586
+    },
+    {
+      "id": "FAXCeRbTbL8",
+      "title": "TANUKI: Pon’s Summer - Official Launch Trailer",
+      "channel": "IGN",
+      "kind": "trailers",
+      "published": "2026-11-10T10:00:21Z",
+      "views": 11869
+    },
+    {
+      "id": "UwRcePRxAZg",
+      "title": "TANUKI: Pon's Summer | Launch Trailer",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-10T10:00:18Z",
+      "views": 3081
+    },
+    {
+      "id": "oXtLLrdzf6s",
+      "title": "15 Minutes of Attack on Titan 3 Gameplay",
+      "channel": "GameSpot",
+      "kind": "trailers",
+      "published": "2026-11-10T08:01:37Z",
+      "views": 13169
+    },
+    {
+      "id": "txx4A-rrkGI",
+      "title": "The First Descendant - Official Monet Character Trailer",
+      "channel": "IGN",
+      "kind": "trailers",
+      "published": "2026-11-10T08:00:39Z",
+      "views": 19343
+    },
+    {
+      "id": "0cC6yoOk2ZA",
+      "title": "The First Descendant - \"Meet Monet\" Character Trailer | PS5 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-10T08:00:17Z",
+      "views": 21376
+    },
+    {
+      "id": "bRqiEcU2JOE",
+      "title": "The First Descendant | Meet Monet | Character Trailer",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-10T08:00:03Z",
+      "views": 6407
+    },
+    {
+      "id": "LQnfddO2ICw",
+      "title": "Wuthering Waves Version 3.8 Official Trailer",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-10T01:04:23Z",
+      "views": 16645
+    },
+    {
+      "id": "EokVqBchhNY",
+      "title": "Dive In Wonderland - Official Trailer (2026)",
+      "channel": "IGN",
+      "kind": "trailers",
+      "published": "2026-11-09T22:15:50Z",
+      "views": 47721
+    },
+    {
+      "id": "Jy6sSgu5Btc",
+      "title": "Minecraft - Official Realms Pro Trailer",
+      "channel": "IGN",
+      "kind": "trailers",
+      "published": "2026-11-09T22:00:32Z",
+      "views": 40811
+    },
+    {
+      "id": "adD2SUJtKEw",
+      "title": "Atelier Karia: The Night Kingdom & the Guide of Memories – Story Trailer",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-09T21:33:47Z",
+      "views": 16833
+    },
+    {
+      "id": "pKZLP_GuwbM",
+      "title": "Hozy is OUT NOW on XBOX Series X|S",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-09T21:04:11Z",
+      "views": 17621
+    },
+    {
+      "id": "z8KKf4FS5mk",
+      "title": "The 9th Dragon - Official Announcement Trailer",
+      "channel": "IGN",
+      "kind": "trailers",
+      "published": "2026-11-09T21:00:01Z",
+      "views": 91472
+    },
+    {
+      "id": "MQ1vuKdr4ok",
+      "title": "Warhammer 40,000: Boltgun 2 - Official Accolades Trailer",
+      "channel": "IGN",
+      "kind": "trailers",
+      "published": "2026-11-09T20:00:07Z",
+      "views": 35531
+    },
+    {
+      "id": "HD75JDFaYvg",
+      "title": "Delta Force | Official Season \"Aurora\" Cinematic Trailer",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-09T19:57:19Z",
+      "views": 20500
+    },
+    {
+      "id": "j9zeok7DQjI",
+      "title": "The Spotter: Dig or Die - Official Date Announcement Trailer | XBOX Series X|S",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-09T19:51:50Z",
+      "views": 19137
+    },
+    {
+      "id": "o-nRCd6YHls",
+      "title": "For The King II - A Mother Below Free Update/Dust To Dust Paid Character Pack DLC | PS5 & PS4 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-09T19:00:21Z",
+      "views": 50484
+    },
+    {
+      "id": "FwGLp8z08RA",
+      "title": "Stormforge: Official Launch Trailer",
+      "channel": "IGN",
+      "kind": "trailers",
+      "published": "2026-11-09T19:00:21Z",
+      "views": 41206
+    },
+    {
+      "id": "MXPN5ICAUvk",
+      "title": "Apex Legends | Godzilla Event Trailer",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-09T17:36:58Z",
+      "views": 24643
+    },
+    {
+      "id": "FzDTyMjpsuM",
+      "title": "Kingdom of Night - Launch Trailer",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-09T17:25:26Z",
+      "views": 20260
+    },
+    {
+      "id": "TqgjMfhwEDg",
+      "title": "Hozy - Release Trailer | PS5 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-09T17:15:17Z",
+      "views": 48686
+    },
+    {
+      "id": "BFYX7V0WyGE",
+      "title": "Sea of Remnants - Dawnbreaker CBT Date Announcement | PS5 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-09T14:15:25Z",
+      "views": 71432
+    },
+    {
+      "id": "O-7XktV16H8",
+      "title": "Sea of Remnants | Dawnbreaker Closed Beta Test - Worldview & Lore Trailer",
+      "channel": "Xbox",
+      "kind": "trailers",
+      "published": "2026-11-09T14:00:33Z",
+      "views": 23244
+    },
+    {
+      "id": "lsm3cSU_S8E",
+      "title": "Atelier Karia: The Night Kingdom & the Guide of Memories - Story Trailer | PS5 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-09T14:00:10Z",
+      "views": 41999
+    },
+    {
+      "id": "0FIMFMxODIE",
+      "title": "Monster Hunter Outlanders (Austin's Review)",
+      "channel": "Skill Up",
+      "kind": "reviews",
+      "published": "2026-11-09T14:00:05Z",
+      "views": 146825
+    },
+    {
+      "id": "qOxyLmDUsFY",
+      "title": "NTE - V1.5 \"Elyms\" Character Trailer | PS5 Games",
+      "channel": "PlayStation",
+      "kind": "trailers",
+      "published": "2026-11-08T03:00:18Z",
+      "views": 82147
+    },
+    {
+      "id": "clNHjJi00Bw",
+      "title": "Stellar Blade - Switch 2 DF Review vs PS5 + Frame Generation Breakdown",
+      "channel": "Digital Foundry",
+      "kind": "reviews",
+      "published": "2026-11-07T14:32:41Z",
+      "views": 182855
+    },
+    {
+      "id": "QsIDIiED5kc",
+      "title": "Stellar Blade Complete Edition – Launch Trailer – Nintendo Switch 2",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-11-06T22:00:39Z",
+      "views": 1042168
+    },
+    {
+      "id": "U-ruvGgz91Q",
+      "title": "Call of Duty: Modern Warfare 4 - PS5/Pro/Xbox Series X|S Tech Review - PSSR Has Pros and Cons",
+      "channel": "Digital Foundry",
+      "kind": "reviews",
+      "published": "2026-11-06T15:50:26Z",
+      "views": 173677
+    },
+    {
+      "id": "T4Eh0M-Sh_g",
+      "title": "The Legend of Zelda: Ocarina of Time – Launch Trailer – Nintendo Switch 2",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-11-05T17:00:20Z",
+      "views": 1125500
+    },
+    {
+      "id": "PFZFU9ImI5k",
+      "title": "Anno 117: Pax Romana - Dawn of the Delta Launch Trailer",
+      "channel": "Ubisoft",
+      "kind": "trailers",
+      "published": "2026-11-05T10:00:22Z",
+      "views": 134761
+    },
+    {
+      "id": "7d93ySOiHMw",
+      "title": "I strongly recommend: 'The Legend of Zelda: Ocarina of Time (2026)' - Review",
+      "channel": "Skill Up",
+      "kind": "reviews",
+      "published": "2026-11-04T12:02:20Z",
+      "views": 732868
+    },
+    {
+      "id": "j5sfIbuCOqI",
+      "title": "The Legend of Zelda: Ocarina of Time 2026 - Switch 2 DF Tech Review",
+      "channel": "Digital Foundry",
+      "kind": "reviews",
+      "published": "2026-11-04T11:27:17Z",
+      "views": 1092401
+    },
+    {
+      "id": "SdYVIAGtRrE",
+      "title": "Just as magical as the original | Ocarina of Time review",
+      "channel": "GamesRadar",
+      "kind": "reviews",
+      "published": "2026-11-04T11:00:34Z",
+      "views": 36584
+    },
+    {
+      "id": "g0ipZ6UoLac",
+      "title": "The Legend of Zelda: Ocarina of Time Review",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-11-04T11:00:03Z",
+      "views": 1902664
+    },
+    {
+      "id": "QzMIhMeNpN4",
+      "title": "Fortnite Treasure Hunters – One Piece Hybrid Trailer – Nintendo Switch 2",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-11-03T23:00:17Z",
+      "views": 125193
+    },
+    {
+      "id": "YYeFF_6R0Bs",
+      "title": "Godzilla: Destroy All Monsters Melee Remastered Review",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-11-03T22:08:25Z",
+      "views": 169961
+    },
+    {
+      "id": "cUeQ0dbbvLo",
+      "title": "The Division 2: Echoes of Central Park - Launch Trailer",
+      "channel": "Ubisoft",
+      "kind": "trailers",
+      "published": "2026-11-03T15:00:14Z",
+      "views": 74365
+    },
+    {
+      "id": "1KWGHZ26T3g",
+      "title": "The Crew Motorfest: Ivory Tower Ogmios Radiant Ed.",
+      "channel": "Ubisoft",
+      "kind": "trailers",
+      "published": "2026-11-03T05:00:30Z",
+      "views": 37472
+    },
+    {
+      "id": "dXjFZapxqcc",
+      "title": "The Division 2: Echoes of Central Park Launch Livestream",
+      "channel": "Ubisoft",
+      "kind": "trailers",
+      "published": "2026-11-02T17:56:16Z",
+      "views": 95421
+    },
+    {
+      "id": "6x-yH4wkOYQ",
+      "title": "Nintendo Treehouse Plays: Pikmin 4 – Nintendo Switch 2 Edition + Dandori Academy",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-11-01T17:00:06Z",
+      "views": 154830
+    },
+    {
+      "id": "WBqU8A9w4kI",
+      "title": "Hello! Pikmin – #02 Dream – Nintendo",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-11-01T15:00:25Z",
+      "views": 437114
+    },
+    {
+      "id": "U4pcZzPIQ1E",
+      "title": "Pikmin Day – Nintendo",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-11-01T07:00:03Z",
+      "views": 138889
+    },
+    {
+      "id": "OXtQy4XCeCo",
+      "title": "Hello! Pikmin – #01 Frog – Nintendo",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-10-31T15:30:37Z",
+      "views": 580474
+    },
+    {
+      "id": "SyRn9Kq6FvM",
+      "title": "Pikmin Bloom – Secret Caves – Nintendo",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-10-31T14:30:24Z",
+      "views": 183491
+    },
+    {
+      "id": "7-1lQh551UY",
+      "title": "Pikmin Day Direct",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-10-31T14:00:24Z",
+      "views": 1295880
+    },
+    {
+      "id": "sYoza8qaXd0",
+      "title": "'Silent Hill: Townfall' - Review",
+      "channel": "Skill Up",
+      "kind": "reviews",
+      "published": "2026-10-31T13:00:16Z",
+      "views": 292488
+    },
+    {
+      "id": "EovntZi3WIk",
+      "title": "Call of Duty: Modern Warfare 4 DMZ Review",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-10-30T23:24:04Z",
+      "views": 154401
+    },
+    {
+      "id": "lOrajiIUTjk",
+      "title": "The Legend of Zelda: Ocarina of Time – The Ocarina Is the Key – Nintendo Switch 2",
+      "channel": "Nintendo of America",
+      "kind": "trailers",
+      "published": "2026-10-30T17:00:28Z",
+      "views": 605789
+    },
+    {
+      "id": "RhFZa5rnOII",
+      "title": "Call of Duty: Modern Warfare 4 - Switch 2 Tech Review - Input Latency, Frame-Rates + Visuals Tested",
+      "channel": "Digital Foundry",
+      "kind": "reviews",
+      "published": "2026-10-30T16:06:58Z",
+      "views": 286218
+    },
+    {
+      "id": "RW61aLDy6fg",
+      "title": "Phantom Blade Zero - PS5/PS5 Pro - The Digital Foundry Tech Review",
+      "channel": "Digital Foundry",
+      "kind": "reviews",
+      "published": "2026-10-28T18:57:29Z",
+      "views": 434934
+    },
+    {
+      "id": "njYbAMJUd08",
+      "title": "Austin recommends: The Wolf Among Us Remastered (Review)",
+      "channel": "Skill Up",
+      "kind": "reviews",
+      "published": "2026-10-28T12:55:19Z",
+      "views": 138367
+    },
+    {
+      "id": "Tg20HSKna_A",
+      "title": "The Wolf Among Us Remastered Review",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-10-28T00:08:58Z",
+      "views": 165394
+    },
+    {
+      "id": "56ljMVigHXM",
+      "title": "One of the best games I've played in years | Phantom Blade Zero review",
+      "channel": "GamesRadar",
+      "kind": "reviews",
+      "published": "2026-10-27T17:41:59Z",
+      "views": 158200
+    },
+    {
+      "id": "n8r2h69hqOk",
+      "title": "Call of Duty: Modern Warfare 4 Review (Campaign and Multiplayer)",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-10-27T11:56:46Z",
+      "views": 493606
+    },
+    {
+      "id": "eRByk5G3nck",
+      "title": "I strongly recommend: Phantom Blade Zero (Review)",
+      "channel": "Skill Up",
+      "kind": "reviews",
+      "published": "2026-10-26T13:00:33Z",
+      "views": 961873
+    },
+    {
+      "id": "3qNkvdSWDmc",
+      "title": "Phantom Blade Zero Review",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-10-26T00:00:07Z",
+      "views": 1121163
+    },
+    {
+      "id": "SlEiWW3bj9g",
+      "title": "Grand Theft Auto V - The Legacy Review",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-10-23T14:00:39Z",
+      "views": 256166
+    },
+    {
+      "id": "c2y85R-FNcI",
+      "title": "One Piece: Grand Gourmet Review",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-10-22T19:45:15Z",
+      "views": 123233
+    },
+    {
+      "id": "Lk2MPW5DBJY",
+      "title": "Nintendo Switch Sports Resort Review",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-10-21T17:49:10Z",
+      "views": 247384
+    },
+    {
+      "id": "jyYlpv-N-wA",
+      "title": "Final Fantasy Resonance Review",
+      "channel": "IGN",
+      "kind": "reviews",
+      "published": "2026-10-20T13:00:37Z",
+      "views": 535804
+    },
+    {
+      "id": "rz1B4B2yBZY",
+      "title": "Grand Theft Auto VI Launch Trailer",
+      "channel": "Rockstar Games",
+      "kind": "trailers",
+      "published": "2026-10-15T13:00:26Z",
+      "views": 76266781
+    },
+    {
+      "id": "lzqbRCkew3A",
+      "title": "Austin recommends: 'Castlevania: Belmont's Curse' (Review)",
+      "channel": "Skill Up",
+      "kind": "reviews",
+      "published": "2026-10-15T13:00:17Z",
+      "views": 349718
+    },
+    {
+      "id": "pf_etO__2fQ",
+      "title": "Planet Zoo 2 Review \"Buy, Wait, Never Touch?\"",
+      "channel": "ACG",
+      "kind": "reviews",
+      "published": "2026-10-13T12:04:08Z",
+      "views": 90726
+    },
+    {
+      "id": "tj746tnAs9U",
+      "title": "Valor Mortis Review \"Buy, wa- oh forget it. Ya its awesome!\"",
+      "channel": "ACG",
+      "kind": "reviews",
+      "published": "2026-10-12T13:01:30Z",
+      "views": 328114
+    }
+  ]
+}

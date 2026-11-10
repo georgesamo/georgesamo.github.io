@@ -4,7 +4,7 @@
 import { chromium } from "playwright";
 
 const base = (process.argv[2] || "http://127.0.0.1:4200").replace(/\/$/, "");
-const PAGES = ["/", "/games/", "/leaderboards/", "/events/", "/samuka/", "/blog/", "/u/", "/soundtrack/"];
+const PAGES = ["/", "/games/", "/leaderboards/", "/events/", "/news/", "/watch/", "/samuka/", "/blog/", "/u/", "/soundtrack/"];
 const MODULES = ["Samuka", "SamukaAuth", "SamukaAccountCore", "SamukaMe", "SamukaPalette", "SamukaArcade", "SamukaScores", "SamukaGlitch", "SamukaTextGlitch", "SamukaLoadGlitch", "SamukaNav"];
 
 const browser = await chromium.launch({ channel: process.env.PW_CHANNEL || "chrome" });

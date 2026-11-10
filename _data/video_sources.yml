@@ -1,0 +1,50 @@
+# YouTube channels for /watch/. scripts/fetch_news.rb reads their public feeds
+# (youtube.com/feeds/videos.xml?channel_id=…) and writes _data/videos.json. Videos play in
+# YouTube's own embedded player; Shorts, streams of unrelated stuff and #sponsored posts are skipped.
+#   kind: trailers  official publisher channels: everything they post counts as a trailer
+#         reviews   critics: only videos with "review" in the title
+#         both      outlets: "review" titles → reviews, trailer-ish titles → trailers, the rest is skipped
+#   channel:  the channel id (UC…). To find one: open the channel page, View source, search "externalId".
+#   playlist: a playlist id (PL…) instead of a channel, e.g. an outlet's "Game Reviews" playlist
+# A feed only lists a channel's last 15 uploads, so results are merged with earlier runs
+# (CI keeps them between deploys) and pile up over the 30-day window.
+- name: PlayStation
+  kind: trailers
+  channel: UC-2Y8dQb0S6DtpxNgAKoJKA
+- name: Xbox
+  kind: trailers
+  channel: UCjBp_7RuDBUYbd1LegWEJ8g
+- name: Nintendo of America
+  kind: trailers
+  channel: UCGIY_O-8vW4rfX98KlMkvRg
+- name: The Game Awards
+  kind: trailers
+  channel: UCqDS7KWjAPKv-7ZSlro9OiQ
+- name: Ubisoft
+  kind: trailers
+  channel: UC0KU8F9jJqSLS11LRXvFWmg
+- name: Rockstar Games
+  kind: trailers
+  channel: UC6VcWc1rAoWdBCM0JxrRQ3A
+
+- name: IGN
+  kind: reviews
+  playlist: PLraFbwCoisJBTl0oXn8UoUam5HXWUZ7ES   # IGN Game Reviews
+- name: IGN
+  kind: both
+  channel: UCKy1dAqELo0zrOtPkf0eTMw
+- name: GameSpot
+  kind: both
+  channel: UCbu2SsF-Or3Rsn3NxqODImw
+- name: GamesRadar
+  kind: both
+  channel: UCk2ipH2l8RvLG0dr-rsBiZw
+- name: Digital Foundry
+  kind: reviews
+  channel: UC9PBzalIcEQCsiIkq36PyUA
+- name: Skill Up
+  kind: reviews
+  channel: UCZ7AeeVbyslLM_8-nVy2B8Q
+- name: ACG
+  kind: reviews
+  channel: UCK9_x1DImhU-eolIay5rb2Q

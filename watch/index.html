@@ -1,0 +1,57 @@
+---
+layout: shell
+title: Trailers & reviews
+description: Official game trailers and video reviews from PlayStation, Xbox, Nintendo, IGN, GameSpot and more, gathered in Samuka's arcade.
+permalink: /watch/
+tab: watch
+file: feeds/trailers.mp4
+icon: mp4
+---
+{%- assign feed = site.data.videos -%}
+{%- assign vids = feed.videos | default: empty -%}
+{%- assign n_tr = vids | where: "kind", "trailers" | size -%}
+{%- assign n_rv = vids | where: "kind", "reviews" | size -%}
+<section class="section watch" id="watch" data-file="feeds/trailers.mp4" data-icon="mp4" data-watch>
+  <header class="section__head reveal">
+    <p class="section__path">feeds/<b>trailers.mp4</b></p>
+    <h1 class="section__title">Trailers &amp; reviews</h1>
+    <p class="section__cmd"><span class="prompt">$</span> rails watch:latest <span class="muted"># official trailers and video reviews, straight from the channels · <a href="{{ '/news/' | relative_url }}">headlines →</a></span></p>
+  </header>
+
+  <div class="news__bar">
+    <div class="pr-filter" role="toolbar" aria-label="Filter videos">
+      <button type="button" class="pr-filter__btn is-active" data-watch-filter="" aria-pressed="true">all <small>{{ vids.size }}</small></button>
+      <button type="button" class="pr-filter__btn" data-watch-filter="trailers" aria-pressed="false">▶ trailers <small>{{ n_tr }}</small></button>
+      <button type="button" class="pr-filter__btn" data-watch-filter="reviews" aria-pressed="false">★ reviews <small>{{ n_rv }}</small></button>
+    </div>
+    <input class="news__search" type="search" placeholder="grep videos… (a game, a channel)" aria-label="Search videos" data-watch-q autocomplete="off" spellcheck="false">
+  </div>
+  {%- if feed.generated_at %}
+  <div class="news__meta muted"><span>updated <time datetime="{{ feed.generated_at }}" data-watch-ago>{{ feed.generated_at | date: "%b %-d, %H:%M UTC" }}</time> · music pauses while a video plays</span>
+    <details class="news__sources"><summary>{{ feed.channels.size }} channels</summary>
+      <ul>
+        {%- for c in feed.channels %}
+        <li><a href="{{ c.url }}" target="_blank" rel="noopener external">{{ c.name | escape }}</a>{% unless c.ok %} <span class="muted">(stale)</span>{% endunless %}</li>
+        {%- endfor %}
+      </ul>
+    </details>
+  </div>
+  {%- endif %}
+
+  {%- if vids.size == 0 %}
+  <p class="news__empty muted"># no videos yet: the channels refresh on the next deploy</p>
+  {%- endif %}
+  <ol class="vids" data-watch-list>
+    {%- for v in vids %}
+    <li class="vid" data-kind="{{ v.kind }}">
+      <a class="vid__link" href="https://www.youtube.com/watch?v={{ v.id | url_encode }}" target="_blank" rel="noopener external" data-vid="{{ v.id | escape }}" data-channel="{{ v.channel | escape }}" data-at="{{ v.published }}">
+        <span class="vid__thumb"><img src="https://i.ytimg.com/vi/{{ v.id | url_encode }}/mqdefault.jpg" alt="" loading="lazy" decoding="async" width="320" height="180"><span class="vid__play" aria-hidden="true"></span><span class="vid__kind vid__kind--{{ v.kind }}">{% if v.kind == "reviews" %}review{% else %}trailer{% endif %}</span></span>
+        <span class="vid__title">{{ v.title | escape }}</span>
+        <span class="vid__meta"><b>{{ v.channel | escape }}</b> · <time datetime="{{ v.published }}">{{ v.published | date: "%b %-d" }}</time>{% if v.views %} · <span data-views="{{ v.views }}">{{ v.views }} views</span>{% endif %}</span>
+      </a>
+    </li>
+    {%- endfor %}
+  </ol>
+  <p class="news__none muted" data-watch-none hidden># no videos match</p>
+  <p class="news__fine muted">Videos play in YouTube's own player (privacy-enhanced mode) and belong to their channels.</p>
+</section>

@@ -56,9 +56,10 @@
   function input(raw) {
     var s = raw.trim();
     if (s === "/exit" || s === "/quit" || s === "exit") { leave(); return { leave: true, html: '<span class="dim">left #lobby</span>' }; }
-    if (s === "/help") return { html: '<span class="b">/who</span> online now · <span class="b">/exit</span> leave' + (owner() ? ' · <span class="b">/del &lt;id&gt;</span> remove a message' : "") };
-    if (s === "/who") {
-      var P = window.SamukaPresence, peers = P ? P.peers() : [];
+    var P = window.SamukaPresence, seeWho = !!(P && P.visible && P.visible());
+    if (s === "/help") return { html: (seeWho ? '<span class="b">/who</span> online now · ' : "") + '<span class="b">/exit</span> leave' + (owner() ? ' · <span class="b">/del &lt;id&gt;</span> remove a message' : "") };
+    if (s === "/who" && seeWho) {
+      var peers = P.peers();
       return { html: "online: you" + (peers.length ? ", " + peers.map(function (p) { return esc(p.name); }).join(", ") : "") };
     }
     var m = /^\/del\s+(\d+)$/.exec(s);

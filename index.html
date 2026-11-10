@@ -21,7 +21,7 @@ boot: true
             <button class="btn" type="button" data-race>⚔ 2-player</button>
           </div>
           <dl class="lobby__stats" data-hub-stats>
-            <div><dt>online now</dt><dd data-hub-online>1</dd></div>
+            <div data-team-only hidden><dt>online now</dt><dd data-hub-online>1</dd></div>
             <div><dt>today</dt><dd data-hub-daily>daily #1</dd></div>
             <div><dt>your achievements</dt><dd data-hub-ach>sign in</dd></div>
             <div><dt>event</dt><dd data-hub-event>—</dd></div>
@@ -52,7 +52,18 @@ boot: true
         <div class="hub-grid">
           <div class="lb reveal" data-leaderboard aria-live="polite"></div>
           <div class="hub-side reveal">
-            <div class="hub-card" data-hub-players><p class="hub-card__title">online now</p><p class="muted">connecting…</p></div>
+            <div class="hub-card" data-hub-players data-team-only hidden><p class="hub-card__title">online now</p><p class="muted">connecting…</p></div>
+            {%- assign headlines = site.data.news.items | default: empty %}
+            {%- if headlines.size > 0 %}
+            <a class="hub-card hub-card--news" href="{{ '/news/' | relative_url }}"><p class="hub-card__title">headlines · news.rss →</p>
+              <ul class="hub-news">
+                {%- assign secs = "tech,gaming,dev" | split: "," %}
+                {%- for sec in secs %}{%- assign i = headlines | where: "section", sec | first %}{%- if i %}
+                <li><small><i class="news__dot news__dot--{{ i.section }}"></i>{{ i.source | escape }}</small><span>{{ i.title | escape }}</span></li>
+                {%- endif %}{%- endfor %}
+              </ul>
+            </a>
+            {%- endif %}
             <a class="hub-card hub-card--event" href="{{ '/events/' | relative_url }}" data-hub-eventcard><p class="hub-card__title">this week</p><p class="muted">loading the weekly challenge…</p></a>
           </div>
         </div>

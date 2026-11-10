@@ -27,6 +27,7 @@
     { key: "weekly", icon: "🗓", title: "Sprint goal met", how: "Finish a weekly challenge" },
     { key: "chatty", icon: "💬", title: "Standup attended", how: "Say something in the live chat" },
     { key: "wall", icon: "📝", title: "First commit", how: "Leave a commit on the wall" },
+    { key: "reader", icon: "📰", title: "Read the release notes", how: "Save a story on the news page" },
     { key: "crowd", icon: "👥", title: "Pair programming", how: "Be here while someone else is online" },
     { key: "lofi", icon: "♪", title: "Beats to debug to", how: "Turn on the site soundtrack" },
     { key: "night_owl", icon: "🦉", title: "Night owl", how: "Visit between midnight and 5 am", secret: true },

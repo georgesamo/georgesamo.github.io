@@ -29,6 +29,7 @@
 .lobby__text { max-width: 52ch; margin: 18px 0 0; color: var(--text-2); font-size: 17px; }
 .lobby__actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
 .lobby__stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 28px 0 0; }
+.lobby__stats:has(> [hidden]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }   /* "online now" is team-only */
 .lobby__stats div { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-elev); }
 .lobby__stats dt { font: 10.5px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .lobby__stats dd { margin: 4px 0 0; font: 600 16px var(--mono); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -45,12 +46,14 @@
 .maker__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (max-width: 980px) {
   .lobby { grid-template-columns: minmax(0, 1fr); min-height: 0; gap: 24px; padding-top: 32px; }
-  .lobby__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lobby__stats, .lobby__stats:has(> [hidden]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lobby__stats:has(> [hidden]) > div:last-child { grid-column: span 2; }
 }
 
 .hub-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr); gap: 16px; align-items: start; }
 .hub-grid .lb { margin-top: 0; }
 .hub-side { display: grid; gap: 16px; }
+.hub-card[hidden] { display: none; }
 .hub-card { display: block; padding: 16px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-elev); color: var(--text); text-decoration: none; }
 a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .hub-card__title { margin: 0 0 10px; font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }

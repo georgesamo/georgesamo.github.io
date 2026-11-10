@@ -1,0 +1,67 @@
+---
+layout: shell
+title: News
+description: Tech, gaming and Ruby/Rails headlines from around the web, gathered every few hours in Samuka's arcade.
+permalink: /news/
+tab: news
+file: feeds/news.rss
+icon: rss
+---
+{%- assign news = site.data.news -%}
+{%- assign items = news.items | default: empty -%}
+{%- assign n_tech = items | where: "section", "tech" | size -%}
+{%- assign n_gaming = items | where: "section", "gaming" | size -%}
+{%- assign n_dev = items | where: "section", "dev" | size -%}
+<section class="section news" id="news" data-file="feeds/news.rss" data-icon="rss" data-news>
+  <header class="section__head reveal">
+    <p class="section__path">feeds/<b>news.rss</b></p>
+    <h1 class="section__title">News</h1>
+    <p class="section__cmd"><span class="prompt">$</span> curl -s feeds/*.rss | rails news:digest <span class="muted"># tech, gaming and dev headlines, refreshed every few hours · <a href="{{ '/watch/' | relative_url }}">trailers &amp; reviews →</a></span></p>
+  </header>
+
+  <div class="news__bar">
+    <div class="pr-filter" role="toolbar" aria-label="Filter stories">
+      <button type="button" class="pr-filter__btn is-active" data-news-filter="" aria-pressed="true">all <small>{{ items.size }}</small></button>
+      <button type="button" class="pr-filter__btn" data-news-filter="tech" aria-pressed="false"><i class="news__dot news__dot--tech"></i>tech <small>{{ n_tech }}</small></button>
+      <button type="button" class="pr-filter__btn" data-news-filter="gaming" aria-pressed="false"><i class="news__dot news__dot--gaming"></i>gaming <small>{{ n_gaming }}</small></button>
+      <button type="button" class="pr-filter__btn" data-news-filter="dev" aria-pressed="false"><i class="news__dot news__dot--dev"></i>ruby &amp; dev <small>{{ n_dev }}</small></button>
+      <button type="button" class="pr-filter__btn" data-news-filter="saved" aria-pressed="false">★ saved <small data-news-saved-n>0</small></button>
+    </div>
+    <input class="news__search" type="search" placeholder="grep headlines…" aria-label="Search headlines" data-news-q autocomplete="off" spellcheck="false">
+  </div>
+
+  {%- if news.generated_at %}
+  <div class="news__meta muted"><span>updated <time datetime="{{ news.generated_at }}" data-news-ago>{{ news.generated_at | date: "%b %-d, %H:%M UTC" }}</time> · <span data-news-newcount></span></span>
+    <details class="news__sources"><summary>{{ news.sources.size }} sources</summary>
+      <ul>
+        {%- for s in news.sources %}
+        <li><i class="news__dot news__dot--{{ s.section }}"></i><a href="{{ s.home }}" target="_blank" rel="noopener external">{{ s.name | escape }}</a>{% unless s.ok %} <span class="muted" title="Couldn't be reached on the last refresh; showing its previous stories">(stale)</span>{% endunless %}</li>
+        {%- endfor %}
+      </ul>
+    </details>
+  </div>
+  {%- endif %}
+
+  {%- if items.size == 0 %}
+  <p class="news__empty muted"># no stories yet: the feeds refresh on the next deploy</p>
+  {%- endif %}
+  <ol class="news__list" data-news-list aria-live="polite">
+    {%- for i in items %}
+    <li class="news-row" data-section="{{ i.section }}" data-at="{{ i.published }}" data-url="{{ i.url | escape }}" data-source="{{ i.source | escape }}">
+      <div class="news-row__main">
+        <p class="news-row__meta"><i class="news__dot news__dot--{{ i.section }}"></i><b>{{ i.source | escape }}</b> · <time datetime="{{ i.published }}">{{ i.published | date: "%b %-d, %H:%M" }}</time></p>
+        <a class="news-row__title" href="{{ i.url | escape }}" target="_blank" rel="noopener external">{{ i.title | escape }}</a>
+        {%- if i.teaser %}
+        <p class="news-row__teaser">{{ i.teaser | escape }}</p>
+        {%- endif %}
+        {%- if i.discussion %}
+        <p class="news-row__hn"><a href="{{ i.discussion | escape }}" target="_blank" rel="noopener external">▲ {{ i.points | default: 0 }} · {{ i.comments | default: 0 }} comments</a></p>
+        {%- endif %}
+      </div>
+      <button type="button" class="news-row__save" data-news-save aria-pressed="false" aria-label="Save for later" title="Save for later">☆</button>
+    </li>
+    {%- endfor %}
+  </ol>
+  <p class="news__none muted" data-news-none hidden># no stories match</p>
+  <p class="news__fine muted">Headlines and teasers belong to their publishers; every story opens on the original site. Saved stories stay on this device.</p>
+</section>

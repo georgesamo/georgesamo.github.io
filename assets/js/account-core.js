@@ -282,6 +282,8 @@
       { label: "Visitors wall", hint: "commit log", href: "/#wall", kw: "guestbook wall commit" },
       { label: "Find a player", hint: "player cards", href: "/u/", kw: "card search user" },
       { label: "Samuka", hint: "the creator · hire me", href: "/samuka/", kw: "about profile resume cv experience hire" },
+      { label: "News", hint: "tech & gaming", href: "/news/", kw: "news headlines feed rss tech gaming rails ruby newsletter" },
+      { label: "Trailers & reviews", hint: "watch", href: "/watch/", kw: "watch video youtube trailer review games gameplay" },
       { label: "Pull requests", hint: "blog", href: "/blog/", kw: "blog posts articles" },
       { label: "Soundtrack", hint: "15 tracks", href: "/soundtrack/", kw: "music lofi songs" }
     ];

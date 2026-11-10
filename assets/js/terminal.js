@@ -179,8 +179,10 @@
       ["daily / race", "daily Gem Match · live 1v1 Sidekiq Rush"],
       ["achievements", "what you've unlocked"],
       ["wall / blog / projects", "visitor commits · pull requests · repos"],
+      ["news [tech|gaming|dev]", "latest headlines · /news/"],
+      ["trailers / reviews", "watch official trailers · video reviews"],
       ["music [on|off]", "generated lo-fi that follows the theme"],
-      ["who / cursors [on|off]", "who's online · ghost cursors"],
+      ["cursors [on|off]", "other visitors' ghost cursors"],
       ["chat", "live #lobby chat with everyone on the site"],
       ["events / card [name]", "this week's challenge · player cards"],
       ["ls, cat &lt;file&gt;, pwd, date, echo, history, clear, exit", ""]
@@ -400,10 +402,26 @@
     },
     who: function () {
       var P = window.SamukaPresence; if (!P) return "you";
+      if (!P.visible || !P.visible()) return '<span class="dim">who: command not found</span>';
       var peers = P.peers();
       return "you" + (peers.length ? "\n" + peers.map(function (x) { return esc(x.name) + ' <span class="dim">(' + esc(x.role) + ")</span>"; }).join("\n") : '\n<span class="dim">nobody else right now</span>');
     },
     blog: function () { close(); navTo("/blog/"); return "→ /blog/"; },
+    trailers: function () { close(); navTo("/watch/#trailers"); return "→ /watch/ · trailers"; },
+    reviews: function () { close(); navTo("/watch/#reviews"); return "→ /watch/ · reviews"; },
+    watch: function () { close(); navTo("/watch/"); return "→ /watch/"; },
+    news: function (a) {
+      var N = window.SamukaNews; if (!N) return "news not loaded";
+      var sec = { tech: "tech", gaming: "gaming", games: "gaming", dev: "dev", ruby: "dev", rails: "dev" }[a[0]] || "";
+      if (a[0] === "open") { close(); navTo("/news/"); return "→ /news/"; }
+      var el = print('<span class="dim">curl -s feeds/' + (sec || "*") + ".rss …</span>");
+      N.latest(sec, 8).then(function (items) {
+        el.innerHTML = (items.length ? items.map(function (i) {
+          return '<span class="dim">' + esc(N.ago(Date.parse(i.published))).padEnd(10) + "</span> " + '<a href="' + esc(i.url) + '" target="_blank" rel="noopener external">' + esc(i.title) + '</a> <span class="dim">· ' + esc(i.source) + "</span>";
+        }).join("\n") : '<span class="dim">no stories right now</span>') + '\n<span class="dim">news tech|gaming|dev · news open → <a href="/news/">/news/</a></span>';
+      }, function () { el.innerHTML = '<span class="warn">news feed offline</span>'; });
+      return null;
+    },
     projects: function () { close(); S.go && S.go("projects"); return "→ projects"; },
     hello: function () { return 'გამარჯობა! <span class="dim">(gamarjoba: hello in Georgian)</span>'; },
     gamarjoba: function () { return COMMANDS.hello(); }
