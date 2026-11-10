@@ -1074,18 +1074,25 @@
    * One tempo map (CUT.tempo) carries it: it glides between chapters, and where a chapter halves or doubles
    * (the collapse, 3 AM into flight, flight into dawn) the jump lands on a downbeat. */
   var CUT = {
-    chapters: [[0, "cold open"], [16, "boot sequence"], [28, "the theme"], [68, "something in the dark"], [100, null], [132, "two cursors"], [196, "collapse"], [202, "3 AM"], [230, "learning to fly"], [262, "dawn"]],
+    chapters: [[0, "cold open"], [16, "boot sequence"], [28, "the theme"], [68, "something in the dark"], [100, null], [148, "two cursors"], [212, "collapse"], [218, "3 AM"], [246, "learning to fly"], [278, "dawn"]],
     sig: { mrrobot: "the monologue", industrial: "the warehouse", kpop: "the dance break" },
     // [bar, bpm]: straight lines between points; a repeated bar is a jump
-    tempo: [[0, 76], [16, 76], [28, 110], [68, 110], [70, 120], [100, 120], [102, 124], [132, 124], [136, 172], [196, 172], [196, 86], [202, 66], [230, 66], [230, 132], [262, 132], [262, 66], [266, 60], [999, 60]],
+    tempo: [[0, 76], [16, 76], [28, 110], [68, 110], [70, 120], [100, 120], [102, 124], [148, 124], [152, 172], [212, 172], [212, 86], [218, 66], [246, 66], [246, 132], [278, 132], [278, 66], [282, 60], [999, 60]],
     prog: [{ r: 40, tri: [52, 55, 59] }, { r: 43, tri: [55, 59, 62] }, { r: 38, tri: [50, 54, 57] }, { r: 35, tri: [47, 51, 54] }]   // Em G D B: the hook's new harmony
   };
   var CUT_MOOD = "the director's cut · the same story, told once, end to end";
   function cutBpm(pos) { return mapBpm(CUT.tempo, pos); }
   function cutName(bar, style) { var name = ""; CUT.chapters.forEach(function (c) { if (bar >= c[0]) name = c[1] || CUT.sig[style] || CUT.sig.mrrobot; }); return name; }
   function hookAt(pos) { return RZ.lead.filter(function (n) { return n[0] === pos; }); }   // pos: 16ths into the 8-bar hook (B A G F# G E ...)
-  // the section each bar belongs to, for the loudness curve: named after the song section it matches
+  // The signature chapter runs 48 bars (100-148); the chapters after it were written for bars 132-310, so they
+  // are played with their bar numbers 16 earlier (SIG_EXTRA) and keep their own arithmetic.
+  var SIG_END = 148, SIG_EXTRA = 16;
   function cutSec(bar) {
+    if (bar >= 100 && bar < SIG_END) return "sig " + (1 + ((bar - 100) >> 3));
+    return cutSecOld(bar >= SIG_END ? bar - SIG_EXTRA : bar);
+  }
+  // the section each bar belongs to, for the loudness curve: named after the song section it matches
+  function cutSecOld(bar) {
     if (bar < 16) return "cold open";
     if (bar < 28) return bar < 22 ? "boot" : "boot 2";
     if (bar < 68) return bar < 36 ? "pulse" : bar < 52 ? "theme" : bar < 60 ? "break" : "drive";
@@ -1194,7 +1201,7 @@
     if (sec === "found") chop(o, t, st, cl);
   }
 
-  /* ---------- the signature chapters, 100–132 at 124 bpm: one per palette ---------- */
+  /* ---------- the signature chapters, 100–148 at 124 bpm: one per palette ---------- */
   var SIG = {
     // the monologue: E D C B walking down under the same Em chord (Em, Em/D, Cmaj7, B), the pulse in threes
     line: [{ r: 40, tri: [52, 55, 59] }, { r: 38, tri: [52, 55, 59] }, { r: 36, tri: [52, 55, 59] }, { r: 35, tri: [51, 54, 57] }],
@@ -1204,79 +1211,188 @@
     // the warehouse: a fuzz ostinato on E that leans on F every fourth bar
     ost: [0, null, 0, 12, 0, null, 0, 10, 0, null, 0, 12, 0, 7, 0, 10], wroots: [40, 40, 40, 41]
   };
-  function sigMonologue(o, t, st, bar) {   // Phthalo · the inner voice
-    var k = bar - 100, c = SIG.line[Math.floor(bar / 2) % 4], six = o.six, lv = k < 8 ? 0 : k < 16 ? 1 : k < 24 ? 2 : 3;
-    if (bar === 131 && st >= 8) { if (st === 8) { o.sub.set(t, 28, 0.0001); blip(o, t, 0.9, 0, 1800); } return; }   // the power goes
+  function hz01(a, b) { var x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); }   // a fixed "random" per step
+
+  /* Phthalo · the monologue, 48 bars: 0-7 alone · 8-15 the inner voice answers · 16-23 the signal breaks up ·
+   * 24-39 the glitch: two faults, each followed by the groove fighting back (24-27 fault, 28-31 reboot,
+   * 32-35 fault, 36-39 the build) · 40-47 everything at full weight, then the power goes. */
+  function sigMonologue(o, t, st, bar) {
+    var k = bar - 100, c = SIG.line[Math.floor(bar / 2) % 4], six = o.six;
+    var g = k >= 24 && k < 40 ? (k - 24) >> 2 : -1, fault = g === 0 || g === 2;
+    var lv = k < 8 ? 0 : k < 16 ? 1 : k < 24 ? 2 : g === 1 ? 2 : g === 3 ? (k < 38 ? 2 : 3) : fault ? 0 : 3;
+    if (bar === SIG_END - 1 && st >= 8) { if (st === 8) { o.sub.set(t, 28, 0.0001); blip(o, t, 0.9, 0, 1800); } return; }   // the power goes
+    if (k === 39 && st >= 8) { if (st === 8) subDrop(o, t, six * 8, 0.45); return; }   // the floor falls away before the last act
     if (st === 0) {
       if (k === 0) mixTo(o, t, { arp: 1.2, fuzz: 0.7 }, six * 8);
-      sweep(o, "arpF", 600 + k * 70, t, 0.8);
-      sweep(o, "padF", 1200 + k * 40, t, 1);
-      sweep(o, "fuzzF", 700, t, 0.5);
-      o.sub.set(t, c.r - 12, 0.05 + lv * 0.025);
-      if (bar % 2 === 0) sm(o, t, c.tri.concat([c.r + 24]), six * 32, 0.04, { a: six * 4, r: 1.5 });
-      if (k >= 8 && bar % 2 === 0) fz(o, t, c.r, 0.8, six * 30, true);   // the bass steps down, one held note at a time
-      if (k === 20) riser(o, t, six * 64, 0.06);
-      if (k === 24) crash(o, t, 0.6);
+      sweep(o, "arpF", fault ? 450 + (k % 4) * 150 : 600 + Math.min(k, 31) * 70, t, fault ? 0.2 : 0.8);
+      sweep(o, "padF", 1200 + Math.min(k, 31) * 40, t, 1);
+      sweep(o, "fuzzF", fault ? 420 : 700, t, 0.5);
+      o.sub.set(t, c.r - 12, fault ? 0.04 : 0.05 + lv * 0.025);
+      if (bar % 2 === 0) sm(o, t, c.tri.concat([c.r + 24]), six * 32, fault ? 0.03 : 0.04, { a: six * 4, r: 1.5 });
+      if (k >= 8 && !fault && bar % 2 === 0) fz(o, t, c.r, 0.8, six * 30, true);   // the bass steps down, one held note at a time
+      if (k === 20 || k === 36) riser(o, t, six * 64, 0.06);
+      if (k === 28 || k === 40) crash(o, t, k === 40 ? 0.6 : 0.45);
+      if (fault && k % 4 === 3) rewind(o, t + six * 10, six * 6, 0.8);   // the tape spooling back as the fault clears
     }
+    if (fault) return glitchBar(o, t, st, bar, c, k);
     var step = (bar * 16 + st) % 3;   // threes against fours: the pulse comes round to the downbeat every three bars
     parp(o, t, c.tri[0] + 12 + SIG.three[step], st % 4 === 0 ? 0.9 : 0.6, six * 0.7, step === 0 ? -0.5 : step === 1 ? 0 : 0.5);
     if (SIG.type.indexOf(st) >= 0 && (k < 16 || bar % 2 === 0)) blip(o, t, 0.3, st % 2 ? 0.7 : -0.7, st % 3 ? 3600 : 4300);
-    if (lv) kit(o, t, st, bar, lv, { back: lv >= 3, fill: bar === 115 || bar === 123 });
+    if (lv) kit(o, t, st, bar, lv, { back: lv >= 3, fill: bar === 115 || bar === 123 || bar === 131 || bar === 143 });
     if (k >= 8) {   // call and response over four bars: the hook upside down on the lead, then right way up, low on the piano
       var ph = (k % 4) * 16 + st;
       if (ph < 32) SIG.inv.forEach(function (n) { if (n[0] === ph) o.lead.play(t, n[1], n[2] * six, 0.07); });
-      else hookAt(ph - 32).forEach(function (n) { keys(o, t, n[1] - 12, 0.6, n[2] * six * 1.3); });
+      else hookAt(ph - 32).forEach(function (n) { keys(o, t, n[1] - 12, 0.6, n[2] * six * 1.3); if (g === 3) keys(o, t + six * 1.5, n[1], 0.25, six); });
     }
     if (k >= 16 && bar % 2 === 1 && st >= 12) { stb(o, t, c.tri, 0.4, six * 0.25, st % 2 ? 0.7 : -0.7); stb(o, t + six * 0.5, c.tri, 0.3, six * 0.25, st % 2 ? -0.7 : 0.7); }   // the signal breaking up
+    if (g === 1 && hz01(bar, st) > 0.9) blip(o, t, 0.5, (hz01(st, bar) - 0.5) * 1.6, 5200);   // stray data, even with the groove back
   }
-  function sigWarehouse(o, t, st, bar) {   // Dark Knight · underground techno, the hook in the low brass like a warning
-    var k = bar - 100, r = SIG.wroots[bar % 4], six = o.six, sec = k < 8 ? 1 : k < 16 ? 2 : k < 24 ? 3 : 4;
-    var tri = r === 41 ? [53, 56, 60] : [52, 55, 59];   // Em, and a Phrygian F leaning on it
+  // Mr. Robot's glitches: the machine misbehaving under the inner voice
+  function glitchBar(o, t, st, bar, c, k) {
+    var six = o.six, h = hz01(bar, st), second = k >= 32;
+    // the pulse sticks: one note looping in 32nds, like a stuck buffer
+    if (st % 4 === 0 && h < 0.75) { var m = c.tri[0] + 12 + SIG.three[(bar + st) % 3]; for (var i = 0; i < (h < 0.3 ? 6 : 3); i++) parp(o, t + i * six / 2, m + (i === 2 && h > 0.5 ? 12 : 0), 0.7 - i * 0.08, six * 0.35, i % 2 ? 0.6 : -0.6); }
+    // data: a burst of tiny clicks thrown across the stereo field
+    if (h > 0.8) for (var j = 0; j < 6; j++) blip(o, t + j * six / 6, 0.35, (hz01(bar * 7 + j, st) - 0.5) * 1.6, 2400 + hz01(j, bar) * 4400);
+    // the terminal: quick high beeps, like a modem talking
+    if (second && st % 2 === 1 && h < 0.4) beep(o, t, 84 + Math.floor(hz01(st, bar) * 12), six * 0.4, 0.5);
+    // the hook, corrupted: upside down on the lead, every note stuttering
+    if (second) SIG.inv.forEach(function (n) { if (n[0] === (k % 2) * 16 + st) for (var r = 0; r < 3; r++) o.lead.play(t + r * six * 0.5, n[1] - (r === 2 ? 12 : 0), six * 0.4, 0.06 - r * 0.012); });
+    // the rhythm drops beats and lands late
+    if (st === 0 || (st === 10 && h < 0.5)) kickT(o, t, 0.55);
+    if (st === 4 || st === 12) percT(o, t + (h > 0.6 ? six * 0.5 : 0), "clap", 0.45);
+    if (st % 2 === 0 && h > 0.35) hatT(o, t, 0.4 + h * 0.3, (h - 0.5) * 0.6);
+    if (st === 15 && h < 0.5) stb(o, t, c.tri.map(function (x) { return x + 12; }), 0.35, six * 0.2, h < 0.25 ? -0.8 : 0.8);
+  }
+
+  /* Dark Knight · the warehouse, 48 bars: 0-7 the dark (the fuzz held, a razor-thin note swelling, wings overhead) ·
+   * 8-15 the city's machine (the fuzz ostinato, metal on metal, spiccato strings) · 16-23 the signal (a two-note call
+   * low in the horns over taiko and strings, no kick) · 24-31 the warning (the hook at half speed in the low brass,
+   * the choir) · 32-39 the chase (a minor march: four on the floor, strings, horn stabs, taiko fills) · 40-47 both
+   * leads an octave apart, then the lights go out. */
+  function sigWarehouse(o, t, st, bar) {
+    var k = bar - 100, r = SIG.wroots[bar % 4], six = o.six;
+    var sec = k < 8 ? "dark" : k < 16 ? "machine" : k < 24 ? "signal" : k < 32 ? "warning" : k < 40 ? "chase" : "leads";
+    var quiet = sec === "signal" || sec === "warning", tri = r === 41 ? [53, 56, 60] : [52, 55, 59];   // Em, and a Phrygian F leaning on it
+    if (bar === SIG_END - 1 && st >= 4) { if (st === 4) { o.sub.set(t, 28, 0.0001); boom(o, t, 0.8); flyby(o, t, six * 10, 0.45); } return; }   // the lights go out
     if (st === 0) {
       if (k === 0) mixTo(o, t, { fuzz: 0.9, stab: 1.1 }, six * 4);
-      sweep(o, "fuzzF", sec === 1 ? 500 : sec === 3 ? 700 : 1300 + (k % 8) * 80, t, 0.5);
-      sweep(o, "padF", sec === 3 ? 1800 : 1100, t, 1);
-      o.sub.set(t, r - 12, sec === 3 ? 0.07 : 0.12);
-      if (sec === 1 && bar % 2 === 0) fz(o, t, r, 0.9, six * 30, true);
-      if ((sec === 1 || sec === 3) && bar % 4 === 0) sm(o, t, [40, 47, 52], six * 64, 0.035, { a: six * 16, r: 3, w: 0.8, wave: "triangle" });
-      if (sec === 3 && bar % 4 === 0 && o.P.choir) pad(o, t, tri, six * 64, 0.02);   // the choir, from the dark
-      if (k === 20) riser(o, t, six * 64, 0.07);
-      if (k === 24 || k === 28) crash(o, t, 0.8);
+      sweep(o, "fuzzF", sec === "dark" ? 500 : quiet ? 700 : 1300 + (k % 8) * 80, t, 0.5);
+      sweep(o, "padF", quiet ? 1800 : 1100, t, 1);
+      o.sub.set(t, r - 12, quiet ? 0.07 : 0.12);
+      if (sec === "dark" && bar % 2 === 0) fz(o, t, r, 0.9, six * 30, true);
+      if ((sec === "dark" || quiet) && bar % 4 === 0) sm(o, t, [40, 47, 52], six * 64, 0.035, { a: six * 16, r: 3, w: 0.8, wave: "triangle" });
+      if (quiet && bar % 4 === 0 && o.P.choir) pad(o, t, tri, six * 64, 0.02);   // the choir, from the dark
+      if (k === 0) sm(o, t, [64], six * 128, 0.02, { a: six * 120, r: 0.12, w: 0, wave: "sawtooth" });   // one razor-thin note, swelling for eight bars, then cut
+      if (sec === "dark" && k % 4 === 1) flyby(o, t, six * 14, 0.3);   // wings, overhead
+      if (sec === "signal" && k % 2 === 0) horns(o, t, k % 4 === 0 ? [40, 52] : [43, 55], six * 30, 0.065, { a: six * 6, pan: k % 4 ? 0.3 : -0.3 });   // the call: two notes, low, rising
+      if (k === 20 || k === 36) riser(o, t, six * 64, 0.07);
+      if (k === 24 || k === 32 || k === 40 || k === 44) crash(o, t, 0.8);
+      if (k === 16 || k === 32) boom(o, t, 0.7);
     }
-    kit(o, t, st, bar, sec === 3 ? 0 : sec === 1 ? 2 : 3, { four: true, back: sec === 4, fill: bar === 115 || bar === 131 });
-    if (sec === 3 && st % 4 === 2) rumble(o, t, 0.7);   // the kick goes; the rumble stays
-    if ((sec === 2 || sec === 4) && SIG.ost[st] !== null) fz(o, t, r + SIG.ost[st], st % 4 === 0 ? 1 : 0.75, six * 0.8);
-    if ((sec === 2 || sec === 4) && (st === 6 || st === 14)) stb(o, t, [r + 12, r + 13], st === 6 ? 0.9 : 0.7, six * 0.6, st === 6 ? -0.5 : 0.5);   // metal on metal
-    if (sec === 3 && bar >= 122 && st % (bar === 123 ? 1 : 2) === 0) rollHit(o, t, 0.3 + (bar - 122) * 0.25 + st * 0.02);
-    if (bar === 123 && st === 8) subDrop(o, t, six * 8, 0.5);
-    if (sec === 3 && st % 2 === 0) hookAt(((bar - 116) * 16 + st) / 2).forEach(function (n) { br2(o, t, [n[1] - 24, n[1] - 12], n[2] * six * 2, 0.06); });   // half speed, in the low brass
-    if (sec === 4) hookAt((k % 8) * 16 + st).forEach(function (n) { o.la.play(t, n[1], n[2] * six, 0.07); o.lb.play(t, n[1] - 12, n[2] * six, 0.06); });   // both leads, an octave apart
+    kit(o, t, st, bar, quiet ? 0 : sec === "dark" ? 2 : 3, { four: true, back: sec === "chase" || sec === "leads", fill: bar === 115 || bar === 139 || bar === 143 });
+    if (quiet && st % 4 === 2) rumble(o, t, 0.7);   // the kick goes; the rumble stays
+    if ((sec === "machine" || sec === "chase" || sec === "leads") && SIG.ost[st] !== null) fz(o, t, r + SIG.ost[st], st % 4 === 0 ? 1 : 0.75, six * 0.8);
+    if ((sec === "machine" || sec === "leads") && (st === 6 || st === 14)) stb(o, t, [r + 12, r + 13], st === 6 ? 0.9 : 0.7, six * 0.6, st === 6 ? -0.5 : 0.5);   // metal on metal
+    // strings: a relentless spiccato on E, the minor sixth leaning in
+    if (sec === "machine" || sec === "signal" || sec === "chase") spic(o, t, (st % 8 === 6 ? 48 : st % 4 === 3 ? 47 : 52) + (r === 41 ? 1 : 0), st % 4 === 0 ? 0.9 : 0.55, st % 2 ? 0.45 : -0.45, sec === "chase" ? 0.8 : 0.45);
+    if (sec === "signal" && (st === 0 || st === 10)) taiko(o, t, st ? 0.6 : 0.9, st ? 0.4 : -0.4);
+    if (sec === "chase" && bar % 2 === 1 && st >= 12) taiko(o, t, 0.5 + (st - 12) * 0.12, (st - 13.5) * 0.25, 120);
+    if (sec === "chase" && (st === 6 || st === 14)) horns(o, t, tri.map(function (m) { return m - 12; }), six * 1.5, 0.05, { a: 0.01, pan: st === 6 ? -0.3 : 0.3 });   // the march's horn stabs
+    if (sec === "warning" && bar >= 130 && st % (bar === 131 ? 1 : 2) === 0) rollHit(o, t, 0.3 + (bar - 130) * 0.25 + st * 0.02);
+    if (bar === 131 && st === 8) subDrop(o, t, six * 8, 0.5);
+    if (sec === "warning" && st % 2 === 0) hookAt(((k - 24) * 16 + st) / 2).forEach(function (n) { br2(o, t, [n[1] - 24, n[1] - 12], n[2] * six * 2, 0.06); });   // half speed, in the low brass
+    if (sec === "leads") hookAt((k % 8) * 16 + st).forEach(function (n) { o.la.play(t, n[1], n[2] * six, 0.07); o.lb.play(t, n[1] - 12, n[2] * six, 0.06); });   // both leads, an octave apart
   }
-  function sigDance(o, t, st, bar) {   // Golden · a K-pop dance break: verse, pre-chorus, chorus, and the key lifts for the last one
-    var k = bar - 100, sec = k < 8 ? "verse" : k < 16 ? "pre" : k < 24 ? "chorus" : "lift", six = o.six;
-    var up = sec === "lift" && bar < 130 ? 2 : 0, c0 = T1.ch[Math.floor(bar / 2) % 4], c = { r: c0.r + up, tri: c0.tri.map(function (m) { return m + up; }) }, pos = (bar % 8) * 16 + st;
+
+  /* Golden · the dance break, 48 bars of K-pop and hip hop: 0-7 a boom-bap verse (the hook on a music box, DJ
+   * scratches) · 8-15 a trap verse (808s, rolling hats, the vocal chop) · 16-23 the pre-chorus · 24-31 the chorus ·
+   * 32-39 the dance break (the beat switching every two bars, stacked claps, scratches) · 40-47 the last chorus,
+   * a whole step up, coming home for the last two bars. */
+  function sigDance(o, t, st, bar) {
+    var k = bar - 100, six = o.six;
+    var sec = k < 8 ? "rap" : k < 16 ? "trap" : k < 24 ? "pre" : k < 32 ? "chorus" : k < 40 ? "break" : "lift";
+    var up = sec === "lift" && bar < SIG_END - 2 ? 2 : 0, c0 = T1.ch[Math.floor(bar / 2) % 4], c = { r: c0.r + up, tri: c0.tri.map(function (m) { return m + up; }) }, pos = (bar % 8) * 16 + st;
     if (st === 0) {
       if (k === 0) mixTo(o, t, { stab: 1.1, keys: 1.1 }, six * 4);
-      sweep(o, "arpF", sec === "pre" ? 900 + (k - 8) * 250 : 2600, t, 0.6);
+      sweep(o, "arpF", sec === "pre" ? 900 + (k - 16) * 250 : 2600, t, 0.6);
       sweep(o, "fuzzF", 1300, t, 0.4);
-      o.sub.set(t, c.r - 12, sec === "verse" ? 0.08 : 0.12);
+      o.sub.set(t, c.r - 12, sec === "rap" || sec === "trap" ? 0.08 : 0.12);
       if (sec === "pre" && bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[0] + 12]), six * 32, 0.045, { a: six * 4, r: 1.4 });
-      if (k === 12) riser(o, t, six * 64, 0.07);
-      if (k === 16 || k === 24) crash(o, t, 1);
+      if (k === 20 || k === 36) riser(o, t, six * 64, 0.07);
+      if (k === 24 || k === 32 || k === 40) crash(o, t, 1);
       if (bar % 4 === 0) glass(o, t, [c.tri[2] + 24, c.tri[0] + 36], six * 48, 0.01);
     }
-    kit(o, t, st, bar, sec === "verse" ? 1 : sec === "pre" ? 2 : 3, { fill: bar === 115 || bar === 123 || bar === 129 || bar === 131 });
-    if (sec === "verse" && [0, 3, 6, 10].indexOf(st) >= 0) keys(o, t, c.tri[st % 3] + 12, 0.45, six * 2);   // syncopated piano chords
-    if (sec === "verse") hookAt(pos).forEach(function (n) { box(o, t, n[1] + 12, 0.7, n[2] * six * 1.3, 0); });
+    if (sec === "rap") boomBap(o, t, st, bar);
+    else if (sec === "trap") trapBeat(o, t, st, bar);
+    else if (sec === "break") danceBreak(o, t, st, bar, k, c);
+    else kit(o, t, st, bar, sec === "pre" ? 2 : 3, { fill: bar === 131 || bar === 145 || bar === 147 });
+    if ((sec === "rap" || sec === "break") && bar % 2 === 1 && (st === 12 || st === 14)) scr(o, t, c.tri[0] + 12 + (st === 14 ? 5 : 0), six * 1.2, 0.05, st === 12 ? -0.4 : 0.4);   // the DJ
+    if ((sec === "rap" || sec === "trap") && [0, 3, 6, 10].indexOf(st) >= 0) keys(o, t, c.tri[st % 3] + 12, 0.42, six * 2);   // syncopated piano chords
+    if (sec === "rap") hookAt(pos).forEach(function (n) { box(o, t, n[1] + 12, 0.7, n[2] * six * 1.3, 0); });
+    if (sec === "trap") { chop(o, t, st, c.tri); if (st % 8 === 0 || st === 11) fz(o, t, c.r, 0.7, six * 1.6); }   // the vocal chop, and the 808 bass under the kicks
     if (sec === "pre") parp(o, t, pulseOf(c, st, C3.arp), st % 4 === 0 ? 0.9 : 0.6, six * 0.7, st % 2 ? 0.4 : -0.4);
-    if (sec === "pre" && bar >= 114 && st % (bar === 115 ? 1 : 2) === 0) rollHit(o, t, 0.3 + (bar - 114) * 0.25 + st * 0.02);
-    if (bar === 115 && st === 8) subDrop(o, t, six * 8, 0.45);
+    if (sec === "pre" && bar >= 122 && st % (bar === 123 ? 1 : 2) === 0) rollHit(o, t, 0.3 + (bar - 122) * 0.25 + st * 0.02);
+    if (bar === 123 && st === 8) subDrop(o, t, six * 8, 0.45);
     if (sec === "chorus" || sec === "lift") {
       if (C3.roll.indexOf(st) >= 0) fz(o, t, c.r + (st % 4 === 3 ? 12 : 0), st % 4 === 2 ? 0.9 : 0.65, six * 0.8);
       chop(o, t, st, c.tri);
       if (st === 0 || st === 8) stb(o, t, c.tri, 0.8, six * 0.8, st ? 0.5 : -0.5);
       hookAt(pos).forEach(function (n) { o.lead.play(t, n[1] + 12 + up, n[2] * six, 0.08); });
     }
+  }
+  // hip hop: a swung boom-bap - the kick on 1 and the "a" of 2, snare and clap on 2 and 4, lazy 16th hats
+  function boomBap(o, t, st, bar) {
+    var six = o.six, sw = st % 2 ? six * 0.18 : 0;
+    if (st === 0 || st === 7 || (st === 10 && bar % 2)) kick808(o, t, st ? 0.75 : 0.95);
+    if (st === 4 || st === 12) { snare(o, t, 0.7); clap(o, t, 0.35); }
+    if (st % 2 === 0 || st % 4 === 3) hh(o, t + sw, st % 4 === 0 ? 0.55 : 0.35, false, st % 4 < 2 ? -0.25 : 0.25);
+    if (st === 14 && bar % 4 === 3) hh(o, t, 0.5, true, 0.3);
+  }
+  // trap: a half-time clap, 808s, the hats rolling in 32nds and triplets
+  function trapBeat(o, t, st, bar) {
+    var six = o.six;
+    if (st === 0 || st === 11 || (st === 6 && bar % 2)) kick808(o, t, 0.9);
+    if (st === 8) { clap(o, t, 0.75); snap(o, t, 0.6); }
+    if (bar % 2 === 1 && st >= 12) for (var i = 0; i < 3; i++) hh(o, t + i * six / 3, 0.3 + i * 0.1, false, 0.15);   // a triplet roll
+    else if (bar % 4 === 2 && st >= 8 && st < 12) { hh(o, t, 0.4, false, -0.15); hh(o, t + six / 2, 0.35, false, 0.15); }   // 32nds
+    else if (st % 2 === 0) hh(o, t, st % 4 === 0 ? 0.55 : 0.4, false, st % 4 ? 0.2 : -0.2);
+  }
+  // the dance break: the beat switches every two bars (half time, then double time), claps stacked, 808s punching
+  function danceBreak(o, t, st, bar, k, c) {
+    var six = o.six, dbl = (k >> 1) % 2 === 1;
+    if (dbl) {
+      if (st % 4 === 0) { kick808(o, t, 0.9); fz(o, t, c.r, 0.75, six * 1.5); }
+      if (st % 8 === 4) { clap(o, t, 0.8); snare(o, t, 0.55); }
+      hh(o, t, st % 2 ? 0.3 : 0.5, st % 4 === 2, st % 2 ? 0.25 : -0.25);
+    } else {
+      if (st === 0 || st === 3 || st === 10) { kick808(o, t, 0.95); fz(o, t, c.r + (st === 10 ? 7 : 0), 0.8, six * 2); }
+      if (st === 8) { clap(o, t, 0.9); snap(o, t, 0.7); snare(o, t, 0.5); }
+      if (st % 2 === 0) hh(o, t, 0.45, false, 0);
+      if (bar % 2 === 1 && st >= 13) hh(o, t + six / 2, 0.4, false, 0.2);
+    }
+    if (k % 2 === 1 && (st === 4 || st === 12)) stb(o, t, [c.tri[0] + 24, c.tri[2] + 24], 0.55, six * 0.3, st === 4 ? -0.6 : 0.6);   // "hey!"
+    if (k === 39 && st >= 8) rollHit(o, t, 0.4 + (st - 8) * 0.07);
+  }
+
+  // The joins between chapters: nothing just stops. A chapter going somewhere quieter drains away into it, and
+  // something carries across; a chapter arriving bigger is announced (a riser) and lands (an impact).
+  function cutSeam(o, t, st, bar) {
+    if (st !== 0) return;
+    var six = o.six, style = o.P.style;
+    if (bar === 14) sm(o, t, [40, 52, 55, 59], six * 48, 0.025, { a: six * 24, r: 3, w: 0.6 });   // cold open → boot: a pad, already the pulse's Em
+    if (bar === 26) riser(o, t, six * 32, 0.05);
+    if (bar === 28) { crash(o, t, 0.5); boom(o, t, 0.4); }   // the theme lands
+    if (bar === 66 || bar === 67) { sweep(o, "fuzzF", bar === 66 ? 600 : 380, t, six * 6); sweep(o, "arpF", bar === 66 ? 700 : 420, t, six * 8); }   // the theme drains away into the dark
+    if (bar === 66) wind(o, t, six * 40, 0.9);
+    if (bar === 67) heart(o, t + six * 8, 0.5);
+    if (bar === 98) riser(o, t, six * 32, 0.05);
+    if (bar === 100) crash(o, t, 0.45);
+    if (bar === SIG_END - 2 && style === "kpop") riser(o, t, six * 32, 0.05);
+    if (bar === SIG_END - 1 && style === "mrrobot") rewind(o, t + six * 10, six * 6, 0.6);   // after the power goes, the tape spools back...
+    if (bar === SIG_END) boom(o, t, 0.55);   // ...and two cursors start on an impact, not out of nothing
+    if (bar === 276) { sm(o, t, [40, 52, 55, 59], six * 32, 0.03, { a: six * 22, r: 4, w: 0.5 }); sweep(o, "padF", 1600, t, six * 8); }   // flight → dawn: Em, dawn's first chord, swelling under the last bars
+    if (bar === 278) { crash(o, t, 0.4); boom(o, t, 0.45); }
   }
 
   function duelDrums(o, t, st, bar, d, withRide) {   // the battle of wits' kit, with each palette's accents on top
@@ -1407,16 +1523,16 @@
     if (style === "kpop" && k >= 42) E5.home.forEach(function (n) { if (n[0] === k - 42 && n[1] === st) box(o, t, n[2] + 12, 0.45, n[3] * six * 1.5, 0); });
   }
   var SONG_CUT = {
-    mood: CUT_MOOD, bpm: 76, bars: 310, outroBars: 2, v2: true, duckDepth: 0.4,
+    mood: CUT_MOOD, bpm: 76, bars: 326, outroBars: 2, v2: true, duckDepth: 0.4,
     tempo: cutBpm,
-    refAt: function (pos) { return pos < 262 ? 440 : pos < 266 ? 440 - 2 * (pos - 262) : 432; },   // dawn retunes to A=432
+    refAt: function (pos) { return pos < 278 ? 440 : pos < 282 ? 440 - 2 * (pos - 278) : 432; },   // dawn retunes to A=432
     chapter: function (bar, theme) { return cutName(bar, (THEMES[theme] || THEMES.phthalo).style); },
     sec: function (bar) { return { id: cutSec(bar) }; },
     trim: { "phthalo": 7, "knight": -1, "golden": 2.5 },
     // measured: each section matched to the loudness of its counterpart in the five songs (cutSec names the match)
-    lift_golden: {"cold open": 0.8, "boot": -5.6, "pulse": -5.4, "theme": -1.0, "break": -1.4, "drive": -0.2, "dark room": -3.6, "something moves": -4.5, "hide": -2.2, "found": 0.2, "sig 1": -1.3, "sig 2": -0.2, "sig 3": -5.2, "sig 4": -0.6, "run-up": 0.6, "handshake": 0.8, "exploit": -2.9, "stalemate": -6.4, "root": -2.5, "collapse": -3.8, "3 AM": 6.2, "memory": 4.2, "the truth": 5.4, "the climb": -0.2, "release": -0.9, "becoming": -0.3, "dawn: ashes": 8.2, "dawn: what remains": 2.2, "dawn: remember": 2.3, "dawn: grief": 3.8, "dawn: the weight lifts": 5.8, "dawn: last light": 5.4, "boot 2": -3.5},
-    lift_knight: {"cold open": 2.7, "boot": -2.8, "pulse": -5.0, "theme": -1.6, "break": 3.5, "drive": -0.4, "dark room": 1.2, "something moves": -5.1, "hide": 2.2, "found": 0.0, "sig 1": -9.3, "sig 2": -2.5, "sig 3": 2.5, "sig 4": -1.1, "run-up": 3.1, "handshake": 5.7, "exploit": -0.8, "stalemate": -4.3, "root": -0.4, "collapse": 2.5, "3 AM": 9.3, "memory": 7.5, "the truth": 8.2, "the climb": 4.1, "release": -1.5, "becoming": -0.9, "dawn: ashes": 11.2, "dawn: what remains": 7.7, "dawn: remember": 7.3, "dawn: grief": 8.7, "dawn: the weight lifts": 10.9, "dawn: last light": 10.1, "boot 2": 0.3},
-    lift_phthalo: {"cold open": -2.2, "boot": -4.2, "pulse": -4.0, "theme": 0.2, "break": -3.9, "drive": -0.1, "dark room": -7.2, "something moves": -9.5, "hide": -5.2, "found": 0.0, "sig 1": 3.3, "sig 2": 0.4, "sig 3": -4.3, "sig 4": -1.1, "run-up": -0.7, "handshake": -2.4, "exploit": -5.8, "stalemate": -10.3, "root": -5.3, "collapse": -7.0, "3 AM": 3.1, "memory": 0.8, "the truth": 2.4, "the climb": -2.2, "release": -0.6, "becoming": -0.1, "dawn: ashes": 2.9, "dawn: what remains": -1.8, "dawn: remember": -1.6, "dawn: grief": 0.3, "dawn: the weight lifts": 2.6, "dawn: last light": 1.4, "boot 2": -3.2},
+    lift_golden: {"cold open": 0.8, "boot": -3.6, "pulse": -5.4, "theme": -1.0, "break": -1.4, "drive": -0.2, "dark room": -3.6, "something moves": -4.5, "hide": -2.2, "found": 0.2, "sig 1": -1.3, "sig 2": -1.3, "sig 3": -0.2, "sig 4": -5.2, "sig 5": -2.0, "sig 6": -0.6, "run-up": 0.6, "handshake": 0.8, "exploit": -2.9, "stalemate": -6.4, "root": -2.5, "collapse": -3.8, "3 AM": 6.2, "memory": 4.2, "the truth": 5.4, "the climb": -0.2, "release": -0.9, "becoming": -0.3, "dawn: ashes": 8.2, "dawn: what remains": 2.2, "dawn: remember": 2.3, "dawn: grief": 3.8, "dawn: the weight lifts": 5.8, "dawn: last light": 5.4, "boot 2": -3.5},
+    lift_knight: {"cold open": 2.7, "boot": -1.5, "pulse": -3.0, "theme": -1.6, "break": 3.5, "drive": -0.4, "dark room": 1.2, "something moves": -5.1, "hide": 2.2, "found": 0.0, "sig 1": -9.3, "sig 2": -2.5, "sig 3": 1.0, "sig 4": 2.5, "sig 5": -1.1, "sig 6": -1.1, "run-up": 3.1, "handshake": 5.7, "exploit": -0.8, "stalemate": -4.3, "root": -0.4, "collapse": 2.5, "3 AM": 9.3, "memory": 7.5, "the truth": 8.2, "the climb": 4.1, "release": -1.5, "becoming": -0.9, "dawn: ashes": 11.2, "dawn: what remains": 7.7, "dawn: remember": 7.3, "dawn: grief": 8.7, "dawn: the weight lifts": 10.9, "dawn: last light": 10.1, "boot 2": 0.3},
+    lift_phthalo: {"cold open": -2.2, "boot": -4.2, "pulse": -4.0, "theme": 0.2, "break": -3.9, "drive": -0.1, "dark room": -5.5, "something moves": -9.5, "hide": -5.2, "found": 0.0, "sig 1": 3.3, "sig 2": 0.4, "sig 3": -4.3, "sig 4": -2.0, "sig 5": -2.0, "sig 6": -1.1, "run-up": -0.7, "handshake": -2.4, "exploit": -5.8, "stalemate": -10.3, "root": -5.3, "collapse": -7.0, "3 AM": 3.1, "memory": 0.8, "the truth": 2.4, "the climb": -2.2, "release": -0.6, "becoming": -0.1, "dawn: ashes": 2.9, "dawn: what remains": -1.8, "dawn: remember": -1.6, "dawn: grief": 0.3, "dawn: the weight lifts": 2.6, "dawn: last light": 1.4, "boot 2": -3.2},
     ramp: 1,
     tone: { sub: -2, punch: 1.5, pres: 1.5 },
     init: function (o, t) {
@@ -1429,12 +1545,16 @@
       else if (bar < 28) cutBoot(o, t, st, bar);
       else if (bar < 68) cutTheme(o, t, st, bar);
       else if (bar < 100) cutDark(o, t, st, bar);
-      else if (bar < 132) (o.P.style === "industrial" ? sigWarehouse : o.P.style === "kpop" ? sigDance : sigMonologue)(o, t, st, bar);
-      else if (bar < 196) cutCursors(o, t, st, bar);
-      else if (bar < 202) cutCollapse(o, t, st, bar);
-      else if (bar < 230) cutThreeAm(o, t, st, bar);
-      else if (bar < 262) cutFly(o, t, st, bar);
-      else cutDawn(o, t, st, bar);
+      else if (bar < SIG_END) (o.P.style === "industrial" ? sigWarehouse : o.P.style === "kpop" ? sigDance : sigMonologue)(o, t, st, bar);
+      else {
+        var b = bar - SIG_EXTRA;   // the later chapters count their bars as they were written
+        if (b < 196) cutCursors(o, t, st, b);
+        else if (b < 202) cutCollapse(o, t, st, b);
+        else if (b < 230) cutThreeAm(o, t, st, b);
+        else if (b < 262) cutFly(o, t, st, b);
+        else cutDawn(o, t, st, b);
+      }
+      cutSeam(o, t, st, bar);
     },
     outro: SONG_EPI.outro
   };

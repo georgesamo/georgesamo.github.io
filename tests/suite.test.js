@@ -22,7 +22,7 @@
       L().catalog().forEach(function (th) {
         expect(th.songs).toHaveLength(10);
         var s = th.songs[5];
-        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(310);
+        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(326);
       });
     });
     it("is a full-length piece: about as long as all five songs together", function () {
