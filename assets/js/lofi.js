@@ -1045,7 +1045,7 @@
   function outroStep(o, t, st, k) {
     var song = o.song, N = song.outroBars;
     if (!o.tgt) {   // decided once, at the outro's first step
-      var ti = o.loop ? o.si : nextIdx(o.theme, o.si), ts = TRACKS[ti];
+      var ti = upNext(o), ts = TRACKS[ti];
       o.tgt = { si: ti, six: 60 / (ts.bpm * o.P.bpm) / 4, ref: ts.ref || 440, six0: o.six, ref0: o.ref };
     }
     var g = o.tgt, f = (k * 16 + st + 1) / (N * 16), e = f * f * (3 - 2 * f);
@@ -2120,6 +2120,18 @@
     if (si === 0 || si >= 5) for (var i = si === 0 || si === 5 ? TRACKS.length - 1 : si - 1; i >= 6; i--) if (siOpen(th, i)) return i;
     return si === 0 || si >= 5 ? 4 : si - 1;
   }
+  // shuffle: what follows a track is a random one from the rotation (the five songs and the open bonus tracks),
+  // picked once per track so "Next:", the outro and the handoff agree; ⏮ walks back through what played
+  var shuffle = (function () { try { return localStorage.getItem("samuka-shuffle") === "1"; } catch (e) { return false; } })();
+  var played = [], lastSi = null, goingBack = false;
+  function rotation(th) { var r = [0, 1, 2, 3, 4]; for (var i = 6; i < TRACKS.length; i++) if (siOpen(th, i)) r.push(i); return r; }
+  function upNext(o, skipLoop) {
+    if (!o) return 0;
+    if (o.loop && !skipLoop) return o.si;
+    if (!shuffle) return nextIdx(o.theme, o.si);
+    if (o.pick == null) { var r = rotation(o.theme).filter(function (x) { return x !== o.si; }); o.pick = r[Math.floor(Math.random() * r.length)]; }
+    return o.pick;
+  }
   // how the tracks are listed and numbered: the five songs, the bonus tracks, and the suite last
   var LIST = [0, 1, 2, 3, 4, 6, 7, 8, 9, 5];
   function posOf(si) { return LIST.indexOf(si) + 1; }
@@ -2217,7 +2229,7 @@
     }
     o.play = function (tt, s) {
       if (Math.floor(s / 16) >= song.bars && !o.tgt) {   // the outro: decide where it hands over, as the synth does
-        o.tgt = { si: o.loop ? si : nextIdx(theme, si), six: fs.dur[n - 1], ref: o.ref, six0: fs.dur[0], ref0: o.ref };
+        o.tgt = { si: upNext(o), six: fs.dur[n - 1], ref: o.ref, six0: fs.dur[0], ref0: o.ref };
       }
       o.six = o.dur = fs.dur[Math.min(s, n - 1)];
       if (!count()) return;
@@ -2230,12 +2242,83 @@
       for (var k = k0; k <= k1; k++) if (!o.started[k] && ready[name + "-" + k]) startPiece(k, tt);
       if (k0 + 1 < count() && ft > (k0 + 1) * C - 20) quiet(loadPiece(name, k0 + 1));   // the next piece, 20 s ahead
       if (ft > fs.at[n] - 20) {   // and the next track's first piece, for the handoff
-        var nx = o.tgt ? o.tgt.si : o.loop ? si : nextIdx(theme, si);
+        var nx = o.tgt ? o.tgt.si : upNext(o);
         if (FILE_TRACKS.indexOf(nx) >= 0 && manifest.tracks[theme + "-" + (nx + 1)]) quiet(loadPiece(theme + "-" + (nx + 1), 0));
       }
     };
     return o;
   }
+
+  /* ---------- the phone player: an <audio> element, so the music keeps playing in the background ----------
+   * Phones freeze a backgrounded page's scripts, and iOS suspends Web Audio altogether, so on touch devices each
+   * track plays from one full-length file (assets/audio/full/<theme>-<n>.mp3, cut at the track's handoff) through
+   * a plain <audio> element. The OS treats that as a media player: it keeps playing when the browser is minimised
+   * or the screen locks, with lock-screen controls (Media Session), and the next track starts when the element
+   * ends, so the rotation carries on in the background too. Desktop keeps the Web Audio player above (on-the-beat
+   * handoffs, crossfades, the visualisers). localStorage "samuka-player" = "web" or "media" overrides the choice. */
+  var MEDIA = (function () {
+    if (!AUDIO_BASE || !window.Audio) return false;
+    try { var o = localStorage.getItem("samuka-player"); if (o === "web") return false; if (o === "media") return true; } catch (e) {}
+    return !!(window.matchMedia && matchMedia("(hover: none) and (pointer: coarse)").matches);
+  })();
+  var mel = null, mLoading = false, mPosAt = 0;
+  function mEl() {
+    if (mel) return mel;
+    mel = new Audio(); mel.preload = "auto"; mel.setAttribute("playsinline", "");
+    mel.addEventListener("ended", function () {   // the track is over: the next one, as the rotation says
+      if (!on || !cur || !cur.media) return;
+      var o = cur, si = upNext(o);
+      if (pinned && !o.loop) pinned.si = si;
+      mLoad(o.theme, si, o.loop, 0, true);
+    });
+    mel.addEventListener("timeupdate", function () {
+      if (!cur || !cur.media) return;
+      mSync();
+      var ms = navigator.mediaSession, now = Date.now();
+      if (ms && ms.setPositionState && isFinite(mel.duration) && now - mPosAt > 1000) {
+        mPosAt = now;
+        try { ms.setPositionState({ duration: mel.duration, playbackRate: 1, position: Math.min(mel.currentTime, mel.duration) }); } catch (e) {}
+      }
+    });
+    // the OS can pause and resume us (a call, headphones unplugged, the lock screen): keep the player in step
+    mel.addEventListener("pause", function () { if (mLoading || !on || paused || mel.ended) return; paused = true; setMs("paused"); render(); emit(); });
+    mel.addEventListener("playing", function () { mLoading = false; if (on && paused) { paused = false; setMs("playing"); render(); emit(); } });
+    // a read failed (a flaky mobile connection): try again from the same place once; if that fails too,
+    // the Web Audio player takes over for the rest of the visit, at the same track and position
+    mel.addEventListener("error", function () {
+      var o = cur; if (!o || !o.media || !on) return;
+      var at = o.lastPos || 0;
+      if (!o.retried) { o.retried = true; setTimeout(function () { if (cur === o && on) { mLoad(o.theme, o.si, o.loop, at, !paused); cur.retried = true; } }, 800); return; }
+      MEDIA = false; mStop(); on = false; cur = null; paused = false;
+      start(o.theme, o.si, o.loop); if (at > 1) seekTime(at);
+    });
+    return mel;
+  }
+  function mLoad(theme, si, loop, at, play) {
+    var P = THEMES[theme], song = TRACKS[si], fs = fileSteps(theme, si), m = mEl();
+    cur = { media: true, file: true, P: P, song: song, theme: theme, si: si, s: 0, six: fs.dur[0], dur: fs.dur[0], loop: !!loop,
+            ref: song.ref || 440, bpm: Math.round(song.bpm * P.bpm), fs: fs, heard: false, tgt: null, lastPos: at || 0 };
+    mLoading = !!play;
+    m.loop = !!loop;
+    m.volume = Math.min(1, vol * vol); m.muted = vol === 0;
+    m.src = AUDIO_BASE + "full/" + theme + "-" + (si + 1) + ".mp3" + (at > 0 ? "#t=" + at.toFixed(2) : "");
+    if (play) { var p = m.play(); if (p && p.catch) p.catch(function () { mLoading = false; paused = true; setMs("paused"); render(); emit(); }); }
+    mSync(); nowPlaying();
+  }
+  // where the element is, in the track's steps: the bar, the outro, "heard"
+  function mSync() {
+    var o = cur; if (!o || !o.media) return;
+    var at = o.fs.at, n = o.fs.dur.length, t = (mel ? mel.currentTime : 0) + 0.05, lo = 0, hi = n - 1;
+    while (lo < hi) { var mid = (lo + hi + 1) >> 1; if (at[mid] <= t) lo = mid; else hi = mid - 1; }
+    o.s = lo; o.six = o.dur = o.fs.dur[lo];
+    if (mel && mel.currentTime > 0) o.lastPos = mel.currentTime;
+    if (lo >= o.song.bars * 16) { if (!o.tgt) o.tgt = { si: upNext(o), six0: o.fs.dur[0], ref0: o.ref }; }
+    else o.tgt = null;
+    if (o.si < 5 && !o.heard && lo >= 64) { o.heard = true; markHeard(o.theme, o.si); }
+  }
+  function mTimes() { var d = mel && isFinite(mel.duration) ? mel.duration : cur.fs.at[cur.fs.dur.length] - 0.05; return { pos: mel ? Math.min(mel.currentTime, d) : 0, dur: d }; }
+  function mSeek(sec) { if (!mel) return; var d = mTimes().dur; try { mel.currentTime = Math.max(0, Math.min(d - 0.25, sec)); } catch (e) {} mSync(); emit(); }
+  function mStop() { if (mel) { mel.pause(); mel.removeAttribute("src"); try { mel.load(); } catch (e) {} } }
 
   /* ---------- engine ---------- */
   // si 0–4 are the songs, si 5 the director's cut; sp = { s: step } starts somewhere other than the top
@@ -2322,7 +2405,7 @@
     while (cur && cur.next < horizon) {
       if (cur.file && !cur.isReady()) { cur.next = Math.max(cur.next, now + 0.05); break; }   // hold the clock until the file is there
       if (cur.s >= (cur.song.bars + cur.song.outroBars) * 16) {
-        var o = cur; handoff(o, o.tgt ? o.tgt.si : o.loop ? o.si : nextIdx(o.theme, o.si), o.loop); continue;
+        var o = cur; handoff(o, o.tgt ? o.tgt.si : upNext(o), o.loop); continue;
       }
       if (cur.si < 5 && cur.s === 64) markHeard(cur.theme, cur.si);   // four bars in counts as "heard"
       cur.play(cur.next, cur.s); cur.s++; cur.next += cur.dur;
@@ -2346,12 +2429,14 @@
     return (song.bars + song.outroBars) * 240 / (song.bpm * THEMES[theme].bpm);
   }
   function times() {
+    if (cur.media) return mTimes();
     var song = cur.song, n = (song.bars + song.outroBars) * 16, s = Math.min(cur.s, n);
     if (song.tempo) { var a = stepTimes(cur.theme, cur.si); return { pos: a[s], dur: a[n] }; }
     var dur = trackSecs(cur.theme, cur.si); return { pos: s / n * dur, dur: dur };
   }
   function seekTime(sec) {
     if (!cur) return;
+    if (cur.media) return mSeek(+sec || 0);
     var song = cur.song, n = (song.bars + song.outroBars) * 16, s;
     sec = Math.max(0, +sec || 0);
     if (song.tempo) {
@@ -2366,6 +2451,7 @@
 
   function info() {
     if (!cur) return null;
+    if (cur.media) mSync();
     var tm = times();
     var base = { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: posOf(cur.si), si: cur.si, of: Math.max(lastPos(cur.theme), posOf(cur.si)), bonus: cur.si >= 6, bpm: Math.round(15 / cur.six), loop: cur.loop, paused: paused, pos: tm.pos, dur: tm.dur };
     var outro = cur.s >= cur.song.bars * 16 && cur.tgt ? " · outro → " + cur.P.titles[cur.tgt.si] : "";
@@ -2377,7 +2463,9 @@
   function nowPlaying() {
     var i = info(); if (!i) return;
     if (btn) btn.title = "♪ " + i.name + " · " + i.themeName + " · " + i.bpm + " bpm" + (cur.file ? "" : " (synthesized live)");
-    if (nextBtn) nextBtn.title = "Next: " + cur.P.titles[nextIdx(cur.theme, cur.si)];
+    if (nextBtn) nextBtn.title = "Next: " + cur.P.titles[upNext(cur, true)];
+    if (lastSi != null && lastSi !== cur.si && !goingBack) { played.push(lastSi); if (played.length > 30) played.shift(); }
+    goingBack = false; lastSi = cur.si;
     var ms = navigator.mediaSession;
     try { if (ms && window.MediaMetadata) ms.metadata = new MediaMetadata({ title: i.name, artist: "Samuka's Arcade", album: i.themeName + " soundtrack" + (cur.file ? "" : " · synthesized live") }); } catch (e) {}
     emit();
@@ -2399,6 +2487,14 @@
   var paused = false, vol = (function () { try { var v = parseFloat(localStorage.getItem("samuka-volume")); return isFinite(v) ? Math.max(0, Math.min(1, v)) : 1; } catch (e) { return 1; } })();
   function level() { return MASTER * vol * vol; }   // squared: the slider feels even to the ear
   function start(theme, si, loop) {
+    if (MEDIA) {
+      if (bc) try { bc.postMessage({ from: tabId }); } catch (e) {}
+      on = true;
+      if (theme != null) mLoad(theme, si || 0, loop, 0, true);
+      else if (!cur) mLoad(themeId(), 0, false, 0, true);
+      else { paused = false; quiet(mEl().play()); }
+      paused = false; mediaSession(); setMs("playing"); render(); emit(); return;
+    }
     if (!AC || !ensureCtx()) { if (btn) btn.hidden = true; return; }
     if (bc) try { bc.postMessage({ from: tabId }); } catch (e) {}
     quiet(ctx.resume());
@@ -2410,6 +2506,7 @@
   }
   // pause keeps everything exactly where it is (the audio clock stops), resume carries on mid-bar
   function pause() {
+    if (MEDIA && on && !paused && mel) { paused = true; mel.pause(); setMs("paused"); render(); emit(); return; }
     if (!on || paused || !ctx) return;
     paused = true;
     var my = ++token;
@@ -2419,6 +2516,7 @@
   }
   function resume() {
     if (!on || !paused) return start();
+    if (MEDIA) { paused = false; quiet(mEl().play()); setMs("playing"); render(); emit(); return; }
     paused = false; token++;
     var p = ctx.resume();
     function go() { ramp(level(), 0.15); run(); }
@@ -2429,6 +2527,7 @@
     vol = Math.max(0, Math.min(1, +v || 0));
     try { localStorage.setItem("samuka-volume", String(vol)); } catch (e) {}
     if (on && !paused && ctx) ramp(level(), 0.08);
+    if (mel) { mel.volume = Math.min(1, vol * vol); mel.muted = vol === 0; }   // phones set their own volume (iOS ignores .volume, not .muted)
     emit();
   }
   // ⏮ restarts the track if it's a few seconds in, otherwise goes to the previous one
@@ -2436,11 +2535,14 @@
     if (!on) return start();
     if (paused) resume();
     if (times().pos > 3) { seekTime(0); return; }
-    var si = prevIdx(cur.theme, cur.si); if (pinned) pinned.si = si;
+    var si = shuffle && played.length ? played.pop() : prevIdx(cur.theme, cur.si); if (pinned) pinned.si = si;
+    goingBack = true;
+    if (cur.media) return mLoad(cur.theme, si, cur.loop, 0, true);
     switchTo(cur.theme, si, 1.2, cur.loop);
   }
   function stop() {
     if (!on) return;
+    if (cur && cur.media) { on = false; pinned = null; paused = false; mStop(); cur = null; setMs("none"); render(); emit(); return; }
     on = false; pinned = null; paused = false;
     var my = ++token;
     ramp(0, 0.8);
@@ -2454,7 +2556,8 @@
   function next() {
     if (!on) return start();
     if (paused) resume();
-    var si = nextIdx(cur.theme, cur.si); if (pinned) pinned.si = si;
+    var si = upNext(cur, true); if (pinned) pinned.si = si;
+    if (cur.media) return mLoad(cur.theme, si, pinned ? cur.loop : false, 0, true);
     switchTo(cur.theme, si, 1.2, pinned ? cur.loop : false);
   }
   // the listening page: a pinned track (theme changes elsewhere don't switch it); loops unless loop === false
@@ -2495,7 +2598,7 @@
     start: function () { start(); }, stop: stop, isOn: function () { return on; }, next: next, prev: prev, preview: preview,
     pause: pause, resume: resume, isPaused: function () { return on && paused; },
     seekTime: seekTime, skip: function (d) { if (cur) seekTime(times().pos + d); },
-    setLoop: function (v) { if (cur) { cur.loop = !!v; if (!v && cur.tgt && cur.tgt.si === cur.si) cur.tgt.si = nextIdx(cur.theme, cur.si); emit(); } },
+    setLoop: function (v) { if (cur) { cur.loop = !!v; if (cur.media && mel) mel.loop = cur.loop; if (!v && cur.tgt && cur.tgt.si === cur.si) cur.tgt.si = upNext(cur, true); emit(); } },
     volume: function (v) { if (v != null) setVolume(v); return vol; },
     render: renderTrack,   // (theme, si, sampleRate?) → Promise<AudioBuffer>, for saving tracks as files
     // where each bar of a track starts (seconds) and which section it belongs to: for measuring a render section by section
@@ -2507,7 +2610,7 @@
     },
     // play a track in the normal rotation (it carries on to the next one when it ends)
     play: function (theme, si) { pinned = null; start(THEMES[theme] ? theme : themeId(), si | 0, false); },
-    seek: function (bar) { if (!cur) return; unTarget(cur); cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; if (cur.file) cur.restart = true; else scheduleDyn(cur, Math.max(ctx.currentTime, cur.next)); },
+    seek: function (bar) { if (!cur) return; if (cur.media) return mSeek(cur.fs.at[Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16] - 0.05); unTarget(cur); cur.s = Math.max(0, Math.min(cur.song.bars - 1, bar | 0)) * 16; if (cur.file) cur.restart = true; else scheduleDyn(cur, Math.max(ctx.currentTime, cur.next)); },
     track: function () { return on ? info() : null; },
     analyser: function () { return on ? analyser : null; },
     theme: themeId,
@@ -2523,7 +2626,14 @@
       open: bonusOpen, unlock: unlockBonus,
       list: function () { return BONUS.map(function (b) { return { si: b.si, game: b.game, name: b.name, titles: b.titles, open: bonusOpen(b.game) }; }); }
     },
-    order: { next: nextIdx, prev: prevIdx },   // what ⏭ / ⏮ and the outros pick (exposed for the tests)
+    order: { next: nextIdx, prev: prevIdx },
+    mode: function () { return MEDIA ? "media" : "web"; },
+    shuffle: function (v) {
+      if (v != null) { shuffle = !!v; try { localStorage.setItem("samuka-shuffle", shuffle ? "1" : "0"); } catch (e) {} if (cur) { cur.pick = null; if (cur.tgt && !cur.loop) cur.tgt.si = upNext(cur, true); nowPlaying(); } }
+      return shuffle;
+    },
+    // seconds into each rendered file where its track hands over (the full-length phone files end there)
+    handoffs: function () { var r = {}; Object.keys(THEMES).forEach(function (th) { FILE_TRACKS.forEach(function (si) { var f = fileSteps(th, si); r[th + "-" + (si + 1)] = f.at[f.dur.length]; }); }); return r; },   // what ⏭ / ⏮ and the outros pick (exposed for the tests)
     catalog: function () {
       return Object.keys(THEMES).map(function (k) {
         var P = THEMES[k];
@@ -2540,6 +2650,13 @@
 
   // theme change: same song, new palette (unless a track is pinned on the listening page)
   window.addEventListener("samuka:theme", function () {
+    if (on && cur && cur.media && !pinned) {   // the phone player: the same place in the new palette's file
+      var th = themeId(); if (th === cur.theme) return;
+      mSync();
+      if (cur.si === 5 && !suiteOpen(th)) return mLoad(th, 0, false, 0, !paused);
+      var s = cur.s < cur.song.bars * 16 ? cur.s : 0;
+      return mLoad(th, cur.si, cur.loop, fileSteps(th, cur.si).at[s] - 0.05, !paused);
+    }
     if (!on || !ctx || !cur || pinned) return;
     var th = themeId(); if (th === cur.theme) return;
     if (cur.si === 5 && !suiteOpen(th)) switchTo(th, 0, 2, false);   // that theme's cut is still locked

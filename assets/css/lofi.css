@@ -26,15 +26,17 @@
 }
 
 /* ---------- the player dock (assets/js/musicdock.js), opened from ♪ ---------- */
-.mdock { --md: var(--accent); position: fixed; z-index: 140; width: 340px; max-height: calc(100vh - 80px); overflow: auto; overscroll-behavior: contain;
+.mdock { --md: var(--accent); --ic-w: 1.8; --ic-cap: square; --ic-join: miter; --btn-r: 10px; --play-r: 14px;
+  position: fixed; z-index: 140; width: 340px; max-height: calc(100vh - 80px); overflow: auto; overscroll-behavior: contain;
   display: grid; gap: 12px; padding: 14px; border-radius: 16px; border: 1px solid var(--line-strong); background: var(--bg-elev);
   box-shadow: var(--shadow), 0 0 0 1px var(--hl-soft); animation: termIn 0.18s var(--ease) both; }
 .mdock[hidden] { display: none; }
-.mdock.is-sheet { left: 8px; right: 8px; top: auto; bottom: calc(70px + env(safe-area-inset-bottom, 0px)); width: auto; }
+.mdock__grab { display: none; }
+.mdock__top { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: start; }
 .mdock__head { display: grid; gap: 2px; min-width: 0; }
 .mdock__eyebrow { font: 10.5px var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--md); }
 .mdock__title { font: 700 17px var(--mono); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mdock__sub { font: 11.5px var(--mono); color: var(--muted); }
+.mdock__sub { font: 11.5px var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mdock__seek { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font: 11px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .mdock__track { position: relative; height: 20px; cursor: pointer; touch-action: none; outline: none; }
 .mdock__rail { position: absolute; left: 0; right: 0; top: 8px; height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; }
@@ -43,23 +45,62 @@
 .mdock__marks i { position: absolute; top: 5px; width: 2px; height: 10px; margin-left: -1px; background: var(--muted); opacity: 0.7; border-radius: 2px; }
 .mdock__thumb { position: absolute; top: 4px; left: 0; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--md); box-shadow: 0 0 0 3px var(--bg-elev); }
 .mdock__track:focus-visible .mdock__rail { box-shadow: 0 0 0 2px var(--md); }
-.mdock__ctrl { display: flex; justify-content: center; align-items: center; gap: 6px; }
-.mdock button { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line-strong); background: transparent; color: var(--text); font-size: 14px; cursor: pointer; }
-.mdock button:hover:not(:disabled) { border-color: var(--md); }
-.mdock button:disabled { opacity: 0.4; cursor: default; }
+
+/* buttons and their icons: one SVG set, drawn in the theme's hand */
+.mdock button { display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border-radius: var(--btn-r); border: 1px solid transparent;
+  background: transparent; color: var(--text); cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.1s; }
+.mdock button[hidden] { display: none; }
+.mdock button:hover:not(:disabled) { color: var(--md); border-color: var(--line-strong); }
+.mdock button:active:not(:disabled) { transform: scale(0.94); }
+.mdock button:disabled { opacity: 0.35; cursor: default; }
 .mdock button:focus-visible { outline: 2px solid var(--md); outline-offset: 2px; }
-.mdock .mdock__play { width: 50px; height: 50px; font-size: 18px; background: var(--md); border-color: var(--md); color: var(--bg); }
-.mdock__row { display: flex; align-items: center; gap: 8px; }
-.mdock .mdock__sm { width: 32px; height: 32px; font-size: 12px; }
-.mdock .mdock__sm[aria-pressed="true"] { border-color: var(--md); background: color-mix(in srgb, var(--md) 20%, transparent); }
-.mdock__row input { flex: 1; min-width: 0; accent-color: var(--md); }
+.mdock svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: var(--ic-w); stroke-linecap: var(--ic-cap); stroke-linejoin: var(--ic-join); overflow: visible; }
+.mdock svg .f { fill: currentColor; }
+.mdock svg .dot { stroke-width: calc(var(--ic-w) * 1.7); stroke-linecap: round; }
+.mdock svg text { fill: currentColor; stroke: none; font: 700 6.5px var(--mono); text-anchor: middle; }
+.mdock svg .one { display: none; }
+.mdock .mdock__sm { width: 34px; height: 34px; color: var(--muted); }
+.mdock .mdock__sm svg { width: 19px; height: 19px; }
+.mdock .mdock__tog[aria-pressed="true"] { color: var(--md); background: color-mix(in srgb, var(--md) 14%, transparent); }
+.mdock .mdock__tog[aria-pressed="true"] svg .one { display: inline; }
+.mdock__ctrl { display: flex; justify-content: space-between; align-items: center; padding: 0 4px; }
+.mdock .mdock__play { width: 56px; height: 56px; border-radius: var(--play-r); background: var(--md); border-color: var(--md); color: var(--bg); }
+.mdock .mdock__play:hover:not(:disabled) { color: var(--bg); filter: brightness(1.08); }
+.mdock .mdock__play svg { width: 26px; height: 26px; }
+.mdock__row { display: flex; align-items: center; gap: 4px; }
+.mdock__row input { flex: 1; min-width: 0; margin: 0 4px; accent-color: var(--md); }
 .mdock__list { list-style: none; margin: 0; padding: 8px 0 0; border-top: 1px solid var(--line); display: grid; gap: 2px; }
-.mdock__list button { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; align-items: center; width: 100%; height: auto; padding: 6px 8px; border: 0; border-radius: 8px; text-align: left; font: 12.5px var(--mono); }
-.mdock__list button:hover { background: var(--bg-soft); }
-.mdock__list button.is-on { background: color-mix(in srgb, var(--md) 16%, transparent); color: var(--text); }
+.mdock.is-folded .mdock__list { display: none; }
+.mdock__list button { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; place-items: center stretch; width: 100%; height: auto; padding: 7px 8px; border: 0; border-radius: 8px; text-align: left; font: 12.5px var(--mono); color: var(--text); }
+.mdock__list button:hover:not(:disabled) { background: var(--bg-soft); border-color: transparent; color: var(--text); }
+.mdock__list button.is-on { background: color-mix(in srgb, var(--md) 16%, transparent); }
 .mdock__n { color: var(--muted); text-align: center; }
 .mdock__list button.is-on .mdock__n { color: var(--md); }
+.mdock__t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mdock__t small { margin-left: 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--md); }
 .mdock__d { color: var(--muted); font-size: 11px; }
 .mdock__room { font: 11.5px var(--mono); color: var(--muted); text-align: center; }
 .mdock__room:hover { color: var(--md); }
+
+/* the themes: Phthalo is a terminal (square ends, sharp corners, a squared play key); Dark Knight is
+   industrial (heavier strokes, cut corners, a stamped play plate); Golden is K-pop glass (round strokes, a glowing orb) */
+:root[data-skin="knight"] .mdock { --ic-w: 2.4; --ic-cap: butt; --ic-join: miter; --btn-r: 3px; --play-r: 3px; }
+:root[data-skin="knight"] .mdock .mdock__play { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+:root[data-skin="knight"] .mdock__thumb { border-radius: 2px; }
+:root[data-skin="golden"] .mdock { --ic-w: 1.9; --ic-cap: round; --ic-join: round; --btn-r: 99px; --play-r: 50%; }
+:root[data-skin="golden"] .mdock .mdock__play { background: radial-gradient(circle at 35% 30%, color-mix(in srgb, #fff 35%, var(--md)), var(--md) 60%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--md) 55%, transparent); }
+:root[data-skin="golden"] .mdock .mdock__tog[aria-pressed="true"] svg { filter: drop-shadow(0 0 4px var(--md)); }
+
+/* phones: a compact sheet at the bottom; the list folds away, ⌄ or a swipe down minimises it */
+.mdock.is-sheet { left: 8px; right: 8px; top: auto; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); width: auto; max-height: min(70vh, calc(100vh - 140px));
+  gap: 8px; padding: 6px 12px 10px; border-radius: 18px; touch-action: pan-y; }
+.mdock.is-sheet .mdock__grab { display: block; justify-self: center; width: 40px; height: 4px; margin: 2px 0 2px; border-radius: 99px; background: var(--line-strong); }
+.mdock.is-sheet .mdock__title { font-size: 15px; }
+.mdock.is-sheet .mdock__sub { font-size: 11px; }
+.mdock.is-sheet .mdock__play { width: 50px; height: 50px; }
+.mdock.is-sheet .mdock__list { max-height: 34vh; overflow: auto; }
+@media (hover: none) {   /* phones set the volume with their own buttons */
+  .mdock.is-sheet .mdock__row input { display: none; }
+  .mdock.is-sheet .mdock__row { justify-content: space-around; }
+}

@@ -66,6 +66,18 @@
         b.forEach(function (s, i) { expect(s.bonus).toBe(true); expect(s.locked).toBe(true); expect(s.no).toBe(6 + i); expect(s.si).toBe(6 + i); expect(s.outro >= 2).toBe(true); });
       });
     });
+    it("knows where every file-backed track hands over, for the phone player's files", function () {
+      var h = L().handoffs();
+      expect(Object.keys(h).length).toBe(30);
+      expect(h["phthalo-4"] > h["phthalo-1"] - 10).toBe(true);   // song 4's outro slows into the epilogue: it runs long
+      expect(h["knight-6"] > 600).toBe(true);
+    });
+    it("starts with shuffle off and remembers the choice", function () {
+      var was = L().shuffle();
+      expect(L().shuffle(true)).toBe(true);
+      expect(localStorage.getItem("samuka-shuffle")).toBe("1");
+      L().shuffle(was);
+    });
     it("lists the suite last, after the bonus tracks", function () {
       L().catalog().forEach(function (th) {
         var order = th.songs.slice().sort(function (a, b) { return a.no - b.no; }).map(function (s) { return s.si; });
