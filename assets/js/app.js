@@ -483,7 +483,7 @@
     requestAnimationFrame(buildGraph);
     // the hero gem lives on the profile page: start a fresh one for the new canvas
     var g = document.getElementById("gem-canvas");
-    if (g && !g.__gem) { var s = document.createElement("script"); s.src = "/assets/js/gem.js"; document.body.appendChild(s); }
+    if (g && !g.__gem) { var s = document.createElement("script"); s.src = "/assets/js/gem.js"; s.onload = s.onerror = function () { s.remove(); }; document.body.appendChild(s); }
   });
 
   /* ---------- go ---------- */

@@ -35,6 +35,7 @@
     var doc = new DOMParser().parseFromString(html, "text/html");
     cache[url] = doc;
     setTimeout(function () { delete cache[url]; }, 60000);
+    var keys = Object.keys(cache); if (keys.length > 6) delete cache[keys[0]];   // a parsed page is thousands of nodes: keep a handful
     return doc;
   }
   function swap(sel, doc, how) {

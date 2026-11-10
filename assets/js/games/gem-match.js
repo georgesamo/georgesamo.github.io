@@ -548,6 +548,7 @@
           alive = false; clearHint();
           window.removeEventListener("pointermove", onPointerMove);
           window.removeEventListener("pointerup", onPointerUp);
+          stage.removeEventListener("click", onClick);   // the stage outlives the game: its listener kept the whole old board alive
         }
       };
     }

@@ -129,6 +129,7 @@
     // the window covers the viewport, so the page behind it is only burning frames: is-arcade
     // lets the CSS drop the card previews out of rendering while a game runs
     document.documentElement.classList.add("is-arcade");
+    document.querySelectorAll(".arcade-card__preview").forEach(function (pv) { setPreview(pv, false); });
     modal.querySelector("#arcade-title").textContent = games[id].title + (opts && opts.mode && opts.mode !== "free" ? " · " + opts.mode : "");
     modal.querySelector("[data-hud]").innerHTML = "";
     modal.querySelector("[data-foot]").innerHTML = "";
@@ -155,6 +156,26 @@
   }
   showBests();
   window.addEventListener("samuka:page", showBests);   // seamless navigation swaps new cards in
+
+  /* The card previews animate only while you can see them: off screen (most of the list on a phone) they
+   * stop - their CSS animations, and the Pit Wall preview's SVG clock, whose <animateMotion> cars cost a
+   * layout pass every frame. A game being open stops them all (the window covers the page). */
+  var pvIO = null;
+  function setPreview(pv, on) {
+    pv.classList.toggle("is-idle", !on);
+    pv.querySelectorAll("svg").forEach(function (s) { if (s.pauseAnimations) { if (on) s.unpauseAnimations(); else s.pauseAnimations(); } });
+  }
+  function watchPreviews() {
+    if (pvIO) pvIO.disconnect();
+    var pvs = document.querySelectorAll(".arcade-card__preview");
+    if (!pvs.length || !("IntersectionObserver" in window)) return;
+    pvIO = new IntersectionObserver(function (en) {
+      en.forEach(function (e) { setPreview(e.target, e.isIntersecting && !current); });
+    }, { rootMargin: "80px" });
+    pvs.forEach(function (pv) { setPreview(pv, false); pvIO.observe(pv); });
+  }
+  watchPreviews();
+  window.addEventListener("samuka:page", watchPreviews);
   window.addEventListener("samuka:auth", showBests);
   function close() {
     if (!modal || modal.hidden) return;
@@ -163,6 +184,7 @@
     modal.hidden = true;
     document.documentElement.style.overflow = "";
     document.documentElement.classList.remove("is-arcade");
+    watchPreviews();   // the previews in view start again
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 

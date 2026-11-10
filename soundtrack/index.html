@@ -120,6 +120,9 @@ sitemap: false
           var L = window.SamukaLofi, A = window.SamukaAuth;
           if (!root) return;
           if ((!L || !A) && document.readyState !== "complete") { window.addEventListener("load", boot, { once: true }); return; }   // site scripts load after the page body
+          // seamless navigation runs this again on every visit: everything it hangs on window/document goes when the page does
+          var ac = window.AbortController ? new AbortController() : null, own = ac ? { signal: ac.signal } : false;
+          window.addEventListener("samuka:page", function () { if (!document.body.contains(root) && ac) ac.abort(); }, own);
           // team only: Samuka and Nino (the same check as Nino's corner)
           function team() { return !!(A && A.user && A.user() && (A.role() === "samuka" || A.role() === "nino")); }
           var built = false;
@@ -136,7 +139,7 @@ sitemap: false
             if (!built) build();
           }
           gate.addEventListener("click", function (e) { if (e.target.closest("[data-st-signin]") && A) A.open({ reason: "team" }); });
-          window.addEventListener("samuka:auth", check);
+          window.addEventListener("samuka:auth", check, own);
 
           function build() {
           built = true;
@@ -235,7 +238,7 @@ sitemap: false
             if (el === volIn && (k === "ArrowLeft" || k === "ArrowRight")) return;
             e.preventDefault(); act(a);
           }
-          document.addEventListener("keydown", onKey);
+          document.addEventListener("keydown", onKey, own);
 
           function draw(f, dur) {
             $("[data-stp-fill]").style.width = (f * 100) + "%";
@@ -297,8 +300,8 @@ sitemap: false
           }
 
           list();
-          window.addEventListener("samuka:suite", function () { if (alive()) { list(); paint(); } });
-          window.addEventListener("samuka:lofi", function () { if (alive()) paint(); });
+          window.addEventListener("samuka:suite", function () { if (alive()) { list(); paint(); } }, own);
+          window.addEventListener("samuka:lofi", function () { if (alive()) paint(); }, own);
           paint(); viz();
           var iv = setInterval(function () { if (!alive()) { clearInterval(iv); return; } paint(); }, 250);
           }

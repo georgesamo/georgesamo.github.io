@@ -55,7 +55,8 @@
   var shatter = { t: 1, dur: 1.7, dirs: [] }; // t: 0 → 1 (1 = at rest)
   var sparks = [];
   var colors = {};
-  var running = false, visible = true, last = 0;
+  var running = false, visible = true, last = 0, lastDraw = 0;
+  var calmMs = window.matchMedia("(pointer: coarse)").matches ? 48 : 30;   // the calm spin: ~20 fps on a phone (battery), ~30 on a desktop
 
   function readColors() {
     var cs = getComputedStyle(document.documentElement);
@@ -76,13 +77,20 @@
 
   function resize() {
     var r = canvas.getBoundingClientRect();
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    // a phone screen is dense enough that 1.5x looks as sharp for thin lines, and it is ~45% fewer pixels to paint
+    DPR = Math.min(window.devicePixelRatio || 1, window.matchMedia("(pointer: coarse)").matches ? 1.5 : 2);
     W = r.width; H = r.height;
     canvas.width = Math.round(W * DPR); canvas.height = Math.round(H * DPR);
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     scale = Math.min(W * 0.2, H * 0.27);
     orbit = W < 520 ? allOrbit.filter(function (o, i) { return i % 2 === 0 || o.name.indexOf("Claude") > -1; }) : allOrbit; // fewer labels on phones
+    paintGlow();
     if (!running) draw(0);
+  }
+  // the glow behind the gem never moves: a CSS background, painted once, instead of a canvas-wide fill every frame
+  function paintGlow() {
+    canvas.style.backgroundImage = "radial-gradient(circle " + Math.round(scale * 2.1) + "px at 50% 47%, " + rgba(colors.ruby, colors.light ? 0.10 : 0.16) + ", " + rgba(colors.ruby, 0) + ")";
+    canvas.style.backgroundRepeat = "no-repeat";
   }
 
   function rot(p, ry, rx) {
@@ -124,12 +132,6 @@
     ctx.clearRect(0, 0, W, H);
     var ry = rotY, rx = rotX + pointerTilt;
     var k = shatterK();
-
-    // glow
-    var gl = ctx.createRadialGradient(W / 2, H * 0.47, 0, W / 2, H * 0.47, scale * 2.1);
-    gl.addColorStop(0, rgba(colors.ruby, colors.light ? 0.10 : 0.16));
-    gl.addColorStop(1, rgba(colors.ruby, 0));
-    ctx.fillStyle = gl; ctx.fillRect(0, 0, W, H);
 
     // orbit labels (split into back / front)
     var labels = orbit.map(function (o) {
@@ -227,7 +229,9 @@
     orbitAngle += dt * (reduced ? 0 : 0.22);
     pointerTilt += (pointerTiltT - pointerTilt) * Math.min(1, dt * 4);
     if (shatter.t < 1) shatter.t = Math.min(1, shatter.t + dt / shatter.dur);
-    draw(dt);
+    // a slow spin reads as smooth at 30 fps: draw every other frame unless something is moving fast
+    var calm = !dragging && shatter.t >= 1 && !sparks.length && Math.abs(velY - (reduced ? 0 : 0.28)) < 0.02;
+    if (!calm || ts - lastDraw >= calmMs) { draw(calm ? (ts - lastDraw) / 1000 : dt); lastDraw = ts; }
     var idle = reduced && !dragging && shatter.t >= 1 && !sparks.length && Math.abs(velY) < 0.001;
     if (!visible || idle || !canvas.isConnected) { running = false; return; }   // stops when the page was switched away
     requestAnimationFrame(frame);
@@ -267,20 +271,28 @@
   canvas.addEventListener("pointerleave", function () { pointerTiltT = 0; });
 
   /* ---- lifecycle ---- */
+  // app.js runs this file again for each new home page (seamless navigation swaps the canvas), so every
+  // listener here belongs to this canvas and goes away with it - or each visit would leave a set behind
+  var ac = window.AbortController ? new AbortController() : null, own = ac ? { signal: ac.signal } : false, io = null;
   readColors();
   resize();
-  window.addEventListener("resize", resize);
-  window.addEventListener("samuka:theme", function () { readColors(); if (!running) draw(0); });
+  window.addEventListener("resize", resize, own);
+  window.addEventListener("samuka:theme", function () { readColors(); paintGlow(); if (!running) draw(0); }, own);
   if ("IntersectionObserver" in window) {
-    new IntersectionObserver(function (en) { visible = en[0].isIntersecting; if (visible) wake(); }).observe(canvas);
+    io = new IntersectionObserver(function (en) { visible = en[0].isIntersecting; if (visible) wake(); });
+    io.observe(canvas);
   }
-  document.addEventListener("visibilitychange", function () { visible = !document.hidden; if (visible) wake(); });
+  document.addEventListener("visibilitychange", function () { visible = !document.hidden; if (visible) wake(); }, own);
+  window.addEventListener("samuka:page", function () {
+    if (canvas.isConnected) return;
+    visible = false; if (io) io.disconnect(); if (ac) ac.abort();
+  }, own);
 
   function intro() {
     if (!reduced) triggerShatter(false); // assemble from fragments
     wake();
   }
-  if (window.__samukaReady) intro(); else window.addEventListener("samuka:ready", intro, { once: true });
+  if (window.__samukaReady) intro(); else window.addEventListener("samuka:ready", intro, ac ? { once: true, signal: ac.signal } : { once: true });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (!running) draw(0); });
   window.SamukaGem = { shatter: triggerShatter };
 })();

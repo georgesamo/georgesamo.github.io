@@ -29,15 +29,18 @@
 .pv-sr__lane { position: relative; border-radius: 8px; border: 1px dashed var(--line-strong); overflow: hidden; container-type: inline-size; }
 .pv-sr__lane::before { content: attr(data-q); position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font: 11px var(--mono); color: var(--muted); }
 /* the bars travel on the compositor: animating `left` relaid out all seven of them every frame */
-.pv-sr__lane i { position: absolute; top: 5px; bottom: 5px; left: 0; width: 54px; border-radius: 5px; animation: pvJob 3.2s linear infinite; }
-.pv-sr__lane:nth-child(1) i { background: var(--sr-critical); }
-.pv-sr__lane:nth-child(2) i { background: var(--sr-default); }
-.pv-sr__lane:nth-child(3) i { background: var(--sr-mailers); }
+/* each <i> is a lane-wide runner carrying a 54px bar: its translateX(100%) is the lane's width, so the
+   motion is a plain transform the compositor runs alone (container units in the keyframes were not) */
+.pv-sr__lane i { position: absolute; top: 5px; bottom: 5px; left: 0; width: 100%; animation: pvJob 3.2s linear infinite; will-change: transform; }
+.pv-sr__lane i::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 54px; border-radius: 5px; background: var(--bar); }
+.pv-sr__lane:nth-child(1) i { --bar: var(--sr-critical); }
+.pv-sr__lane:nth-child(2) i { --bar: var(--sr-default); }
+.pv-sr__lane:nth-child(3) i { --bar: var(--sr-mailers); }
 .pv-sr__lane i:nth-child(2) { animation-delay: -1.1s; }
 .pv-sr__lane i:nth-child(3) { animation-delay: -2.2s; }
 .pv-sr__lane:nth-child(2) i { animation-duration: 4.1s; }
 .pv-sr__lane:nth-child(3) i { animation-duration: 2.6s; }
-@keyframes pvJob { from { transform: translateX(-60px); } to { transform: translateX(calc(100cqw + 6px)); } }
+@keyframes pvJob { from { transform: translateX(-60px); } to { transform: translateX(calc(100% + 6px)); } }
 
 /* preview: gem grid */
 .pv-gm { position: absolute; inset: 0; display: grid; place-content: center; grid-template-columns: repeat(7, 34px); gap: 6px; }
@@ -54,6 +57,8 @@
    Measured on a 20x-throttled phone: Gem Match 15.6 -> 58.5 fps, Schema Stack 16.1 -> 59.3 fps. */
 :root.is-arcade .arcade-card__preview { content-visibility: hidden; }
 :root.is-arcade .arcade-card__preview * { animation-play-state: paused; }
+/* off screen (arcade.js watches): no clock running for a preview nobody can see */
+.arcade-card__preview.is-idle * { animation-play-state: paused; }
 /* same for the header's "online" dot: its pulse animates box-shadow, a repaint on every frame */
 :root.is-arcade .online i { animation-play-state: paused; }
 
@@ -100,8 +105,8 @@
 .arcade__new { color: var(--gold); margin-left: 6px; }
 .arcade__toast {
   position: absolute; left: 50%; top: 12px; z-index: 6; transform: translateX(-50%);
-  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--bg-elev);
-  font: 12px var(--mono); color: var(--text-2); white-space: nowrap; pointer-events: none;
+  width: max-content; max-width: calc(100% - 24px); padding: 6px 12px; border-radius: 16px; border: 1px solid var(--line-strong); background: var(--bg-elev);
+  font: 12px/1.4 var(--mono); color: var(--text-2); text-align: center; overflow-wrap: anywhere; pointer-events: none;
   animation: toast 1.4s var(--ease) both;
 }
 .arcade__toast.ok { color: var(--accent); border-color: var(--accent); }
@@ -297,7 +302,7 @@
 /* ---------- small screens ---------- */
 @media (max-width: 760px) {
   .arcade-cards { grid-template-columns: minmax(0, 1fr); }
-  .arcade { padding: 0; }
+  .arcade { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: var(--bg-elev); }   /* full screen, clear of the notch and home indicator */
   .arcade__win { width: 100%; height: 100%; border-radius: 0; }
   .arcade__stage { padding: 10px; }
   .arcade__foot { font-size: 11px; }

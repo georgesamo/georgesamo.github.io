@@ -300,6 +300,7 @@ main { max-width: 980px; margin: 0 auto; padding: 0 40px 64px; }
   white-space: normal; /* newlines between .ln blocks collapse; each .ln keeps `pre` */
 }
 .code .ln { display: block; min-height: 1.75em; white-space: pre; }
+.notfound .code .ln { white-space: pre-wrap; overflow-wrap: anywhere; }   /* a log line, not code: wrap it on a phone */
 .code--numbered { counter-reset: ln; padding-left: 0; }
 .code--numbered .ln { counter-increment: ln; padding-left: 52px; position: relative; }
 .code--numbered .ln::before {

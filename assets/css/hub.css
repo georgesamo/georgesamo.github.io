@@ -254,7 +254,8 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
      with the page or leave a gap. The window itself never scrolls, so the address bar stays put. */
   html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
   /* the frame is pinned to the visible screen edges: no leftover area can show below the bar */
-  body { position: fixed; inset: 0; display: flex; flex-direction: column; height: auto; overflow: hidden; background-attachment: scroll, scroll; }
+  body { position: fixed; inset: 0; display: flex; flex-direction: column; height: auto; overflow: hidden; background-attachment: scroll, scroll;
+    padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }   /* clear of the notch in landscape */
   .ide { flex: 1 1 auto; min-height: 0; height: auto; grid-template-rows: minmax(0, 1fr); }
   .editor {
     min-height: 0; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -283,8 +284,8 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   .msheet__card a:hover, .msheet__card button:hover { background: var(--bg-hover); }
   .msheet__card small { margin-left: auto; color: var(--muted); }
   .msheet__card [hidden] { display: none; }
-  .ach-toast { bottom: calc(var(--mnav-h) + 14px); right: 10px; left: 10px; }
-  .arcade__toast { bottom: 16px; }
+  .ach-toast { bottom: calc(var(--mnav-h) + 14px + env(safe-area-inset-bottom)); right: 10px; left: 10px; }
+  .arcade__toast { top: auto; bottom: 16px; }   /* moved to the bottom on phones: "top" must go, or it stretches top to bottom */
   .lobby { padding-top: 28px; gap: 20px; }
   .lobby__title { font-size: clamp(48px, 15vw, 72px); }
   .lobby__text { font-size: 15.5px; }

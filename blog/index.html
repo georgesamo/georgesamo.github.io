@@ -83,8 +83,9 @@ tab_file: pulls/index.md
     Array.prototype.forEach.call(btns, function (b) {
       b.addEventListener("click", function () { apply(b.getAttribute("data-pr-filter")); });
     });
-    // also react to clicks on a label inside a row
-    document.addEventListener("click", function (e) {
+    // also react to clicks on a label inside a row (listening on the list: it leaves with the page, the document doesn't)
+    var listEl = rows.length ? rows[0].parentNode : null;
+    if (listEl) listEl.addEventListener("click", function (e) {
       var l = e.target.closest && e.target.closest(".pr-row .pr-label");
       if (l) apply(l.getAttribute("data-tag"));
     });
