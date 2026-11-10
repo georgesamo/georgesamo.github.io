@@ -69,7 +69,9 @@
     it("knows where every file-backed track hands over, for the phone player's files", function () {
       var h = L().handoffs();
       expect(Object.keys(h).length).toBe(30);
-      expect(h["phthalo-4"] > h["phthalo-1"] - 10).toBe(true);   // song 4's outro slows into the epilogue: it runs long
+      // an outro keeps its song's tempo: Ring Zero hands over after 64 + 4 bars at 110 bpm (the file starts at 0.05 s)
+      expect(Math.abs(h["phthalo-1"] - (0.05 + 68 * 4 * 60 / 110)) < 0.01).toBe(true);
+      expect(Math.abs(h["golden-4"] - (0.05 + 100 * 4 * 60 / (172 * 1.1))) < 0.01).toBe(true);
       expect(h["knight-6"] > 600).toBe(true);
     });
     it("starts with shuffle off and remembers the choice", function () {
