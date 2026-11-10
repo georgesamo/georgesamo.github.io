@@ -23,8 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "20"
       - name: Install Playwright (uses the runner's Chrome, no browser download)
@@ -40,16 +40,16 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
       - id: pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       # the last run's news/videos, so stories and reviews pile up across runs (feeds only list the newest few)
       - name: Restore the last run's feeds
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: |
             _data/news.json
@@ -59,7 +59,7 @@ jobs:
       - name: Fetch news feeds and YouTube channels
         run: bundle exec ruby scripts/fetch_news.rb || echo "::warning::feed fetch failed, building with the last copy"
       - name: Keep the feeds for the next run
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: |
             _data/news.json
@@ -69,7 +69,7 @@ jobs:
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "20"
       - name: Install build tools (esbuild, Playwright with the runner's Chrome)
@@ -81,7 +81,7 @@ jobs:
           (cd _site && python3 ../tests/serve.py 4200 > /tmp/site.log 2>&1 &)
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:4200/ > /dev/null && break; sleep 0.5; done
           node tests/smoke.mjs http://127.0.0.1:4200
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
 
   deploy:
     needs: build
@@ -91,4 +91,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
