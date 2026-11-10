@@ -988,17 +988,22 @@
     if (k === 1 && st === 0) keys(o, t, 76, 0.5, 5);
   };
   SONG_DUEL.outroBars = 4;
-  SONG_DUEL.outro = function (o, t, st, k, N) {   // after the logout: one soft chord and the two hackers' last words
+  // After the logout: one soft chord and the two hackers' last words, then a breath. The tempo glides from
+  // 172 down to the epilogue's 60 here, so nothing rhythmic plays once it starts to slow (no ticking that
+  // drags), and an E minor pad - the epilogue's first chord - swells in and rings on across the join.
+  SONG_DUEL.outro = function (o, t, st, k, N) {
     var six = o.six, fade = 1 - k / N;
     if (st === 0) {
-      o.sub.set(t, 28, 0.05 * fade + 0.02);   // stays at the logout's level
+      o.sub.set(t, 28, 0.05 * fade + 0.02);   // stays at the logout's level, then thins out
       if (k === 0) stb(o, t, [52, 55, 59], 0.25, six * 2, 0);
       if (k === 1) { sm(o, t, [52, 55, 59, 64], six * 40, 0.035, { a: six * 4, r: 2 }); o.la.play(t, 76, six * 6, 0.07); }
-      if (k === 2) { o.la.play(t, 67, six * 14, 0.05); o.lb.play(t, 64, six * 14, 0.045); }
+      if (k === 2) {
+        o.la.play(t, 67, six * 14, 0.05); o.lb.play(t, 64, six * 14, 0.045);
+        sm(o, t, [40, 52, 55, 59], 9, 0.03, { a: 3, r: 5, w: 0.4, wave: "triangle" });   // the bridge into the epilogue
+      }
     }
     if (k === 1 && st === 8) o.lb.play(t, 71, six * 8, 0.065);
-    if (k < 2 && st % 4 === 2) hh(o, t, 0.22 * fade, false, st % 8 === 2 ? -0.4 : 0.4);
-    if (k === 3 && st % 3 === 0) blip(o, t, 0.4 - st * 0.02, st % 2 ? 0.7 : -0.7, 3600);
+    if (k === 0 && st % 4 === 2) hh(o, t, 0.22 * fade, false, st % 8 === 2 ? -0.4 : 0.4);
   };
   SONG_EPI.outroBars = 2;
   SONG_EPI.outro = function (o, t, st, k) {   // a last glint of light over a held G chord
@@ -2111,14 +2116,18 @@
     return 0;
   }
   function prevIdx(th, si) {
-    if (si === 0 || si >= 6) for (var i = si === 0 ? TRACKS.length - 1 : si - 1; i >= 6; i--) if (siOpen(th, i)) return i;
+    // the suite is listed last, after the bonus tracks: ⏮ from it goes back to the last open one
+    if (si === 0 || si >= 5) for (var i = si === 0 || si === 5 ? TRACKS.length - 1 : si - 1; i >= 6; i--) if (siOpen(th, i)) return i;
     return si === 0 || si >= 5 ? 4 : si - 1;
   }
-  function lastOpen(th) { for (var i = TRACKS.length - 1; i > 4; i--) if (siOpen(th, i)) return i + 1; return 5; }
+  // how the tracks are listed and numbered: the five songs, the bonus tracks, and the suite last
+  var LIST = [0, 1, 2, 3, 4, 6, 7, 8, 9, 5];
+  function posOf(si) { return LIST.indexOf(si) + 1; }
+  function lastPos(th) { var n = 5; LIST.forEach(function (si, i) { if (siOpen(th, si)) n = Math.max(n, i + 1); }); return n; }
 
   /* ---------- pre-rendered tracks ----------
    * Live synthesis depends on the listener's machine: when the audio thread misses a deadline, short drum
-   * hits come out as clicks. So the five songs, the director's cut and the Sidekiq Rush bonus track play
+   * hits come out as clicks. So every track - the five songs, the director's cut and the bonus tracks - plays
    * from files rendered offline by this same engine (SamukaLofi.render, via soundtrack-lab/publish-audio.sh).
    * Each track is cut into 30-second MP3 pieces (assets/audio/<theme>-<n>-<k>.mp3, listed in index.json)
    * that overlap by 0.1 s and crossfade there, so only the piece playing and the next one are in memory
@@ -2126,7 +2135,7 @@
    * The step clock keeps running exactly as it does for the synth - position, seeking, theme switches,
    * "heard", outros and handoffs all work the same way - it just doesn't make the sound; the files do.
    * If a file can't be loaded, the track falls back to the synth where it is. */
-  var FILE_TRACKS = [0, 1, 2, 3, 4, 5, 6];
+  var FILE_TRACKS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
   var AUDIO_BASE = (function () { try { return new URL("../audio/", document.currentScript.src).href; } catch (e) { return null; } })();
   var manifest = null, manifestP = null;
   function loadManifest() {
@@ -2358,7 +2367,7 @@
   function info() {
     if (!cur) return null;
     var tm = times();
-    var base = { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: cur.si + 1, si: cur.si, of: Math.max(lastOpen(cur.theme), cur.si + 1), bonus: cur.si >= 6, bpm: Math.round(15 / cur.six), loop: cur.loop, paused: paused, pos: tm.pos, dur: tm.dur };
+    var base = { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: posOf(cur.si), si: cur.si, of: Math.max(lastPos(cur.theme), posOf(cur.si)), bonus: cur.si >= 6, bpm: Math.round(15 / cur.six), loop: cur.loop, paused: paused, pos: tm.pos, dur: tm.dur };
     var outro = cur.s >= cur.song.bars * 16 && cur.tgt ? " · outro → " + cur.P.titles[cur.tgt.si] : "";
     base.bar = Math.min(cur.song.bars - 1, Math.floor(cur.s / 16)); base.bars = cur.song.bars; base.outro = !!outro;
     base.style = (cur.song.chapter ? "the director's cut · " + cur.song.chapter(base.bar, cur.theme) : cur.song.mood) + outro;
@@ -2460,7 +2469,9 @@
     if (on) stop();
     rendering = true;
     rate = rate || 44100;
-    var song = TRACKS[si], n = (song.bars + song.outroBars) * 16, secs = trackSecs(theme, si) + 5;
+    // the length comes from the real step timing: an outro that slows into a slower track (4 → 5) runs
+    // longer than the track's own tempo says, and its end and its tail must not be cut off
+    var song = TRACKS[si], n = (song.bars + song.outroBars) * 16, secs = Math.max(trackSecs(theme, si), fileSteps(theme, si).at[n]) + 5;
     var live = { ctx: ctx, master: master, mixOut: mixOut, analyser: analyser, noiseBuf: noiseBuf, verbBuf: verbBuf, verbBuf2: verbBuf2 };
     var off = new OAC(2, Math.ceil(secs * rate), rate), CH = 4, o;
     function swapIn() { ctx = off; master = rs.master; analyser = rs.analyser; noiseBuf = rs.noiseBuf; verbBuf = rs.verbBuf; verbBuf2 = rs.verbBuf2; }
@@ -2516,11 +2527,11 @@
     catalog: function () {
       return Object.keys(THEMES).map(function (k) {
         var P = THEMES[k];
-        var songs = SONGS.map(function (s, i) { return { no: i + 1, title: P.titles[i], mood: s.mood, bpm: Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round((s.bars + s.outroBars) * 4 * 60 / (s.bpm * P.bpm)) }; });
-        songs.push({ no: 6, title: P.titles[5], mood: CUT_MOOD, bpm: bpmRange(P), bars: SONG_CUT.bars, outro: SONG_CUT.outroBars, secs: Math.round(trackSecs(k, 5)), suite: true, locked: !suiteOpen(k), heard: heardCount(k) });
+        var songs = SONGS.map(function (s, i) { return { si: i, no: posOf(i), title: P.titles[i], mood: s.mood, bpm: Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round((s.bars + s.outroBars) * 4 * 60 / (s.bpm * P.bpm)) }; });
+        songs.push({ si: 5, no: posOf(5), title: P.titles[5], mood: CUT_MOOD, bpm: bpmRange(P), bars: SONG_CUT.bars, outro: SONG_CUT.outroBars, secs: Math.round(trackSecs(k, 5)), suite: true, locked: !suiteOpen(k), heard: heardCount(k) });
         BONUS.forEach(function (b) {
           var s = b.song;
-          songs.push({ no: b.si + 1, title: P.titles[b.si], mood: s.mood, bpm: s.range ? Math.round(s.range[0] * P.bpm) + "–" + Math.round(s.range[1] * P.bpm) : Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round(trackSecs(k, b.si)), bonus: true, game: b.game, gameName: b.name, locked: !bonusOpen(b.game) });
+          songs.push({ si: b.si, no: posOf(b.si), title: P.titles[b.si], mood: s.mood, bpm: s.range ? Math.round(s.range[0] * P.bpm) + "–" + Math.round(s.range[1] * P.bpm) : Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round(trackSecs(k, b.si)), bonus: true, game: b.game, gameName: b.name, locked: !bonusOpen(b.game) });
         });
         return { theme: k, name: P.name, songs: songs };
       });

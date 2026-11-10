@@ -106,14 +106,14 @@
       var e = t && cat ? cat.songs[t.si] : null;
       q("[data-md-outro]").style.width = e && e.outro ? (e.outro / (e.bars + e.outro) * 100) + "%" : "0";
       q("[data-md-marks]").innerHTML = t && t.si === 5 ? Lo.suite.marks(th).slice(1).map(function (m) { return '<i style="left:' + (m.at / t.dur * 100) + '%" title="' + esc(m.name) + '"></i>'; }).join("") : "";
-      q("[data-md-list]").innerHTML = cat ? cat.songs.filter(function (s) { return !s.locked; }).map(function (s) {
-        return '<li><button type="button" data-md-si="' + (s.no - 1) + '"><span class="mdock__n"></span><span class="mdock__t">' + esc(s.title) + (s.suite ? ' <small>secret</small>' : s.bonus ? ' <small>bonus</small>' : "") + "</span><span class=\"mdock__d\">" + fmt(s.secs) + "</span></button></li>";
+      q("[data-md-list]").innerHTML = cat ? cat.songs.filter(function (s) { return !s.locked; }).sort(function (a, b) { return a.no - b.no; }).map(function (s) {
+        return '<li><button type="button" data-md-si="' + s.si + '" data-md-no="' + s.no + '"><span class="mdock__n"></span><span class="mdock__t">' + esc(s.title) + (s.suite ? ' <small>secret</small>' : s.bonus ? ' <small>bonus</small>' : "") + "</span><span class=\"mdock__d\">" + fmt(s.secs) + "</span></button></li>";
       }).join("") : "";
     }
     el.querySelectorAll("[data-md-si]").forEach(function (b) {
       var onIt = t && +b.getAttribute("data-md-si") === t.si;
       b.classList.toggle("is-on", !!onIt);
-      b.querySelector(".mdock__n").textContent = onIt ? (t.paused ? "▶" : "♪") : String(+b.getAttribute("data-md-si") + 1);
+      b.querySelector(".mdock__n").textContent = onIt ? (t.paused ? "▶" : "♪") : b.getAttribute("data-md-no");
     });
     q("[data-md-room]").hidden = !team() || location.pathname.indexOf("/soundtrack") === 0;
   }

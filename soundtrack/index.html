@@ -155,12 +155,12 @@ sitemap: false
             cat = L.catalog();
             root.innerHTML = cat.map(function (th) {
               var plays = th.theme === "phthalo" ? "plays for everyone" : th.theme === "knight" ? "plays on Samuka's theme" : "plays on Nino's theme";
-              return '<div class="st__theme st__theme--' + th.theme + (th.theme === mine ? " is-mine" : "") + '"><h3>' + th.name + ' <small>' + plays + '</small></h3><ol class="st__list">' + th.songs.map(function (s) {
+              return '<div class="st__theme st__theme--' + th.theme + (th.theme === mine ? " is-mine" : "") + '"><h3>' + th.name + ' <small>' + plays + '</small></h3><ol class="st__list">' + th.songs.slice().sort(function (a, b) { return a.no - b.no; }).map(function (s) {
                 if (s.bonus && s.locked) return '<li class="st__row is-locked"><span class="st__play" aria-hidden="true">🔒</span>' +
                   '<span><span class="st__title">' + s.no + '. ??? <span class="st__tag">bonus</span></span><span class="st__meta">finish a run of ' + s.gameName + ' to unlock it in every theme</span></span></li>';
                 if (s.locked) return '<li class="st__row is-locked"><button class="st__play" type="button" data-pb-theme="' + th.theme + '" aria-label="Open the patch bay">🔒</button>' +
                   '<span><span class="st__title">6. ??? <span class="st__tag">secret</span></span><span class="st__meta">' + (s.heard < 5 ? "heard " + s.heard + "/5 · the patch bay wakes when you've heard all five" : "the patch bay is warm · press 🔒 to patch it together") + '</span></span></li>';
-                return '<li class="st__row' + (s.suite ? " is-suite" : "") + '" data-st="' + th.theme + ':' + (s.no - 1) + '"><button class="st__play" type="button" aria-label="Play ' + s.title + '">▶</button>' +
+                return '<li class="st__row' + (s.suite ? " is-suite" : "") + '" data-st="' + th.theme + ':' + s.si + '"><button class="st__play" type="button" aria-label="Play ' + s.title + '">▶</button>' +
                   '<span><span class="st__title">' + s.no + '. ' + s.title + (s.suite ? ' <span class="st__tag">suite</span>' : s.bonus ? ' <span class="st__tag">bonus</span>' : "") + '</span><span class="st__meta">' + s.mood + ' · ' + s.bpm + ' bpm · ' + fmt(s.secs) + '</span></span></li>';
               }).join("") + "</ol></div>";
             }).join("");

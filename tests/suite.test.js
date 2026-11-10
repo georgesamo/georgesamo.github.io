@@ -63,8 +63,15 @@
       L().catalog().forEach(function (th) {
         var b = th.songs.slice(6);
         expect(b.map(function (s) { return s.game; })).toEqual(["sidekiq", "gems", "schema", "pitwall"]);
-        b.forEach(function (s, i) { expect(s.bonus).toBe(true); expect(s.locked).toBe(true); expect(s.no).toBe(7 + i); expect(s.outro >= 2).toBe(true); });
+        b.forEach(function (s, i) { expect(s.bonus).toBe(true); expect(s.locked).toBe(true); expect(s.no).toBe(6 + i); expect(s.si).toBe(6 + i); expect(s.outro >= 2).toBe(true); });
       });
+    });
+    it("lists the suite last, after the bonus tracks", function () {
+      L().catalog().forEach(function (th) {
+        var order = th.songs.slice().sort(function (a, b) { return a.no - b.no; }).map(function (s) { return s.si; });
+        expect(order).toEqual([0, 1, 2, 3, 4, 6, 7, 8, 9, 5]);
+      });
+      expect(L().order.prev("phthalo", 5)).toBe(4);   // nothing unlocked: back to the last song
     });
     it("runs to the asked lengths: techno 3-4 min, the crescendo about 3, the dark loop about 3, the race 4", function () {
       expect(secs(6) >= 180 && secs(6) <= 240).toBe(true);
@@ -108,7 +115,7 @@
       expect(O.prev("knight", 8)).toBe(6);
       expect(O.prev("knight", 6)).toBe(4);
       expect(O.next("knight", 5)).toBe(0);
-      expect(O.prev("knight", 5)).toBe(4);
+      expect(O.prev("knight", 5)).toBe(8);   // the suite is listed last: ⏮ goes back to the last open bonus track
     });
   });
 
