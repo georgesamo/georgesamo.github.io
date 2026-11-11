@@ -459,16 +459,73 @@
     };
   }
   // each section of a song gets one level (song.lift, in dB); the curve ramps over the last beat before a change
+  // How a section arrives can be shaped per section id with song.moves (or song["moves_" + theme], which wins):
+  //   land   the share of the level change made at the downbeat (0-1, default 1)
+  //   grow   bars over which the rest of it follows, evenly in dB (default 0: all at once)
+  //   ease   going down: bars before the downbeat over which the louder section eases off (default song.ramp)
+  //   drums  bars over which the kit grows in from `from` (default 0.35) of its velocity - see entryV
+  //   fade   bars before this section over which the outgoing kit thins to `to` (default 0.3) - for a way down
+  // e.g. moves: { "it hunts": { land: 0.4, grow: 2, drums: 2 } } - the hunt starts under its full height and
+  // reaches it two bars in, the way a band builds rather than a switch flipping.
+  function movesOf(song, theme) { return song["moves_" + theme] || song.moves || {}; }
+  function secStart(song, bar) {
+    var st = song.secStarts || (song.secStarts = []);
+    if (st[bar] == null) { var id = song.sec(bar).id, b = bar; while (b > 0 && song.sec(b - 1).id === id) b--; st[bar] = b; }
+    return st[bar];
+  }
   function dynFromSections(song, theme) {
-    var lift = song["lift_" + theme] || {}, ramp = song.ramp || 0.25, pts = [], prev = null;
+    var lift = song["lift_" + theme] || {}, ramp = song.ramp || 0.25, mv = movesOf(song, theme), pts = [], prev = null;
     for (var b = 0; b < song.bars; b++) {
-      var v = lift[song.sec(b).id] || 0;
-      if (prev === null) pts.push([0, v]);
-      else if (v !== prev) { pts.push([b - ramp, prev]); pts.push([b, v]); }
+      var id = song.sec(b).id, v = lift[id] || 0;
+      if (prev === null) { pts.push([0, v]); prev = v; continue; }
+      if (v === prev) continue;
+      var m = mv[id] || {}, end = b + 1, last = pts[pts.length - 1][0];
+      while (end < song.bars && song.sec(end).id === id) end++;
+      var land = m.land != null ? m.land : 1, grow = Math.max(0, Math.min(m.grow || 0, end - b - 0.25)), at = prev + (v - prev) * land;
+      // going down, the level eases off over the last beat(s) of the louder section; going up, it waits for the new
+      // section's downbeat and moves in a few tens of milliseconds there, where the entrance covers it. Ramping up
+      // before the bar line lifted the end of the quieter section - its riser's crest most of all - into an audible
+      // swell just before each drop (song 2 at 0:31, by about 7 dB).
+      if (v < prev) { var e = Math.min(m.ease != null ? m.ease : ramp, b - last - 0.01); pts.push([b - e, prev]); pts.push([b, grow ? at : v]); }
+      else { pts.push([b, prev]); pts.push([b + 0.06, grow ? at : v]); }
+      if (grow) for (var k = 1; k <= Math.ceil(grow * 4); k++) { var f = Math.min(1, k / (grow * 4)); pts.push([b + 0.06 + (grow - 0.06) * f, at + (v - at) * f]); }
       prev = v;
     }
     pts.push([song.bars, prev]);
-    return pts;
+    var flat = song["flat_" + theme];
+    return flat ? withFlat(pts, flat, song.bars) : pts;
+  }
+  // song["flat_" + theme]: one level correction per bar (dB), measured and written by soundtrack-lab/flatten.py so that
+  // every bar of the song sits at the same loudness from the first bar to the last (the user: "the volume at the
+  // beginning must be the same throughout to the end"). An instrument coming in makes its bar a little louder; the
+  // correction takes the rest of the mix down by as much, so the arrival is heard as colour, not as volume. Each bar's
+  // value moves in over the first eighth of the bar, where its downbeat covers the change - never before the bar line.
+  function withFlat(pts, flat, bars) {
+    var fv = function (x) {
+      var b = Math.floor(x), f = x - b, cur = flat[Math.min(b, flat.length - 1)] || 0, was = b > 0 ? flat[Math.min(b - 1, flat.length - 1)] || 0 : cur;
+      return f >= 0.125 ? cur : was + (cur - was) * (f / 0.125);
+    };
+    var xs = pts.map(function (p) { return p[0]; });
+    for (var b = 0; b < bars; b++) xs.push(b, b + 0.125);
+    xs.sort(function (a, c) { return a - c; });
+    var out = [];
+    xs.forEach(function (x) { if (!out.length || x > out[out.length - 1][0] + 1e-6) out.push([x, dynAt(pts, x) + fv(x)]); });
+    return out;
+  }
+  // the kit's velocity while a section with moves[id].drums grows in: from `from` at its first bar to 1 after `drums`
+  // bars. And when the section after this one has moves[next].fade, the kit thins out over this section's last `fade`
+  // bars to `to` (default 0.3) of its velocity, so a quieter section isn't a switch either. It reads the track's own
+  // step (o.s), so it works the same inside the director's cut, which plays other songs' bars.
+  function entryV(o) {
+    var song = o.song; if (!song.sec || (!song.moves && !song["moves_" + o.theme])) return 1;
+    var bar = Math.floor(o.s / 16), mv = movesOf(song, o.theme), pos = o.s / 16, v = 1;
+    if (bar >= song.bars) return 1;
+    var id = song.sec(bar).id, m = mv[id], s0 = secStart(song, bar), end = bar + 1;
+    if (m && m.drums) { var k = (pos - s0) / m.drums, from = m.from != null ? m.from : 0.35; if (k < 1) v *= from + (1 - from) * k; }
+    while (end < song.bars && song.sec(end).id === id) end++;
+    var n = end < song.bars ? mv[song.sec(end).id] : null;
+    if (n && n.fade && end - pos <= n.fade) { var to = n.to != null ? n.to : 0.3; v *= to + (1 - to) * ((end - pos) / n.fade); }
+    return v;
   }
   function dynAt(pts, bar) {
     if (bar <= pts[0][0]) return pts[0][1];
@@ -546,7 +603,7 @@
     opt = opt || {};
     synthGate(o, t, st, lv >= 3);
     if (!lv) return;
-    var style = o.P.style, fill = opt.fill && st >= 12, six = o.six, V = opt.v != null ? opt.v : 1;
+    var style = o.P.style, fill = opt.fill && st >= 12, six = o.six, V = (opt.v != null ? opt.v : 1) * entryV(o);
     if (fill) { fillIn(o, t, st, 0.9 * V); return; }
     if (style === "kpop") {
       var four = lv >= 3 || opt.four;
@@ -753,17 +810,23 @@
       if (bar < 40) return { id: "the chase", run: 1, trem: 0, fuzz: 800, drums: 2, sub: 0.12, crash: bar === 32, arpCut: 1300 + (bar - 32) * 80 };
       if (bar < 48) return { id: "cornered", run: 2, trem: 0.25, fuzz: 1100, drums: 3, sub: 0.14, crash: bar === 40, screech: bar === 42 || bar === 46, riser: bar === 44, fill: bar === 47, arpCut: 2200 };
       if (bar < 56) return { id: "hide", heart: 3, box: 1, glass: bar % 4 === 0, drone: 1, far: 1, sub: 0.07, trem: 0, riser: bar === 52, drop: bar === 55 };
-      if (bar < 72) return { id: "found", cluster: bar % 2 === 0, trem: 0.45, bass: "found", fuzz: 950, drums: 3, screech: bar % 4 === 0, stab: bar % 2 === 0, sub: 0.14, crash: bar === 56 || bar === 64 };
+      if (bar < 72) return { id: "found", cluster: bar % 2 === 0, trem: 0.45, bass: "found", fuzz: 950, drums: 3, screech: bar % 4 === 0, stab: bar % 2 === 0, sub: 0.14, crash: bar === 64 };   // no cymbal on the drop itself: the kit growing in is the arrival
       return { id: "black", heart: 4, sub: 0.04, trem: 0, last: bar === 72, drone: 0.7 };
     }
   };
   var SONG_DARK = {
+    flat_golden: [4.3, -0.2, 3.7, 10.0, 1.8, -0.3, 3.4, 11.2, -4.0, -3.7, -4.2, -4.0, -3.9, -4.1, -4.1, -4.1, 2.2, 1.0, 1.4, 0.9, 1.4, 0.7, 1.3, 0.9, 1.7, 0.7, 0.9, 0.2, 1.0, 0.3, 1.2, -0.4, -4.0, -3.4, -3.1, -2.8, -3.1, -2.6, -3.5, -2.9, -4.5, -4.7, -3.9, -4.1, -3.9, -3.9, -4.6, -3.6, 6.1, 7.0, 8.2, 7.6, 8.8, 6.4, 7.7, 7.6, -0.6, 0.6, -0.5, -0.1, -0.5, -0.2, -0.1, 0.1, -0.8, 0.2, -0.6, 0.1, -1.0, -0.0, -0.3, 0.0, 3.1, 5.1, 5.3, 6.1],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [5.9, 2.2, 6.4, 12.0, 5.7, 3.0, 7.0, 12.0, -3.8, -2.4, -2.4, -2.4, -2.3, -2.4, -2.4, -2.9, 5.0, 3.7, 3.9, 4.7, 4.3, 4.3, 3.5, 4.1, 2.2, 2.0, 1.7, 2.2, 2.0, 2.3, 1.7, 1.7, -2.1, -1.1, -0.7, -0.6, -0.3, -0.3, -0.6, -0.3, -2.8, -2.8, -2.3, -2.2, -2.1, -2.3, -2.4, -1.5, 10.0, 10.2, 11.2, 11.8, 12.0, 10.0, 11.1, 12.0, -0.7, -0.6, -0.5, 0.3, -0.9, -0.3, -0.7, -0.2, -1.0, -0.4, -0.7, 0.1, -0.9, -0.1, -0.8, -0.3, 6.6, 9.0, 8.8, 9.5],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [5.7, 1.7, 5.0, 12.0, 3.5, 0.7, 4.3, 12.0, -3.6, -2.9, -3.3, -3.4, -3.3, -3.5, -3.5, -3.8, 2.4, 1.8, 1.3, 1.1, 1.6, 0.9, 1.5, 1.7, 1.8, 1.2, 0.7, 0.5, 0.8, 0.3, 1.0, 1.3, -4.0, -2.5, -2.3, -2.0, -2.0, -1.8, -2.7, -2.0, -5.3, -4.3, -3.8, -3.7, -3.8, -3.7, -4.1, -2.5, 8.2, 9.6, 11.2, 10.5, 11.1, 9.6, 9.2, 12.0, -0.5, -0.1, -0.7, -0.5, -1.2, -0.7, -0.6, -0.2, -1.6, 0.1, -1.1, -0.7, -1.1, -0.6, -0.6, 0.2, 4.8, 7.0, 6.6, 7.5],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "the horror scene · something in the dark, industrial and close", bpm: 120, bars: 76, v2: true, duckDepth: 0.4, sec: H2.sec,
     trim: { "phthalo": 7.6, "knight": 5.6, "golden": 4.5 },
-    lift_golden: { "dark room": -3.8, "something moves": -6.4, "it hunts": -0.2, "the chase": -1.2, "cornered": 0.0, "hide": -3.7, "found": 0.0, "black": -0.9 },
-    lift_knight: { "dark room": -3.5, "something moves": -11.1, "it hunts": -1.2, "the chase": -1.2, "cornered": 0.0, "hide": -4.1, "found": 0.0, "black": -0.9 },
-    lift_phthalo: { "dark room": -6.5, "something moves": -11.3, "it hunts": -0.6, "the chase": -1.5, "cornered": 0.0, "hide": -7.0, "found": 0.0, "black": -4.7 },
+    lift_golden: { "dark room": 0.0, "something moves": 0.0, "it hunts": 0.0, "the chase": 0.0, "cornered": 0.0, "hide": 0.0, "found": 0.0, "black": 0.0 },
+    lift_knight: { "dark room": 0.0, "something moves": 0.0, "it hunts": 0.0, "the chase": 0.0, "cornered": 0.0, "hide": 0.0, "found": 0.0, "black": 0.0 },
+    lift_phthalo: { "dark room": 0.0, "something moves": 0.0, "it hunts": 0.0, "the chase": 0.0, "cornered": 0.0, "hide": 0.0, "found": 0.0, "black": 0.0 },
     tone: { sub: -3, punch: 2, pres: 2 },
+    // no moves: every part comes in and goes out at its full level (the user: a kit growing in from low made the
+    // whole song sound like it was getting louder). The level is held steady bar by bar by flat_<theme>
+    // (soundtrack-lab/flatten.py): when the drums arrive, the rest of the mix makes room. The lifts are 0.
     init: function (o, t) { o.sub = makeSub(o, t); o.la = makeLead2(o, t, o.P.lead, -0.3); o.lb = makeLead2(o, t, o.P.lead2, 0.4); },
     play: function (o, t, st, bar) {
       var sec = H2.sec(bar), cl = H2.cl[(bar >> 1) % 4], six = o.six;
@@ -773,17 +836,19 @@
         sweep(o, "padF", sec.id === "found" ? 2600 : 1600, t, 0.8);
         if (sec.fuzz) sweep(o, "fuzzF", sec.fuzz, t, 0.5);
         o.sub.set(t, 28, sec.sub);
-        if (sec.cluster) sm(o, t, cl, six * 32, sec.id === "dark room" ? 0.035 : 0.045, { a: six * 8, r: 2 });
-        // the atmosphere: a low drone that breathes, far-off glass, a piano in another room - all of it quiet
-        if (sec.drone && bar % 4 === 0) sm(o, t, [40, 47], six * 64, 0.028 * sec.drone, { a: six * 20, r: 3, w: 0.8, wave: "triangle" });
-        if (sec.glass) glass(o, t, bar % 8 < 4 ? [83, 88] : [84, 89], six * 48, 0.012);
+        if (sec.cluster) sm(o, t, cl, six * 32, sec.id === "dark room" ? 0.06 : 0.045, { a: six * 8, r: 2 });
+        // the atmosphere: a low drone that breathes, far-off glass, a piano in another room. In the two sparse
+        // sections (the dark room, hiding: sec.far) the drone gets its octave and more level, so they hold the same
+        // heard loudness as the band with something the ear hears, not a sub boosted 12 dB (flat_<theme>)
+        if (sec.drone && bar % 4 === 0) sm(o, t, sec.far ? [40, 47, 52] : [40, 47], six * 64, (sec.far ? 0.06 : 0.028) * sec.drone, { a: six * 20, r: 3, w: 0.8, wave: "triangle" });
+        if (sec.glass) glass(o, t, bar % 8 < 4 ? [83, 88] : [84, 89], six * 48, sec.id === "hide" ? 0.02 : 0.012);
         if (sec.screech) scr(o, t, 76 + (bar % 3), six * 10, 0.04, bar % 8 < 4 ? -0.7 : 0.7);
-        if (sec.riser) riser(o, t, six * 64, 0.06);
-        if (sec.crash) crash(o, t, 0.9);
+        if (sec.riser) riser(o, t, six * 64, sec.id === "hide" ? 0.03 : 0.06);
+        if (sec.crash) crash(o, t, 0.45);
         if (sec.last) { sm(o, t, [40, 41], six * 56, 0.05, { a: 0.05, r: 3, w: 0.3 }); keys(o, t, 28, 0.9, 6); }
       }
-      if (sec.far) H2.far.forEach(function (n) { if (n[0] === bar % 8 && n[1] === st) keys(o, t, n[2], 0.22, 5); });
-      if (sec.drop && st === 8) subDrop(o, t, six * 8, 0.45);
+      if (sec.far) H2.far.forEach(function (n) { if (n[0] === bar % 8 && n[1] === st) keys(o, t, n[2], 0.45, 5); });
+      if (sec.drop && st === 8) subDrop(o, t, six * 8, 0.18);
       // the heartbeat: steady, racing, loud in hiding, running down at the end
       var hb = sec.heart;
       if (hb === 1 && (st === 0 || st === 8)) heart(o, t, 0.6);
@@ -809,7 +874,7 @@
       sweep(o, "padF", 2200, t, 0.8);
       o.sub.set(t, c.r - 12, sec.sub);
       if (bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[0] + 12]), six * 32, sec.run === 2 ? 0.045 : 0.035, { a: six * 4, r: 1.4 });
-      if (sec.crash) crash(o, t, 0.9);
+      if (sec.crash) crash(o, t, 0.45);
       if (sec.riser) riser(o, t, six * 64, 0.06);
       if (sec.screech) scr(o, t, 76 + (bar % 3), six * 10, 0.035, bar % 4 < 2 ? -0.7 : 0.7);
     }
