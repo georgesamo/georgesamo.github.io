@@ -533,3 +533,15 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   .tree, .tabs, .mnav, .status, .msheet, .hire__actions, .site-foot, .spotlight { display: none !important; }
   .hire__card, .hire__facts > div, .hire__hl li { break-inside: avoid; }
 }
+
+/* ---------- daily streak reminder (streak.js) ---------- */
+.streak-note { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 12px; padding: 8px 10px; border-radius: 10px; font-size: 13.5px; line-height: 1.45; color: var(--text); background: color-mix(in srgb, var(--hl) 12%, transparent); border: 1px solid color-mix(in srgb, var(--hl) 40%, transparent); }
+.streak-note[hidden] { display: none; }
+.streak-note > span { flex: 1; }
+.streak-note--urgent { background: color-mix(in srgb, #ff8a3d 16%, transparent); border-color: color-mix(in srgb, #ff8a3d 55%, transparent); }
+.streak-note--kept { background: transparent; color: var(--text-2); }
+.streak-note__x { flex: none; width: 24px; height: 24px; margin: -3px -4px -3px 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; }
+.streak-note__x:hover { color: var(--text); background: var(--bg-soft); }
+.tree__nav a.has-streak-dot .nav-l::after, .mnav__item.has-streak-dot::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff8a3d; box-shadow: 0 0 0 2px var(--bg); }
+.tree__nav a.has-streak-dot .nav-l::after { margin-left: 6px; vertical-align: 2px; }
+.mnav__item.has-streak-dot::after { position: absolute; top: 8px; left: calc(50% + 8px); }
