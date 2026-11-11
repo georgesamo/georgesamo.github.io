@@ -4,5 +4,4 @@ _site/
 .sass-cache/
 .bundle/
 vendor/
-.claude/*
-!.claude/skills/
+.claude/
