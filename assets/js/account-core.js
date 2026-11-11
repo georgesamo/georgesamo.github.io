@@ -278,7 +278,7 @@
       { label: "Lobby", hint: "home", href: "/", kw: "arcade home start" },
       { label: "Games", hint: "page", href: "/games/", kw: "arcade play" },
       { label: "Leaderboards", hint: "page", href: "/leaderboards/", kw: "scores top ranking" },
-      { label: "Events", hint: "weekly challenge", href: "/events/", kw: "week challenge" },
+      { label: "Today", hint: "daily, live, weekly", href: "/events/", kw: "events week challenge daily puzzle live 1v1" },
       { label: "Your collection", hint: "bests, badges, music", href: "/me/", kw: "me collection unlocks secrets bonus tracks" },
       { label: "What's new", hint: "site updates", href: "/whats-new/", kw: "changelog updates new release notes" },
       { label: "Guestbook", hint: "visitors wall", href: "/#wall", kw: "guestbook wall commit visitors" },

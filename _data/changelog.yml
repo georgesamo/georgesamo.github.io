@@ -3,6 +3,12 @@
 #   link  optional, a page on this site
 - date: 2026-11-11
   tag: feature
+  title: A simpler bottom bar on phones
+  text: Home, Games, Today, Me and More. Today gathers the daily puzzle, live races, the leaderboards and this week's challenge in one place.
+  link: /events/
+
+- date: 2026-11-11
+  tag: feature
   title: Challenge a friend
   text: Finished a run you're proud of? Send it as a link. Your friend plays the exact same board whenever they like, and you both see who won. Works without an account.
   link: /games/
