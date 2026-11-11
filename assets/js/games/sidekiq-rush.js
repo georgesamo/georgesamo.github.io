@@ -263,6 +263,7 @@
 
       /* ---------- screens ---------- */
       function start() {
+        api.newRun();   // each run has its own seed (replayable as a challenge)
         S = fresh();
         inboxEl.innerHTML = "";
         LANES.forEach(function (l) { laneEls[l.id].queue.innerHTML = ""; laneEls[l.id].workers.innerHTML = ""; renderWorkers(l.id); });

@@ -237,6 +237,7 @@
         if (dropT >= interval()) { dropT = 0; down(false); hud(); }
       }
       function start() {
+        api.newRun();   // each run has its own seed (replayable as a challenge)
         board = []; for (var i = 0; i < W * H; i++) board.push(null);
         created = { users: true, orders: false, invoices: false };
         score = 0; lines = 0; level = 1; alive = true; paused = false; dropT = 0; last = 0; next = null; hold = null; held = false; pieces = 0; powersUsed = 0;
