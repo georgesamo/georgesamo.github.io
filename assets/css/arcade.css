@@ -83,6 +83,15 @@
 .arcade__hud b { color: var(--text); font-weight: 500; }
 .arcade__hud b.low { color: var(--ruby-red); }
 .arcade__x { border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 1px 8px; font: 11px var(--mono); color: var(--muted); cursor: pointer; }
+/* phones: the game name and esc share the first row, the score line gets a row of its own
+   (on one row the title wrapped and the HUD ran past the window edge) */
+@media (max-width: 560px) {
+  .arcade__bar { flex-wrap: wrap; gap: 4px 10px; padding: 6px 12px; }
+  .arcade__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .arcade__x { order: 2; }
+  .arcade__hud { order: 3; flex-basis: 100%; margin-left: 0; flex-wrap: wrap; gap: 2px 12px; font-size: 11.5px; }
+  .arcade__hud:empty { display: none; }
+}
 /* The stage is the coordinate system every game sizes itself against. It is a size container so a
    board can be laid out in cq units: vh/vw measure the browser window, which is the wrong box once
    the game lives inside a 1000x740 panel, and was why boards ran off the bottom of a phone. */
