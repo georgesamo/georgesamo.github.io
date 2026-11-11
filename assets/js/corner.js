@@ -51,7 +51,7 @@
     if (!root) return;
     var a = A();
     if (!team()) {
-      root.innerHTML = '<div class="corner__closed"><p class="arcade__kicker">$ cat team/ninos-corner.md</p><h2>404 · nothing to see here</h2><p class="muted">This corner is for the team. Back to the <a href="/">arcade</a>?</p></div>';
+      root.innerHTML = '<div class="corner__closed"><p class="arcade__kicker">$ cat team/ninos-corner.md</p><h1 class="corner__closed-title">404 · nothing to see here</h1><p class="muted">This corner is for the team. Back to the <a href="/">arcade</a>?</p></div>';
       return;
     }
     var who = a.role() === "nino" ? "Nino" : "Samuka (visiting)";

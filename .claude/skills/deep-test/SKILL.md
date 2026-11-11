@@ -106,7 +106,7 @@ Text reading can't see these, so this section measures and then looks.
 
 **1. Measure** — read [tests/probes/visual.js](../../../tests/probes/visual.js) and pass it to `javascript_tool`. Set `window.__vtRoot = ".mdock"` first to scope it to one area, and `window.__vtAll = true` to get every measurement. It finds small square/round icon buttons and compares the icon's **ink** (canvas `measureText` bounds for glyphs on the real baseline, shape bounds for SVG) with the button's centre. It returns:
 - `misaligned`: icons more than 1.5px (or 6% of the button) off centre, or spilling outside the button, with `offPx` (+x = right, +y = low) and a `zoom` box.
-- `mixedIconStyles`: a toolbar mixing colour emoji (⏪ 🔁 🔊 as blue/yellow tiles) with flat glyphs (⏮ ⏸ ⏹), or icons of very different visual size in same-size buttons.
+- `mixedIconStyles`: a toolbar mixing colour emoji (⏪ 🔁 🔊 as blue/yellow tiles) with flat glyphs (⏮ ⏸ ⏹). Icon heights aren't compared (a chevron and a list icon are rightly different sizes), so judge size mismatches in the screenshot pass.
 - `unmeasuredCssIcons`: icons drawn with CSS (`<i class="fi">`, `::before`, the eq bars on the ♪ button while playing, the theme toggle). These need the screenshot check.
 - `clippedText`: text cut off with no ellipsis.
 
