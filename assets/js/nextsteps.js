@@ -10,7 +10,6 @@
   "use strict";
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
   var NAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match", schema: "Schema Stack", pitwall: "Pit Wall" };
-  var VERSUS = { sidekiq: 1, gems: 1, pitwall: 1 };   // games with a live 1v1
   var run = null;   // { game, mode, unlocks: [], rank: undefined | null | {rank, behind} }
 
   function user() { var a = window.SamukaAuth; return a && a.user && a.user(); }
@@ -22,7 +21,7 @@
     if (d.name === "start") { run = { game: d.game, mode: d.mode || "free", unlocks: [], over: false }; return; }
     if (d.name === "closed") { run = null; return; }
     if (d.name === "over" && run && run.game === d.game) {
-      run.over = true; run.score = d.score | 0;
+      run.over = true; run.score = d.score | 0; run.seed = d.seed; run.kind = d.kind; run.length = d.length;
       if (run.mode !== "free") return;
       attach(run);
     }
@@ -58,7 +57,7 @@
     // a game they've never scored in
     var fresh = Object.keys(NAMES).filter(function (id) { return id !== r.game && !best(id); })[0];
     if (fresh) return '<button class="btn" type="button" data-play="' + fresh + '">▶ try ' + esc(NAMES[fresh]) + "</button>";
-    if (VERSUS[r.game]) return '<button class="btn" type="button" data-race>⚔ beat ' + r.score.toLocaleString("en-US") + " with a friend</button>";
+    // the challenge button (below) already offers a friend; otherwise point at the boards
     return '<a class="btn" href="/leaderboards/">🏆 see the boards</a>';
   }
 
@@ -75,6 +74,7 @@
     }
     return (rows.length ? '<ul class="next-steps__list">' + rows.join("") + "</ul>" : "") +
       '<div class="next-steps__row"><span class="next-steps__label">next:</span>' + suggestion(r) +
+      (window.SamukaChallenge ? window.SamukaChallenge.offerButton(r) : "") +
       (r.unlocks.length ? '<a class="next-steps__link" href="/me/">your collection →</a>' : "") + "</div>";
   }
   function paint(r) {

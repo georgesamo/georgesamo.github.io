@@ -1,7 +1,7 @@
 /* Samuka · arcade shell: one modal window that hosts any registered game */
 (function () {
   "use strict";
-  var games = {}, current = null, currentId = null, modal = null, lastFocus = null;
+  var games = {}, current = null, currentApi = null, currentId = null, modal = null, lastFocus = null;
   var store = {
     get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -76,21 +76,34 @@
 
   function api(id, stage, opts) {
     opts = opts || {};
+    /* Every run has a seed, so any run can be replayed as a challenge (challenge.js). Games keep the
+     * api.rng function they got at mount; newRun() swaps the generator behind it when a run starts:
+     * a fresh random seed in free play, the given one in daily / race / challenge (same board every try). */
+    var fixed = opts.seed != null, gen = null, runSeed = null;
+    function newRun() {
+      runSeed = fixed ? String(opts.seed) : id + "-" + Math.random().toString(36).slice(2, 10);
+      gen = seeded(runSeed);
+      return runSeed;
+    }
+    newRun();
     return {
       stage: stage,
       opts: opts,
       mode: opts.mode || "free",
-      rng: opts.seed != null ? seeded(opts.seed) : Math.random,
+      rng: function () { return gen(); },
+      newRun: newRun,
+      seed: function () { return runSeed; },
       emit: function (name, data) { emit(id, name, data, opts); },
       reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       // only touch the DOM when the text actually changed (games call these every frame)
       hud: function (html) { var el = modal.querySelector("[data-hud]"); if (el.__h !== html) { el.__h = html; el.innerHTML = html; } },
       foot: function (html) { var el = modal.querySelector("[data-foot]"); if (el.__h !== html) { el.__h = html; el.innerHTML = html; } },
       best: function (score, extra) {
-        var payload = { score: score }; if (extra) for (var k in extra) payload[k] = extra[k];
+        var payload = { score: score, seed: runSeed }; if (extra) for (var k in extra) payload[k] = extra[k];
         emit(id, "over", payload, opts);
+        // a challenge is a known board: it doesn't count as a best or go on the boards
+        if (opts.mode === "daily" || opts.mode === "race" || opts.mode === "challenge") return { best: score, isNew: false };
         guestNudge(stage, score);
-        if (opts.mode === "daily" || opts.mode === "race") return { best: score, isNew: false };
         var prev = getBest(id);
         if (score > prev) { setBest(id, score); return { best: score, isNew: true }; }
         return { best: prev, isNew: false };
@@ -138,7 +151,8 @@
     stage.innerHTML = "";
     stage.className = "arcade__stage arcade__stage--" + id;
     currentId = id;
-    current = games[id].mount(stage, api(id, stage, opts)) || {};
+    currentApi = api(id, stage, opts);
+    current = games[id].mount(stage, currentApi) || {};
     emit(id, "start", null, opts);
     stage.focus({ preventScroll: true });
     return true;
@@ -206,6 +220,7 @@
     isOpen: function () { return !!(modal && !modal.hidden); },
     current: function () { return currentId; },
     seeded: seeded,
+    seed: function () { return currentApi && currentId ? currentApi.seed() : null; },   // the running game's seed
     best: getBest,
     // bests saved on the server (scores.js) never lower a local best
     mergeBests: function (map) { Object.keys(map || {}).forEach(function (g) { if ((map[g] | 0) > getBest(g)) setBest(g, map[g] | 0); }); showBests(); },

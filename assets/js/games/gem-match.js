@@ -442,7 +442,7 @@
       function start() {
         score = 0; moves = MOVES_RUN; sel = -1; alive = true; busy = false; moveLog = [];
         charges = 0; meterAt = 0; meterNext = 1000; hammer = false; boostsUsed = 0;
-        if (daily || race) rng = window.SamukaArcade.seeded(api.opts.seed); // everyone gets the same board
+        api.newRun();   // a fresh seed each run; daily, race and challenge get the same board every time
         fill(); paint(); hud(); api.clearOverlay(); armHint();
         cells[focusI].focus();
       }
