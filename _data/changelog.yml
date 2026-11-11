@@ -1,6 +1,12 @@
 # What's new in the arcade, newest first. Shown on the lobby (latest three) and on /whats-new/.
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
+- date: 2026-11-12
+  tag: feature
+  title: Calm mode
+  text: One switch in Settings for no screen shake, glitches, spinning or sliding animations. By default it follows your device's reduced-motion setting.
+  link: /settings/
+
 - date: 2026-11-11
   tag: feature
   title: One Settings page

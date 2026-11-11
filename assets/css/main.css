@@ -593,6 +593,12 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
   .js .code[data-type] .ln { clip-path: none; }
   .spotlight { display: none; }
 }
+/* calm mode (data-calm on <html>, set in default.html) */
+:root[data-calm] { scroll-behavior: auto; }
+:root[data-calm] *, :root[data-calm] *::before, :root[data-calm] *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; transition-delay: 0s !important; }
+:root[data-calm].js .reveal { opacity: 1; transform: none; }
+:root[data-calm].js .code[data-type] .ln { clip-path: none; }
+:root[data-calm] .spotlight { display: none; }
 
 /* ---------- phones: every tap target at least 40px tall ----------
    Buttons grow; inline links get invisible padding (cancelled by a negative margin) so the

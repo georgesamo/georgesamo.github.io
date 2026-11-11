@@ -6,7 +6,7 @@
  */
 (function () {
   "use strict";
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }   // calm mode (live)
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
   var store = {
     get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -127,7 +127,7 @@
   function decorate() {
     var s = season(); if (!s) return;
     document.documentElement.setAttribute("data-season", s.id);
-    var host = document.querySelector(".lobby"); if (!host || reduced) return;
+    var host = document.querySelector(".lobby"); if (!host || reduced()) return;
     var glyph = { winter: "❄", valentine: "💜", spring: "🌸", halloween: "🦇" }[s.id];
     var layer = document.createElement("div"); layer.className = "season-fx"; layer.setAttribute("aria-hidden", "true");
     for (var i = 0; i < 18; i++) {

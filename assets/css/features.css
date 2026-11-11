@@ -215,6 +215,7 @@
 .lb__row.is-flash { animation: meFlash 1.6s ease-out; }
 @keyframes meFlash { 0%, 40% { background: var(--hl-soft); box-shadow: inset 0 0 0 2px var(--hl); } }
 @media (prefers-reduced-motion: reduce) { .lb__row.is-flash { animation: none; } }
+:root[data-calm] .lb__row.is-flash { animation: none; }
 
 /* ---------- leaderboards ---------- */
 .lb { margin-top: 18px; padding: 16px 18px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-elev); }
@@ -380,6 +381,7 @@
 }
 @keyframes crtTxt { 0%, 20% { opacity: 0; } 30%, 80% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .crt-on { animation: none; opacity: 0; } }
+:root[data-calm] .crt-on { animation: none; opacity: 0; }
 
 /* ---------- patch bay (assets/js/patchbay.js) ---------- */
 .pb__win { width: min(620px, 100%); }
@@ -423,6 +425,7 @@
   .pb__jack { font-size: 11.5px; padding: 6px 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .pb__cables path.is-live { animation: none; } }
+:root[data-calm] .pb__cables path.is-live { animation: none; }
 
 /* ---------- page-load glitch (loadglitch.js): title scratch-in, colours from the theme ---------- */
 .lg-scratch { position: relative; animation: lgJitter 0.62s steps(10) both; }
@@ -465,3 +468,4 @@
 }
 @keyframes lgScan { 0% { transform: translateY(0); opacity: 0.9; } 100% { transform: translateY(100vh); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .lg-scratch { animation: none; } .lg-scratch::before, .lg-scratch::after, .lg-scan { display: none; } }
+:root[data-calm] .lg-scratch { animation: none; } :root[data-calm] .lg-scratch::before, :root[data-calm] .lg-scratch::after, :root[data-calm] .lg-scan { display: none; }

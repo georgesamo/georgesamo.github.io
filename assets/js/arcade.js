@@ -94,7 +94,7 @@
       newRun: newRun,
       seed: function () { return runSeed; },
       emit: function (name, data) { emit(id, name, data, opts); },
-      reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      get reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : window.matchMedia("(prefers-reduced-motion: reduce)").matches; },   // calm mode, live
       // only touch the DOM when the text actually changed (games call these every frame)
       hud: function (html) { var el = modal.querySelector("[data-hud]"); if (el.__h !== html) { el.__h = html; el.innerHTML = html; } },
       foot: function (html) { var el = modal.querySelector("[data-foot]"); if (el.__h !== html) { el.__h = html; el.innerHTML = html; } },

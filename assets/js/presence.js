@@ -8,7 +8,7 @@
  */
 (function () {
   "use strict";
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }   // calm mode (live)
   var finePointer = window.matchMedia("(pointer: fine)").matches;
   var channel = null, me = null, peers = {}, ghosts = {}, layer = null, badge = null, count = 1, lastSend = 0, lastXY = null, joinedFor = null;
   var store = {
@@ -132,9 +132,10 @@
 
   function boot() {
     layer = document.createElement("div");
-    layer.className = "ghosts" + (reduced ? " ghosts--still" : "");
+    layer.className = "ghosts" + (reduced() ? " ghosts--still" : "");
     layer.setAttribute("aria-hidden", "true");
     document.body.appendChild(layer);
+    window.addEventListener("samuka:calm", function () { layer.classList.toggle("ghosts--still", reduced()); });
     paintBadge();
     if (finePointer) window.addEventListener("pointermove", onMove, { passive: true });
     var A = window.SamukaAuth;
