@@ -131,7 +131,9 @@ jobs:
       - name: Smoke test
         run: node tests/smoke.mjs http://127.0.0.1:4200
       - name: Deep test
-        run: node tests/deep.mjs http://127.0.0.1:4200
+        # --strict: warnings (visual, a11y, tap targets) block the deploy too, not just errors.
+        # To ship past a known false alarm, drop the flag in a PR and say why.
+        run: node tests/deep.mjs http://127.0.0.1:4200 --strict
       - name: Keep the deep-test report and screenshots
         if: always()
         uses: actions/upload-artifact@v7
