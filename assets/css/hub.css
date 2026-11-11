@@ -433,3 +433,14 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .coll-slot.is-locked b { color: var(--text-2); }
 .coll-slot.is-locked .coll-slot__icon { opacity: 0.6; font-size: 14px; }
 @media (max-width: 640px) { .coll-bests { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- game over: what next? (nextsteps.js) ---------- */
+.next-steps { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+.next-steps__list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; font-size: 14px; color: var(--text-2); }
+.next-steps__list b { color: var(--text); }
+.next-steps__chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.next-steps__got { padding: 3px 9px; border-radius: 999px; background: var(--hl-soft); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hl) 40%, transparent); color: var(--text); font-size: 13px; font-weight: 600; animation: termIn 0.4s var(--ease) both; }
+.next-steps__row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.next-steps__row .btn { margin-top: 0; }
+.next-steps__label { font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+.next-steps__link { margin-left: auto; font: 12.5px var(--mono); }
