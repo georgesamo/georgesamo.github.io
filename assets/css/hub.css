@@ -557,3 +557,18 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .tour__skip { border: 0; padding: 6px 0; background: transparent; color: var(--muted); font: 12.5px var(--mono); cursor: pointer; }
 .tour__skip:hover { color: var(--text); text-decoration: underline; }
 .tour-target { outline: 2px solid var(--hl); outline-offset: 3px; border-radius: 10px; }
+
+/* ---------- desktop tabs: the Feeds tab and its menu (feeds.js) ---------- */
+button.tabs__tab { margin: 0; border-top: 0; border-bottom: 0; border-left: 0; font: inherit; cursor: pointer; }
+.tabs__tab--feeds { gap: 6px; }
+.tabs__sub { color: var(--text-2); }
+.tabs__caret { font-size: 10px; color: var(--muted); transition: transform 0.15s; }
+.tabs__tab--feeds[aria-expanded="true"] .tabs__caret { transform: rotate(180deg); }
+.tabs__tab--feeds[aria-expanded="true"].tabs__tab--idle { background: var(--bg-hover) !important; color: var(--text) !important; }
+.feeds-menu { position: fixed; z-index: 120; display: grid; min-width: 240px; padding: 6px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg-elev); box-shadow: var(--shadow); font: 13px var(--sans); }
+.feeds-menu[hidden] { display: none; }
+.feeds-menu a { display: grid; grid-template-columns: 18px 1fr; align-items: center; gap: 0 10px; padding: 8px 10px; border-radius: 8px; color: var(--text); text-decoration: none; }
+.feeds-menu a small { grid-column: 2; font: 11.5px var(--mono); color: var(--muted); }
+.feeds-menu a .fi { grid-row: span 2; }
+.feeds-menu a:hover, .feeds-menu a:focus-visible { background: var(--bg-hover); outline: none; }
+.feeds-menu a.is-here { background: var(--bg-soft); box-shadow: inset 2px 0 0 var(--hl); }

@@ -19,7 +19,10 @@ layout: default
 {%- assign on_profile = false -%}{%- if tab == "samuka" -%}{%- assign on_profile = true -%}{%- endif -%}
 {%- assign on_lobby = false -%}{%- if tab == "lobby" -%}{%- assign on_lobby = true -%}{%- endif -%}
 {%- comment -%} id|file tag|icon|url|plain label: the label is what people read, the file name is flavour {%- endcomment -%}
-{%- assign tabs = "lobby|lobby.rb|rb|/|Home,games|games/|log|/games/|Games,events|events.rb|rb|/events/|Today,leaderboards|leaderboards.yml|yml|/leaderboards/|Leaderboards,news|news.rss|rss|/news/|News,samuka|samuka.rb|rb|/samuka/|About,pulls|pulls/|pr|/blog/|Blog" | split: "," -%}
+{%- assign tabs = "lobby|lobby.rb|rb|/|Home,games|games/|log|/games/|Games,events|events.rb|rb|/events/|Today,leaderboards|leaderboards.yml|yml|/leaderboards/|Leaderboards,feeds|feeds/|rss||Feeds,samuka|samuka.rb|rb|/samuka/|About" | split: "," -%}
+{%- comment -%} the Feeds tab opens a menu with these; on one of their pages it's the active tab {%- endcomment -%}
+{%- assign feeds = "news|News|tech & gaming headlines|/news/|rss,watch|Trailers|trailers & reviews|/watch/|mp4,updates|What's new|site updates|/whats-new/|md,pulls|Blog|posts as pull requests|/blog/|pr" | split: "," -%}
+{%- assign feed_label = "" -%}{%- for f in feeds -%}{%- assign fp = f | split: "|" -%}{%- if fp[0] == tab -%}{%- assign feed_label = fp[1] -%}{%- endif -%}{%- endfor -%}
 
 {%- if page.boot -%}
 <div class="boot" id="boot" aria-hidden="true">
@@ -95,14 +98,27 @@ layout: default
       <div class="tabs__files">
         {%- for t in tabs -%}
           {%- assign tp = t | split: "|" -%}
-          {%- if tp[0] == tab -%}
+          {%- if tp[0] == "feeds" -%}
+        <button type="button" class="tabs__tab tabs__tab--feeds{% if feed_label != "" %} is-active{% else %} tabs__tab--idle{% endif %}" data-feeds-btn aria-haspopup="true" aria-expanded="false" aria-controls="feeds-menu"{% if feed_label != "" %} aria-current="page"{% endif %}>
+          {%- if feed_label != "" -%}
+          <i class="fi fi--{{ icon }}" data-tab-icon></i><span class="nav-l">Feeds <span class="tabs__sub">· {{ feed_label }}</span></span><small class="nav-f" data-tab-name>{{ file_name }}</small>
+          {%- else -%}
+          <i class="fi fi--rss"></i><span class="nav-l">Feeds</span><small class="nav-f">feeds/</small>
+          {%- endif -%}
+          <span class="tabs__caret" aria-hidden="true">▾</span>{% if feed_label != "" %}<span class="tabs__dot"></span>{% endif %}</button>
+        <div class="feeds-menu" id="feeds-menu" role="menu" aria-label="Feeds" hidden>
+          {%- for f in feeds -%}{%- assign fp = f | split: "|" %}
+          <a role="menuitem" tabindex="-1" href="{{ fp[3] | relative_url }}"{% if fp[0] == tab %} class="is-here" aria-current="page"{% endif %}{% if fp[0] == "updates" %} data-updates-latest="{{ site.data.changelog[0].date }}"{% endif %}><i class="fi fi--{{ fp[4] }}"></i><span class="nav-l">{{ fp[1] }}</span><small>{{ fp[2] }}</small></a>
+          {%- endfor %}
+        </div>
+          {%- elsif tp[0] == tab -%}
         <a class="tabs__tab is-active" href="{{ tp[3] | relative_url }}" aria-current="page"><i class="fi fi--{{ icon }}" data-tab-icon></i><span class="nav-l">{{ tp[4] }}</span><small class="nav-f" data-tab-name>{{ file_name }}</small><span class="tabs__dot"></span></a>
           {%- else -%}
         <a class="tabs__tab tabs__tab--idle tabs__tab--{{ tp[0] }}" href="{{ tp[3] | relative_url }}"><i class="fi fi--{{ tp[2] }}"></i><span class="nav-l">{{ tp[4] }}</span><small class="nav-f">{{ tp[1] }}</small></a>
           {%- endif -%}
         {%- endfor -%}
-        {%- if tab == "player" or tab == "nino" or tab == "watch" or tab == "updates" or tab == "me" or tab == "settings" or tab == "hire" %}
-        <a class="tabs__tab is-active" href="{{ page.url | relative_url }}" aria-current="page"><i class="fi fi--{{ icon }}" data-tab-icon></i><span class="nav-l">{% if tab == "watch" %}Trailers{% else %}{{ page.title | default: "Player" }}{% endif %}</span><small class="nav-f" data-tab-name>{{ file_name }}</small><span class="tabs__dot"></span></a>
+        {%- if tab == "player" or tab == "nino" or tab == "me" or tab == "settings" or tab == "hire" %}
+        <a class="tabs__tab is-active" href="{{ page.url | relative_url }}" aria-current="page"><i class="fi fi--{{ icon }}" data-tab-icon></i><span class="nav-l">{{ page.title | default: "Player" }}</span><small class="nav-f" data-tab-name>{{ file_name }}</small><span class="tabs__dot"></span></a>
         {%- endif %}
       </div>
       <div class="tabs__crumbs" data-tab-crumbs>{{ file_parts | join: " › " }}</div>
