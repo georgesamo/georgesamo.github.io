@@ -3,6 +3,12 @@
 #   link  optional, a page on this site
 - date: 2026-11-12
   tag: feature
+  title: A quick tour for first visits
+  text: New here? Three small pointers show where to play, what's on today and where your bests and badges collect. Replay it from Settings any time.
+  link: /?tour=1
+
+- date: 2026-11-12
+  tag: feature
   title: Streak reminder
   text: "Signed in with a daily streak going? Home and Today now tell you how long you have left to keep it, and a dot appears on Today. Hide it for the day, or switch it off in Settings."
   link: /events/
