@@ -35,7 +35,8 @@
       };
     } catch (e) { return null; }
   }
-  function link(c) { return location.origin + "/games/?c=" + encode(c); }
+  // /c/<game>/ carries the link preview (that game's challenge card) and forwards to /games/?c=…
+  function link(c) { return location.origin + "/c/" + c.game + "/?c=" + encode(c); }
   function myName() { var A = window.SamukaAuth; return A && A.user && A.user() && A.publicName ? A.publicName() : "a friend"; }
 
   // a run that can be replayed: scored, seeded, and for Pit Wall a quick race (GP and championship need your picks)
