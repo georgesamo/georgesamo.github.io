@@ -1,0 +1,22 @@
+{%- comment -%}
+  Metadata + "how to play" for one arcade game card, from _data/games.yml.
+  Usage: {% include game-meta.html id="sidekiq" %}
+{%- endcomment -%}
+{%- assign g = site.data.games | where: "id", include.id | first -%}
+{%- if g %}
+<ul class="game-meta" aria-label="About {{ g.name }}">
+  <li title="How long a game takes">⏱ {{ g.minutes }}</li>
+  {%- if g.modes contains "solo" %}<li>👤 solo</li>{% endif %}
+  {%- if g.modes contains "1v1" %}<li>⚔ 1v1</li>{% endif %}
+  {%- if g.modes contains "daily" %}<li>📅 daily</li>{% endif %}
+  <li title="Controls">🎮 {{ g.controls }}</li>
+</ul>
+<details class="game-how">
+  <summary>how to play</summary>
+  <ol>
+    {%- for step in g.how %}
+    <li>{{ step }}</li>
+    {%- endfor %}
+  </ol>
+</details>
+{%- endif -%}

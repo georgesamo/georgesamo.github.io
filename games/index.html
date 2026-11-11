@@ -14,8 +14,16 @@ icon: log
           <h2 class="section__title">Games</h2>
           <p class="section__cmd"><span class="prompt">$</span> bin/arcade --list <span class="muted"># built around the stack I work with every day</span></p>
         </header>
+        <div class="pr-filter games-filter" role="toolbar" aria-label="Filter games">
+          <button type="button" class="pr-filter__btn is-active" data-games-filter="" aria-pressed="true">all <small>{{ site.data.games.size }}</small></button>
+          <button type="button" class="pr-filter__btn" data-games-filter="1v1" aria-pressed="false">⚔ with a friend</button>
+          <button type="button" class="pr-filter__btn" data-games-filter="daily" aria-pressed="false">📅 daily</button>
+          <button type="button" class="pr-filter__btn" data-games-filter="quick" aria-pressed="false">⚡ quick</button>
+          <button type="button" class="pr-filter__btn" data-games-filter="long" aria-pressed="false">☕ longer</button>
+        </div>
         <div class="arcade-cards">
-          <article class="arcade-card reveal">
+          {%- assign gd = site.data.games | where: "id", "sidekiq" | first %}
+          <article class="arcade-card reveal" data-game-card data-modes="{{ gd.modes | join: ' ' }}" data-length="{{ gd.length }}">
             <div class="arcade-card__preview" aria-hidden="true">
               <div class="pv-sr"><div class="pv-sr__lane" data-q=":critical"><i></i><i></i></div><div class="pv-sr__lane" data-q=":default"><i></i><i></i><i></i></div><div class="pv-sr__lane" data-q=":mailers"><i></i><i></i></div></div>
             </div>
@@ -23,6 +31,7 @@ icon: log
               <p class="arcade-card__file">games/sidekiq_rush.rb</p>
               <h3 class="arcade-card__title">Sidekiq Rush</h3>
               <p class="arcade-card__text">Hospital jobs pour into Redis. Route claims, imports and reminders to the right queue, hire workers, grab gold power-up jobs (autoscale, flush, rate limit, ×2) and survive the Monday-morning spike.</p>
+              {% include game-meta.html id="sidekiq" %}
               <div class="arcade-card__row">
                 <button class="btn btn--primary" type="button" data-play="sidekiq"><span class="btn__prompt">▶</span> play</button>
                 <button class="btn" type="button" data-race title="Live 1v1 against a friend">⚔ 1v1</button>
@@ -30,7 +39,8 @@ icon: log
               </div>
             </div>
           </article>
-          <article class="arcade-card reveal">
+          {%- assign gd = site.data.games | where: "id", "gems" | first %}
+          <article class="arcade-card reveal" data-game-card data-modes="{{ gd.modes | join: ' ' }}" data-length="{{ gd.length }}">
             <div class="arcade-card__preview" aria-hidden="true">
               <div class="pv-gm">
                 {%- assign pv = "rb,pg,sk,rd,rs,dk,rb,sk,rs,dk,pg,rb,rd,sk,pg,rd,rb,rs,dk,sk,pg" | split: "," -%}
@@ -41,6 +51,7 @@ icon: log
               <p class="arcade-card__file">games/gem_match.rb</p>
               <h3 class="arcade-card__title">Gem Match</h3>
               <p class="arcade-card__text">Match three gems from the Gemfile. Build power-ups: <b>Pipeline</b> clears a line, <b>Force push</b> blasts 3×3, <b>Bundle</b> wipes a whole kind. Swap two together for combos, and spend deploy-meter charges on boosters.</p>
+              {% include game-meta.html id="gems" %}
               <div class="arcade-card__row">
                 <button class="btn btn--primary" type="button" data-play="gems"><span class="btn__prompt">▶</span> play</button>
                 <button class="btn" type="button" data-daily title="Same board for everyone today">📅 daily</button>
@@ -48,7 +59,8 @@ icon: log
               </div>
             </div>
           </article>
-          <article class="arcade-card reveal">
+          {%- assign gd = site.data.games | where: "id", "schema" | first %}
+          <article class="arcade-card reveal" data-game-card data-modes="{{ gd.modes | join: ' ' }}" data-length="{{ gd.length }}">
             <div class="arcade-card__preview" aria-hidden="true">
               <div class="pv-ms">{%- assign pvm = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,2,0,0,0,1,0,0,0,0,0,2,2,3,3,1,1,0,2,2,0,2,2,3,3,1,1,0,2,2,2,1,1,1,3,3,3,0,2,1,1" | split: "," -%}{%- for v in pvm %}<i class="pv-ms__c pv-ms__c--{{ v }}"></i>{% endfor -%}</div>
             </div>
@@ -56,13 +68,15 @@ icon: log
               <p class="arcade-card__file">games/schema_stack.rb</p>
               <h3 class="arcade-card__title">Schema Stack</h3>
               <p class="arcade-card__text">Migrations fall into the schema. Deploy full rows, but <b>create_table</b> first: changes to missing tables land pending and block their row until it exists. Stash pieces and catch hotfix, redo and squash power-ups.</p>
+              {% include game-meta.html id="schema" %}
               <div class="arcade-card__row">
                 <button class="btn btn--primary" type="button" data-play="schema"><span class="btn__prompt">▶</span> play</button>
                 <span class="arcade-card__best" data-best="schema"></span>
               </div>
             </div>
           </article>
-          <article class="arcade-card reveal">
+          {%- assign gd = site.data.games | where: "id", "pitwall" | first %}
+          <article class="arcade-card reveal" data-game-card data-modes="{{ gd.modes | join: ' ' }}" data-length="{{ gd.length }}">
             <div class="arcade-card__preview" aria-hidden="true">
               <div class="pv-pw"><svg viewBox="20 20 380 250"><path class="pw__road" d="M70,212 C48,212 36,196 44,176 L86,92 C96,70 122,62 144,76 L196,112 C212,123 232,120 242,104 L270,58 C282,38 312,34 330,50 L366,84 C382,100 378,124 358,134 L268,176 C250,186 250,204 266,212 L314,226 C334,232 330,250 308,250 L92,250 C72,250 60,232 70,212 Z"/></svg><div class="pv-pw__cars"><i class="pv-pw__me"></i><i class="pv-pw__rv"></i></div></div>
             </div>
@@ -70,6 +84,7 @@ icon: log
               <p class="arcade-card__file">games/pit_wall.rb</p>
               <h3 class="arcade-card__title">Pit Wall</h3>
               <p class="arcade-card__text">You're the race engineer. Quick race, Grand Prix or a 10-round World Championship across ten circuits: call the stops, pick tyres, deploy ERS, react to rain and safety cars.</p>
+              {% include game-meta.html id="pitwall" %}
               <div class="arcade-card__row">
                 <button class="btn btn--primary" type="button" data-play="pitwall"><span class="btn__prompt">▶</span> play</button>
                 <button class="btn" type="button" data-race title="Two strategists, same grid and weather">⚔ 1v1</button>
@@ -78,9 +93,10 @@ icon: log
             </div>
           </article>
         </div>
-      </section>
-        <div class="lobby__actions" style="margin-top:20px">
+        <p class="muted games-empty" data-games-empty hidden>No game matches that filter.</p>
+        <div class="lobby__actions games-more">
           <button class="btn" type="button" data-daily>📅 daily Gem Match</button>
           <button class="btn" type="button" data-race>⚔ live 2-player</button>
           <a class="btn" href="{{ '/leaderboards/' | relative_url }}">🏆 leaderboards</a>
         </div>
+      </section>

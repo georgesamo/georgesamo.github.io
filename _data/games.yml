@@ -1,0 +1,63 @@
+# One entry per arcade game. Drives the lobby tiles and the games page (filters, metadata, how to play).
+#   id      the SamukaArcade id (data-play / data-best)
+#   modes   solo | 1v1 | daily   (what the filter chips on /games/ match)
+#   length  quick (a few minutes) | long (a session)
+- id: sidekiq
+  name: Sidekiq Rush
+  file: games/sidekiq_rush.rb
+  icon: "📬"
+  tone: sr
+  tagline: Route hospital jobs to the right queue and survive the Monday spike.
+  minutes: "2–4 min"
+  length: quick
+  modes: [solo, 1v1]
+  controls: keyboard or tap
+  how:
+    - Jobs drop into Redis. Send each one to its queue (critical, default, mailers) before memory fills up.
+    - Hire workers to clear queues faster and grab the gold power-up jobs.
+    - The spike keeps growing; the run ends when Redis runs out of memory.
+
+- id: gems
+  name: Gem Match
+  file: games/gem_match.rb
+  icon: "💎"
+  tone: gm
+  tagline: Match three gems from the Gemfile and chain power-ups into combos.
+  minutes: "~3 min"
+  length: quick
+  modes: [solo, daily, 1v1]
+  controls: swipe, mouse or arrow keys
+  how:
+    - Swap two neighbouring gems to line up three or more of a kind.
+    - Match 4 for a Pipeline (clears a line), an L or T for a Force push (3×3), 5 for a Bundle (wipes a kind).
+    - Swap two power-ups together for a combo. The daily board is the same for everyone, one try a day.
+
+- id: schema
+  name: Schema Stack
+  file: games/schema_stack.rb
+  icon: "🧱"
+  tone: ms
+  tagline: Stack falling migrations, but create a table before you change it.
+  minutes: "5+ min"
+  length: long
+  modes: [solo]
+  controls: arrow keys or tap
+  how:
+    - Migrations fall into the schema. Fill a whole row to deploy it.
+    - A change to a table that doesn't exist yet lands pending and blocks its row until create_table arrives.
+    - Stash a piece for later and catch hotfix, redo and squash power-ups.
+
+- id: pitwall
+  name: Pit Wall
+  file: games/pit_wall.rb
+  icon: "🏁"
+  tone: pw
+  tagline: Be the race engineer. Call the stops, pick tyres, beat the rain.
+  minutes: "3 min – a season"
+  length: long
+  modes: [solo, 1v1]
+  controls: mouse or tap
+  how:
+    - Pick quick race, Grand Prix or a 10-round World Championship.
+    - Call pit stops, choose tyres and deploy ERS while the race runs.
+    - Rain and safety cars change everything; react before your rivals do.
