@@ -56,7 +56,7 @@
           var on = !!got[x.key], hide = x.secret && !on;
           return '<span class="pcard__badge' + (on ? "" : " is-off") + '" title="' + esc(hide ? "secret" : x.title) + '">' + (hide ? "?" : esc(x.icon)) + "</span>";
         }).join("") + "</div>" +
-        '<div class="pcard__foot"><span>georgesamo.github.io/u/?n=' + esc(card.name) + "</span><span>Samuka's Arcade</span></div>" +
+        '<div class="pcard__foot"><span>' + esc(location.host + shortLink(card.name).replace(/\/$/, "")) + "</span><span>Samuka's Arcade</span></div>" +
       "</article>" +
       (window.SamukaAccountCore ? '<div class="pcard-extra">' + window.SamukaAccountCore.cardExtrasHtml(card) + "</div>" : "") +
       '<div class="pcard-actions"><button class="btn btn--primary" type="button" data-pcard-copy>⧉ copy link</button><button class="btn" type="button" data-pcard-png>⬇ save as image</button>' +
@@ -64,37 +64,63 @@
       '<form class="pcard-find" data-pcard-find><input name="n" maxlength="24" placeholder="find another player" aria-label="Player nickname" required><button class="btn" type="submit">find</button></form>';
   }
 
-  /* PNG export drawn on a canvas (no libraries) */
-  function png() {
-    var W = 1040, H = 560, cv = document.createElement("canvas"), g = cv.getContext("2d");
+  /* the card as a PNG, drawn on a canvas (no libraries). Also used by scripts/player-cards.mjs
+     at build time for link previews (og: 1200x630 with the card centred). */
+  function pathSafe(name) { return /^[A-Za-z0-9._-]{1,24}$/.test(name || ""); }
+  function shortLink(name) { return pathSafe(name) ? "/u/" + name + "/" : "/u/?n=" + encodeURIComponent(name || ""); }
+  function drawCard(c, opts) {
+    opts = opts || {};
+    var CW = 1040, CH = 560, og = !!opts.og, W = og ? 1200 : CW, H = og ? 630 : CH;
+    var cv = document.createElement("canvas"), g = cv.getContext("2d");
     cv.width = W; cv.height = H;
     var cs = getComputedStyle(document.documentElement), v = function (k, d) { return (cs.getPropertyValue(k) || d).trim() || d; };
     var bg = v("--bg-elev", "#0b1912"), accent = v("--accent", "#3ad08f"), hl = v("--hl", "#d9b45a"), text = v("--text", "#e4efe8"), muted = v("--muted", "#6c857a"), soft = v("--bg-soft", "#0f2119");
-    var grd = g.createLinearGradient(0, 0, W, H); grd.addColorStop(0, bg); grd.addColorStop(1, soft);
-    g.fillStyle = grd; g.fillRect(0, 0, W, H);
-    g.strokeStyle = card.role === "samuka" ? "#e5383b" : card.role === "nino" ? "#b98cff" : hl; g.lineWidth = 4; g.strokeRect(2, 2, W - 4, H - 4);
+    if (og) { g.fillStyle = v("--bg", "#07110c"); g.fillRect(0, 0, W, H); g.translate((W - CW) / 2, (H - CH) / 2); }
+    var grd = g.createLinearGradient(0, 0, CW, CH); grd.addColorStop(0, bg); grd.addColorStop(1, soft);
+    g.fillStyle = grd; g.fillRect(0, 0, CW, CH);
+    g.strokeStyle = c.role === "samuka" ? "#e5383b" : c.role === "nino" ? "#b98cff" : hl; g.lineWidth = 4; g.strokeRect(2, 2, CW - 4, CH - 4);
     g.fillStyle = v("--phthalo", "#123524"); g.fillRect(52, 52, 120, 120);
-    g.fillStyle = hl; g.font = "800 64px Inter, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(card.name.charAt(0).toUpperCase(), 112, 116);
+    g.fillStyle = hl; g.font = "800 64px Inter, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(c.name.charAt(0).toUpperCase(), 112, 116);
     g.textAlign = "left"; g.textBaseline = "alphabetic";
-    g.fillStyle = text; g.font = "800 56px Inter, sans-serif"; g.fillText(card.name, 200, 112);
-    g.fillStyle = muted; g.font = "22px 'JetBrains Mono', monospace"; g.fillText((card.role === "samuka" ? "creator" : card.role === "nino" ? "PM" : "player") + " · joined " + month(card.joined), 200, 154);
-    var best = card.best || {}, got = (card.achievements || []).length, list = (window.SamukaAch && window.SamukaAch.list) || [];
+    g.fillStyle = text; g.font = "800 56px Inter, sans-serif"; g.fillText(c.name, 200, 112);
+    g.fillStyle = muted; g.font = "22px 'JetBrains Mono', monospace"; g.fillText((c.role === "samuka" ? "creator" : c.role === "nino" ? "PM" : "player") + " · joined " + month(c.joined) + " · " + fmt(c.games) + " games", 200, 154);
+    var best = c.best || {}, list = (window.SamukaAch && window.SamukaAch.list) || [];
+    var have = {}; (c.achievements || []).forEach(function (k) { have[k] = 1; });
+    var got = list.filter(function (a) { return have[a.key]; }).length;
     [["Gem Match", fmt(best.gems)], ["Sidekiq", fmt(best.sidekiq)], ["Schema", fmt(best.schema)], ["Pit Wall", fmt(best.pitwall)], ["badges", got + "/" + list.length]].forEach(function (s, i) {
       var x = 52 + i * 190;
       g.fillStyle = soft; g.fillRect(x, 220, 176, 130);
       g.fillStyle = accent; g.font = "700 34px 'JetBrains Mono', monospace"; g.fillText(s[1], x + 16, 290);
       g.fillStyle = muted; g.font = "17px 'JetBrains Mono', monospace"; g.fillText(s[0].toUpperCase(), x + 16, 330);
     });
-    g.font = "34px sans-serif";
-    var have = {}; (card.achievements || []).forEach(function (k) { have[k] = 1; });
-    list.forEach(function (a, i) { g.globalAlpha = have[a.key] ? 1 : 0.18; g.fillText(have[a.key] || !a.secret ? a.icon : "?", 52 + i * 47, 420); });
+    // badges: one row while they fit in the card (936px), otherwise two rows, shrinking if needed
+    var room = CW - 104, one = list.length * 47 <= room, per = one ? list.length : Math.ceil(list.length / 2);
+    var step = one ? 47 : Math.min(47, room / Math.max(1, per)), size = Math.min(34, Math.floor(step * 0.74));
+    g.font = size + "px sans-serif";
+    list.forEach(function (a, i) {
+      var row = one ? 0 : Math.floor(i / per), col = one ? i : i % per;
+      g.globalAlpha = have[a.key] ? 1 : 0.18;
+      g.fillText(have[a.key] || !a.secret ? a.icon : "?", 52 + col * step, one ? 420 : 404 + row * (size + 14));
+    });
     g.globalAlpha = 1;
-    g.fillStyle = muted; g.font = "20px 'JetBrains Mono', monospace"; g.fillText("georgesamo.github.io/u/?n=" + card.name, 52, 510);
-    g.textAlign = "right"; g.fillStyle = hl; g.fillText("Samuka's Arcade", W - 52, 510);
+    g.fillStyle = muted; g.font = "20px 'JetBrains Mono', monospace"; g.fillText((opts.host || location.host) + shortLink(c.name).replace(/\/$/, ""), 52, 510);
+    g.textAlign = "right"; g.fillStyle = hl; g.fillText("Samuka's Arcade", CW - 52, 510);
+    return cv;
+  }
+  function png() {
     var a = document.createElement("a");
     a.download = "player-card-" + card.name.replace(/[^\w.-]/g, "_") + ".png";
-    a.href = cv.toDataURL("image/png");
+    a.href = drawCard(card).toDataURL("image/png");
     document.body.appendChild(a); a.click(); a.remove();
+  }
+  // players with a link-preview page (/u/<name>/, built every 3 hours): their share link uses it
+  var previews = null;
+  function shareUrl(name) {
+    if (!previews) previews = fetch("/u/cards.json", { cache: "no-cache" }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+    return previews.then(function (list) {
+      var has = Array.isArray(list) && list.indexOf(name) > -1;
+      return location.origin + (has ? "/u/" + name + "/" : "/u/?n=" + encodeURIComponent(name));
+    });
   }
 
   document.addEventListener("submit", function (e) {
@@ -107,7 +133,7 @@
     if (!root || !root.contains(e.target)) return;
     if (e.target.closest("[data-pcard-copy]")) {
       var b = e.target.closest("[data-pcard-copy]");
-      if (navigator.clipboard) navigator.clipboard.writeText(location.origin + "/u/?n=" + encodeURIComponent(card.name)).then(function () { b.textContent = "✓ copied"; });
+      shareUrl(card.name).then(function (url) { if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { b.textContent = "✓ copied"; }); });
     }
     if (e.target.closest("[data-pcard-png]")) png();
     if (e.target.closest("[data-acct-open], [data-pcard-signin]")) { var a = A(); if (a) a.open(); }
@@ -117,4 +143,6 @@
   window.addEventListener("samuka:auth", function () { setTimeout(go, 50); });
   window.addEventListener("samuka:page", function () { started = false; card = null; go(); });
   setTimeout(go, 2500);
+
+  window.SamukaPlayer = { draw: drawCard, shareUrl: shareUrl, shortLink: shortLink, pathSafe: pathSafe };
 })();

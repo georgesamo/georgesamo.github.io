@@ -113,10 +113,14 @@
   });
   function copyCard(btn) {
     if (!signedIn()) return Promise.resolve(false);
-    var url = location.origin + C.cardHref(A().publicName());
-    var done = function (ok) { if (btn) btn.textContent = ok ? "✓ link copied" : url; return ok; };
-    if (!navigator.clipboard) return Promise.resolve(done(false));
-    return navigator.clipboard.writeText(url).then(function () { return done(true); }, function () { return done(false); });
+    var name = A().publicName(), P = window.SamukaPlayer;
+    // the short /u/<name>/ link when a link-preview page exists for this player (player.js knows)
+    var get = P && P.shareUrl ? P.shareUrl(name) : Promise.resolve(location.origin + C.cardHref(name));
+    return get.then(function (url) {
+      var done = function (ok) { if (btn) btn.textContent = ok ? "✓ link copied" : url; return ok; };
+      if (!navigator.clipboard) return done(false);
+      return navigator.clipboard.writeText(url).then(function () { return done(true); }, function () { return done(false); });
+    });
   }
 
   /* ---------- avatar menu ---------- */

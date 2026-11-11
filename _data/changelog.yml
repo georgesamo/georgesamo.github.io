@@ -3,6 +3,11 @@
 #   link  optional, a page on this site
 - date: 2026-11-12
   tag: feature
+  title: Link previews for cards and challenges
+  text: Paste a player card or a challenge into a chat app and it now shows a proper preview, with the card itself or the game you've been challenged at.
+
+- date: 2026-11-12
+  tag: feature
   title: A tidier tab bar
   text: On desktop, News, Trailers, What's new and the Blog now share one Feeds tab, so the top bar reads Home, Games, Today, Leaderboards, Feeds, About.
 

@@ -36,8 +36,8 @@
       expect(C.canChallenge({ game: "pitwall", seed: "p", score: 10, kind: "quick" })).toBe(true);
       expect(C.canChallenge({ game: "pitwall", seed: "p", score: 10, kind: "gp" })).toBe(false);
     });
-    it("point at the games page", function () {
-      expect(C.link({ game: "gems", seed: "gems-a", name: "n", score: 1 }).indexOf(location.origin + "/games/?c=")).toBe(0);
+    it("point at the game's preview page, which forwards to /games/", function () {
+      expect(C.link({ game: "gems", seed: "gems-a", name: "n", score: 1 }).indexOf(location.origin + "/c/gems/?c=")).toBe(0);
     });
   });
 
