@@ -24,7 +24,7 @@ const PAGE_PROBE = readFileSync(new URL("./probes/page.js", import.meta.url), "u
 const VISUAL_PROBE = readFileSync(new URL("./probes/visual.js", import.meta.url), "utf8");
 
 // pages on the shell layout get the module check; the rest only the generic ones
-const SHELL_PAGES = ["/", "/games/", "/leaderboards/", "/events/", "/news/", "/watch/", "/samuka/", "/blog/", "/settings/", "/u/", "/nino/", "/soundtrack/", "/offline/"];
+const SHELL_PAGES = ["/", "/games/", "/leaderboards/", "/events/", "/news/", "/watch/", "/samuka/", "/blog/", "/settings/", "/hire/", "/u/", "/nino/", "/soundtrack/", "/offline/"];
 const OTHER_PAGES = ["/404.html"];
 const VIEWPORTS = [
   { name: "desktop", opts: { viewport: { width: 1280, height: 800 } } },

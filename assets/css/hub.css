@@ -495,3 +495,41 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .set__row--stack { display: grid; justify-content: stretch; gap: 8px; }
 .set__modes3 { grid-template-columns: repeat(3, 1fr); max-width: 360px; }
 .set__note { margin: 0; font: 12px var(--mono); color: var(--muted); }
+
+/* ---------- /hire/: one-page summary for recruiters ---------- */
+.hire { max-width: 820px; }
+.hire__card { padding: 20px 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-elev); }
+.hire__who { display: flex; align-items: center; gap: 14px; }
+.hire__name { display: block; font: 800 20px/1.25 var(--sans); letter-spacing: -0.01em; }
+.hire__name .muted { font-weight: 500; font-size: 15px; }
+.hire__role { display: block; margin-top: 2px; font: 13px var(--mono); color: var(--text-2); }
+.hire__intro { margin: 14px 0 16px; font-size: 16px; line-height: 1.55; color: var(--text); }
+.hire__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.hire__facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; margin: 16px 0 0; }
+.hire__facts > div { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-soft); }
+.hire__facts dt { font: 12px var(--mono); color: var(--muted); }
+.hire__facts dd { margin: 3px 0 0; font-size: 14.5px; color: var(--text); }
+.hire__h { margin: 30px 0 12px; font: 800 19px/1.2 var(--sans); letter-spacing: -0.01em; }
+.hire__hl { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.hire__hl li { display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-elev); }
+.hire__hl b { font-size: 15px; }
+.hire__hl span { font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.hire__stack { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.hire__stack li { padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; font: 13px var(--mono); color: var(--text); background: var(--bg-soft); }
+.hire__career { margin: 0; padding: 0; list-style: none; border-left: 2px solid var(--line); }
+.hire__career li { display: grid; grid-template-columns: 1fr auto; gap: 0 12px; padding: 8px 0 8px 16px; }
+.hire__career b { font-size: 15px; }
+.hire__career span { grid-column: 1; font-size: 13.5px; color: var(--text-2); }
+.hire__career time { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 12.5px var(--mono); color: var(--muted); white-space: nowrap; }
+.hire__side { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--text-2); }
+@media (max-width: 560px) {
+  .hire__card { padding: 16px; }
+  .hire__hl { grid-template-columns: 1fr; }
+  .hire__career li { grid-template-columns: 1fr; }
+  .hire__career time { grid-column: 1; grid-row: auto; }
+  .hire__actions .btn { flex: 1 1 auto; justify-content: center; }
+}
+@media print {
+  .tree, .tabs, .mnav, .status, .msheet, .hire__actions, .site-foot, .spotlight { display: none !important; }
+  .hire__card, .hire__facts > div, .hire__hl li { break-inside: avoid; }
+}

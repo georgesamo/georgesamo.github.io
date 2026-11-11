@@ -124,6 +124,14 @@
     });
   });
 
+  describe("recruiter page", function () {
+    it("search finds it for hiring words, ahead of the profile", function () {
+      ["recruiter", "hire", "hiring"].forEach(function (q) {
+        expect(C.searchPalette(C.paletteItems({ games: [] }), q)[0].href).toBe("/hire/");
+      });
+    });
+  });
+
   describe("links to settings", function () {
     it("avatar menu, phone sheet and search all lead there", function () {
       var m = C.menuItems({ name: "neo", role: "user" }).filter(function (i) { return i.key === "settings"; })[0];

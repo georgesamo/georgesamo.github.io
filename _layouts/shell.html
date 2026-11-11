@@ -59,6 +59,7 @@ layout: default
       <button type="button" class="tree__dir" data-tree-dir="about" aria-expanded="true">about</button>
       <div class="tree__group" data-tree-group="about">
         <a href="{% if on_profile %}#hero{% else %}{{ '/samuka/' | relative_url }}{% endif %}"{% if on_profile %} data-nav="hero"{% endif %}{% if tab == "samuka" %} class="is-here"{% endif %}><i class="fi fi--rb"></i><span class="nav-l">About Samuka</span><small class="nav-f">samuka.rb</small></a>
+        <a href="{{ '/hire/' | relative_url }}"{% if tab == "hire" %} class="is-here"{% endif %}><i class="fi fi--md"></i><span class="nav-l">Hiring? Start here</span><small class="nav-f">HIRE.md</small></a>
         {%- if on_profile %}
         <a class="tree__sub" href="#experience" data-nav="experience"><span class="nav-l">Experience</span><small class="nav-f">career.log</small></a>
         <a class="tree__sub" href="#skills" data-nav="skills"><span class="nav-l">Skills</span><small class="nav-f">Gemfile</small></a>
@@ -100,7 +101,7 @@ layout: default
         <a class="tabs__tab tabs__tab--idle tabs__tab--{{ tp[0] }}" href="{{ tp[3] | relative_url }}"><i class="fi fi--{{ tp[2] }}"></i><span class="nav-l">{{ tp[4] }}</span><small class="nav-f">{{ tp[1] }}</small></a>
           {%- endif -%}
         {%- endfor -%}
-        {%- if tab == "player" or tab == "nino" or tab == "watch" or tab == "updates" or tab == "me" or tab == "settings" %}
+        {%- if tab == "player" or tab == "nino" or tab == "watch" or tab == "updates" or tab == "me" or tab == "settings" or tab == "hire" %}
         <a class="tabs__tab is-active" href="{{ page.url | relative_url }}" aria-current="page"><i class="fi fi--{{ icon }}" data-tab-icon></i><span class="nav-l">{% if tab == "watch" %}Trailers{% else %}{{ page.title | default: "Player" }}{% endif %}</span><small class="nav-f" data-tab-name>{{ file_name }}</small><span class="tabs__dot"></span></a>
         {%- endif %}
       </div>
@@ -129,14 +130,15 @@ layout: default
   {%- for m in mn -%}{%- assign mp = m | split: "|" %}
   <a href="{{ mp[2] | relative_url }}" class="mnav__item{% if tab == mp[0] %} is-here{% endif %}"{% if tab == mp[0] %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="{{ mp[3] }}"/></svg><span>{{ mp[1] }}</span></a>
   {%- endfor %}
-  <button type="button" class="mnav__item{% if tab == "leaderboards" or tab == "samuka" or tab == "pulls" or tab == "news" or tab == "watch" or tab == "updates" or tab == "nino" or tab == "player" or tab == "settings" %} is-here{% endif %}" data-mnav-more aria-expanded="false" aria-controls="msheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg><span>more</span></button>
+  <button type="button" class="mnav__item{% if tab == "leaderboards" or tab == "samuka" or tab == "pulls" or tab == "news" or tab == "watch" or tab == "updates" or tab == "nino" or tab == "player" or tab == "settings" or tab == "hire" %} is-here{% endif %}" data-mnav-more aria-expanded="false" aria-controls="msheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg><span>more</span></button>
 </nav>
 <div class="msheet" id="msheet" hidden>
   <div class="msheet__backdrop" data-mnav-close></div>
   <div class="msheet__card" role="dialog" aria-label="More">
     <div class="msheet__me" data-me-sheet hidden></div>
     <a href="{{ '/leaderboards/' | relative_url }}"><i class="fi fi--yml"></i>Leaderboards <small>top players</small></a>
-    <a href="{{ '/samuka/' | relative_url }}"><i class="fi fi--rb"></i>About Samuka <small>the creator · hire me</small></a>
+    <a href="{{ '/samuka/' | relative_url }}"><i class="fi fi--rb"></i>About Samuka <small>the creator</small></a>
+    <a href="{{ '/hire/' | relative_url }}"><i class="fi fi--md"></i>Hiring? Start here <small>one-page summary</small></a>
     <a href="{{ '/news/' | relative_url }}"><i class="fi fi--rss"></i>News <small>tech &amp; gaming</small></a>
     <a href="{{ '/watch/' | relative_url }}"><i class="fi fi--mp4"></i>Trailers <small>trailers &amp; reviews</small></a>
     <a href="{{ '/whats-new/' | relative_url }}" data-updates-latest="{{ site.data.changelog[0].date }}"><i class="fi fi--md"></i>What's new <small>site updates</small></a>
