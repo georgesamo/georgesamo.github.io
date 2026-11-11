@@ -238,6 +238,10 @@
 .lb__role, .lb__you { margin-left: 6px; padding: 1px 6px; border-radius: 999px; font-size: 10.5px; border: 1px solid var(--line-strong); color: var(--muted); }
 .lb__role--samuka { border-color: #e5383b; color: #e5383b; }
 .lb__role--nino { border-color: #b98cff; color: #b98cff; }
+:root[data-theme="light"] .lb__row--gold .lb__rank { color: #fff; }   /* light --gold is dark: #1b1404 on it was 3.4:1 */
+:root[data-theme="light"] .lb__role--samuka { border-color: #b3121a; color: #b3121a; }
+:root:not([data-theme="light"]) .lb__role--samuka { color: #ff6b6e; }   /* #e5383b on the dark rows was 4.0:1 */
+:root[data-theme="light"] .lb__role--nino { border-color: #6a45e0; color: #6a45e0; }
 .lb__you { border-color: var(--accent); color: var(--accent); }
 .lb__empty, .lb__note { margin: 6px 0 0; font: 12.5px var(--mono); }
 .lb-mini { margin-top: 12px; text-align: left; }

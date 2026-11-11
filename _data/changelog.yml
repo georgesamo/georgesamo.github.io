@@ -3,6 +3,11 @@
 #   link  optional, a page on this site
 - date: 2026-11-12
   tag: fix
+  title: Easier-to-read grey text
+  text: Labels, dates and captions were a little too faint, especially in light mode. They're now dark enough to read comfortably in every skin. With calm mode on, Sidekiq Rush's preview no longer hides its queue names and Pit Wall's cars stay on the track.
+
+- date: 2026-11-12
+  tag: fix
   title: The music player loads when you want it
   text: The soundtrack is the biggest part of the site; it now loads the first time you reach for ♪ (or open a page that shows the music), so every other page starts faster.
 
