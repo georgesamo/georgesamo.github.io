@@ -1,17 +1,42 @@
 ---
 layout: shell
-title: Events
-description: Weekly challenges and seasonal events in Samuka's arcade.
+title: Today
+description: "What's on in Samuka's arcade today: the daily puzzle, live 1v1 races, the leaderboards, this week's challenge and seasonal events."
 permalink: /events/
 tab: events
 file: arcade/events.rb
 icon: rb
 ---
-      <section class="section" id="events" data-file="arcade/events.rb" data-icon="rb">
+      <section class="section" id="today" data-file="arcade/today.rb" data-icon="rb">
         <header class="section__head reveal">
-          <p class="section__path">arcade/<b>events.rb</b></p>
-          <h1 class="section__title">Events</h1>
-          <p class="section__cmd"><span class="prompt">$</span> rails events:current <span class="muted"># a new challenge every Monday, same for everyone</span></p>
+          <p class="section__path">arcade/<b>today.rb</b></p>
+          <h1 class="section__title">Today</h1>
+          <p class="section__cmd"><span class="prompt">$</span> rails arcade:today <span class="muted"># the daily puzzle, live races, the boards and this week's challenge</span></p>
+        </header>
+        <div class="today">
+          <div class="hub-card today__daily reveal">
+            <p class="hub-card__title">daily puzzle · new in <span data-home-reset>—</span></p>
+            <p class="today__big"><span aria-hidden="true">📅</span> Gem Match <span data-home-daily>#1</span></p>
+            <p class="muted">Same board for everyone, one try a day.</p>
+            <button class="btn btn--primary" type="button" data-daily><span class="btn__prompt">▶</span> play today's</button>
+          </div>
+          <div class="hub-card today__live reveal">
+            <div data-hub-players><p class="hub-card__title">play live</p><p class="muted">Race a friend on the same board, in real time. Or send a challenge from any result card.</p></div>
+            <button class="btn" type="button" data-race>⚔ start a 1v1</button>
+          </div>
+          <a class="hub-card today__boards reveal" href="{{ '/leaderboards/' | relative_url }}">
+            <p class="hub-card__title">leaderboards</p>
+            <p class="today__big"><span aria-hidden="true">🏆</span> Top players</p>
+            <p class="muted">All-time, this week and today, for every game.</p>
+            <span class="btn">see the boards →</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="section section--tight" id="events" data-file="arcade/events.rb" data-icon="rb">
+        <header class="home-head reveal">
+          <h2 class="home-head__title">This week &amp; seasons</h2>
+          <span class="home-head__more muted">a new challenge every Monday</span>
         </header>
         <div class="ev-grid" data-events><p class="muted">loading…</p></div>
       </section>
