@@ -1,0 +1,40 @@
+---
+layout: shell
+title: What's new
+description: "Every update to Samuka's arcade: new games, music, features and fixes."
+permalink: /whats-new/
+tab: updates
+file: CHANGELOG.md
+icon: md
+---
+{%- assign log = site.data.changelog -%}
+      <section class="section" id="updates" data-file="CHANGELOG.md" data-icon="md" data-updates-page>
+        <header class="section__head reveal">
+          <p class="section__path"><b>CHANGELOG.md</b></p>
+          <h1 class="section__title">What's new</h1>
+          <p class="section__cmd"><span class="prompt">$</span> git log --oneline arcade <span class="muted"># new games, music, features and fixes, newest first</span></p>
+        </header>
+        <div class="pr-filter updates__filter" role="toolbar" aria-label="Filter updates">
+          <button type="button" class="pr-filter__btn is-active" data-updates-filter="" aria-pressed="true">all <small>{{ log.size }}</small></button>
+          {%- assign tags = "game,music,feature,fix" | split: "," -%}
+          {%- for t in tags %}
+          {%- assign n = log | where: "tag", t | size -%}
+          {%- if n > 0 %}
+          <button type="button" class="pr-filter__btn" data-updates-filter="{{ t }}" aria-pressed="false"><i class="update__dot update__dot--{{ t }}"></i>{{ t }} <small>{{ n }}</small></button>
+          {%- endif %}
+          {%- endfor %}
+        </div>
+        <ol class="updates">
+          {%- for u in log %}
+          <li class="update reveal" data-update-date="{{ u.date }}" data-update-tag="{{ u.tag }}">
+            <time datetime="{{ u.date }}">{{ u.date | date: "%b %-d" }}</time>
+            <span class="update__tag update__tag--{{ u.tag }}">{{ u.tag }}</span>
+            <div class="update__body">
+              <b class="update__title">{% if u.link %}<a href="{{ u.link | relative_url }}">{{ u.title }}</a>{% else %}{{ u.title }}{% endif %}</b>
+              <p>{{ u.text }}</p>
+            </div>
+          </li>
+          {%- endfor %}
+        </ol>
+        <p class="home-foot">Looking for headlines from around the web? They're in <a href="{{ '/news/' | relative_url }}">News</a>.</p>
+      </section>

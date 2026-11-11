@@ -1,0 +1,58 @@
+# What's new in the arcade, newest first. Shown on the lobby (latest three) and on /whats-new/.
+#   tag   game | music | feature | fix
+#   link  optional, a page on this site
+- date: 2026-11-11
+  tag: feature
+  title: A friendlier lobby and clearer menus
+  text: Everything has a plain name now (Home, Games, News…), the lobby gets you into a game in one click, and this page tells you what changed.
+  link: /
+
+- date: 2026-11-10
+  tag: feature
+  title: News and trailers
+  text: Tech, gaming and Ruby headlines gathered every few hours, plus official trailers and reviews. The music pauses while a video plays.
+  link: /news/
+
+- date: 2026-11-10
+  tag: music
+  title: The soundtrack, remastered
+  text: Every track is pre-rendered and loudness-balanced, songs flow into each other, and the player keeps going on phones in the background.
+
+- date: 2026-11-10
+  tag: fix
+  title: Smoother on phones
+  text: No more black strip under the bottom menu on Android, nothing left running after you leave a game, and a much lighter idle.
+
+- date: 2026-11-09
+  tag: music
+  title: A bonus track for every game
+  text: Finish a game to unlock its own track in the ♪ player. Unlocked tracks join the shuffle.
+
+- date: 2026-11-09
+  tag: game
+  title: Every game fits a phone
+  text: All four games resize to the screen, and the card previews stop animating while you play.
+  link: /games/
+
+- date: 2026-11-08
+  tag: game
+  title: "Pit Wall: World Championship"
+  text: Ten circuits, varied weather, incidents and a 10-round season. Smoother cars, too.
+  link: /games/
+
+- date: 2026-11-08
+  tag: feature
+  title: Play first, sign in later
+  text: Guests can play every game. Sign in when you want your score on the boards, plus ranks, streaks and Ctrl+P to jump anywhere.
+
+- date: 2026-11-08
+  tag: game
+  title: "New game: Schema Stack"
+  text: Falling migrations, pending changes and create_table first. A puzzle for anyone who has ever broken a deploy.
+  link: /games/
+
+- date: 2026-11-08
+  tag: feature
+  title: Live 1v1, weekly events and the commit wall
+  text: Race a friend live, take the weekly challenge, and leave a line on the visitors' wall.
+  link: /events/

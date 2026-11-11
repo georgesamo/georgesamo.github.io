@@ -4,7 +4,7 @@ layout: default
 {%- comment -%}
   Shared editor chrome for every page: file tree, open-file tabs (the site's main
   navigation), status bar, terminal. Front matter a page can set:
-    tab: lobby | leaderboards | events | news | watch | samuka | player | pulls | nino   (which tab is active)
+    tab: lobby | leaderboards | events | news | watch | updates | samuka | player | pulls | nino   (which tab is active)
     file: path shown in the crumbs / status bar (the profile page updates it on scroll)
     icon: rb | log | gem | yml | md | pr | rss | mp4
     lang: status-bar language label
@@ -52,6 +52,7 @@ layout: default
       <div class="tree__group" data-tree-group="feeds">
         <a href="{{ '/news/' | relative_url }}"{% if tab == "news" %} class="is-here"{% endif %}><i class="fi fi--rss"></i><span class="nav-l">News</span><small class="nav-f">news.rss</small></a>
         <a href="{{ '/watch/' | relative_url }}"{% if tab == "watch" %} class="is-here"{% endif %}><i class="fi fi--mp4"></i><span class="nav-l">Trailers</span><small class="nav-f">trailers.mp4</small></a>
+        <a href="{{ '/whats-new/' | relative_url }}" data-updates-latest="{{ site.data.changelog[0].date }}"{% if tab == "updates" %} class="is-here"{% endif %}><i class="fi fi--md"></i><span class="nav-l">What's new</span><small class="nav-f">CHANGELOG.md</small></a>
       </div>
       <button type="button" class="tree__dir" data-tree-dir="about" aria-expanded="true">about</button>
       <div class="tree__group" data-tree-group="about">
@@ -97,7 +98,7 @@ layout: default
         <a class="tabs__tab tabs__tab--idle tabs__tab--{{ tp[0] }}" href="{{ tp[3] | relative_url }}"><i class="fi fi--{{ tp[2] }}"></i><span class="nav-l">{{ tp[4] }}</span><small class="nav-f">{{ tp[1] }}</small></a>
           {%- endif -%}
         {%- endfor -%}
-        {%- if tab == "player" or tab == "nino" or tab == "watch" %}
+        {%- if tab == "player" or tab == "nino" or tab == "watch" or tab == "updates" %}
         <a class="tabs__tab is-active" href="{{ page.url | relative_url }}" aria-current="page"><i class="fi fi--{{ icon }}" data-tab-icon></i><span class="nav-l">{% if tab == "watch" %}Trailers{% else %}{{ page.title | default: "Player" }}{% endif %}</span><small class="nav-f" data-tab-name>{{ file_name }}</small><span class="tabs__dot"></span></a>
         {%- endif %}
       </div>
@@ -125,7 +126,7 @@ layout: default
   {%- for m in mn -%}{%- assign mp = m | split: "|" %}
   <a href="{{ mp[2] | relative_url }}" class="mnav__item{% if tab == mp[0] %} is-here{% endif %}"{% if tab == mp[0] %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="{{ mp[3] }}"/></svg><span>{{ mp[1] }}</span></a>
   {%- endfor %}
-  <button type="button" class="mnav__item{% if tab == "pulls" or tab == "news" or tab == "watch" or tab == "nino" or tab == "player" %} is-here{% endif %}" data-mnav-more aria-expanded="false" aria-controls="msheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg><span>more</span></button>
+  <button type="button" class="mnav__item{% if tab == "pulls" or tab == "news" or tab == "watch" or tab == "updates" or tab == "nino" or tab == "player" %} is-here{% endif %}" data-mnav-more aria-expanded="false" aria-controls="msheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg><span>more</span></button>
 </nav>
 <div class="msheet" id="msheet" hidden>
   <div class="msheet__backdrop" data-mnav-close></div>
@@ -133,6 +134,7 @@ layout: default
     <div class="msheet__me" data-me-sheet hidden></div>
     <a href="{{ '/news/' | relative_url }}"><i class="fi fi--rss"></i>News <small>tech &amp; gaming</small></a>
     <a href="{{ '/watch/' | relative_url }}"><i class="fi fi--mp4"></i>Trailers <small>trailers &amp; reviews</small></a>
+    <a href="{{ '/whats-new/' | relative_url }}" data-updates-latest="{{ site.data.changelog[0].date }}"><i class="fi fi--md"></i>What's new <small>site updates</small></a>
     <a href="{{ '/blog/' | relative_url }}"><i class="fi fi--pr"></i>Blog <small>pull requests</small></a>
     <a href="{{ '/#wall' | relative_url }}"><i class="fi fi--log"></i>Guestbook <small>visitors.log</small></a>
     <a href="{{ '/u/' | relative_url }}"><i class="fi fi--rb"></i>Find a player <small>player cards</small></a>
