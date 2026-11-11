@@ -48,6 +48,8 @@
     rootEl.querySelectorAll("script").forEach(function (old) {
       if (old.src) return;
       var s = document.createElement("script");
+      // keep id/type: pages ship data as <script type="application/json" id="…"> and read it back by id
+      for (var i = 0; i < old.attributes.length; i++) s.setAttribute(old.attributes[i].name, old.attributes[i].value);
       s.textContent = old.textContent;
       old.replaceWith(s);
     });

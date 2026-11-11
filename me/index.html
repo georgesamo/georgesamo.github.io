@@ -1,0 +1,29 @@
+---
+layout: shell
+title: Collection
+description: "Your arcade collection: personal bests, achievements, soundtrack unlocks and the secrets still waiting to be found."
+permalink: /me/
+tab: me
+file: me/collection.rb
+icon: rb
+---
+{%- assign games = site.data.games -%}
+<script id="me-games" type="application/json">{{ games | jsonify }}</script>
+      <section class="section" id="collection" data-file="me/collection.rb" data-icon="rb" data-collection>
+        <header class="section__head reveal">
+          <p class="section__path">me/<b>collection.rb</b></p>
+          <h1 class="section__title">Your collection</h1>
+          <p class="section__cmd"><span class="prompt">$</span> rails me:collection <span class="muted"># bests, badges, music and the secrets you haven't found yet</span></p>
+        </header>
+        <div class="coll-who" data-coll-who><p class="muted">loading…</p></div>
+
+        <h2 class="coll-h">Personal bests</h2>
+        <div class="coll-bests" data-coll-bests></div>
+
+        <h2 class="coll-h">Achievements <small data-coll-ach-n></small></h2>
+        <div class="coll-grid" data-coll-ach></div>
+
+        <h2 class="coll-h">Soundtrack <small data-coll-music-n></small></h2>
+        <p class="coll-note">Press <b>♪</b> in the header to open the player. Everything you unlock plays there.</p>
+        <div class="coll-grid" data-coll-music></div>
+      </section>
