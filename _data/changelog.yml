@@ -3,6 +3,12 @@
 #   link  optional, a page on this site
 - date: 2026-11-12
   tag: feature
+  title: Streak reminder
+  text: "Signed in with a daily streak going? Home and Today now tell you how long you have left to keep it, and a dot appears on Today. Hide it for the day, or switch it off in Settings."
+  link: /events/
+
+- date: 2026-11-12
+  tag: feature
   title: A page for recruiters
   text: "Hiring? Start here: one page with Samuka's experience, stack, highlights and how to get in touch, plus the résumé PDF."
   link: /hire/

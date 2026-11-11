@@ -30,6 +30,7 @@
       role: user && A.role ? A.role() : "guest",
       glitches: prof.glitches !== false,
       cursors: user && P && P.cursors ? P.cursors() : null,
+      streakRemind: user && window.SamukaStreak ? window.SamukaStreak.enabled() : null,
       music: L ? music(L) : null,
       calm: window.SamukaCalm ? { pref: window.SamukaCalm.pref(), on: window.SamukaCalm.on(), system: window.SamukaCalm.system() } : null
     };
@@ -80,6 +81,7 @@
         '<span class="set__btns"><button type="button" class="btn" data-me-act="profile">edit nickname</button><button type="button" class="btn" data-me-act="signout">sign out</button></span></div>' +
       toggle("data-set-glitches", c.glitches, "Glitch easter eggs", "the screen occasionally glitches for a moment") +
       (c.cursors === null ? "" : toggle("data-set-cursors", c.cursors, "Live cursors", "see where other visitors are pointing")) +
+      (c.streakRemind === null || c.streakRemind === undefined ? "" : toggle("data-set-streak", c.streakRemind, "Streak reminder", "a note on Home and Today when your daily streak is about to end")) +
       C.dataHtml({ owner: c.role === "samuka" });
   }
   function html(c) {
@@ -100,7 +102,7 @@
   }
   function focusKey(f) {
     if (f.name && f.value && f.type === "radio") return 'input[name="' + f.name + '"][value="' + f.value + '"]';
-    var a = ["data-set-music", "data-set-shuffle", "data-set-glitches", "data-set-cursors", "data-set-volume"].filter(function (x) { return f.hasAttribute(x); })[0];
+    var a = ["data-set-music", "data-set-shuffle", "data-set-glitches", "data-set-cursors", "data-set-streak", "data-set-volume"].filter(function (x) { return f.hasAttribute(x); })[0];
     return a ? "[" + a + "]" : null;
   }
   function paintMusic() {
@@ -126,6 +128,7 @@
     else if (t.hasAttribute("data-set-shuffle") && L) L.shuffle(t.checked);
     else if (t.hasAttribute("data-set-glitches") && window.SamukaAuth) window.SamukaAuth.savePrefs({ glitches: t.checked });
     else if (t.hasAttribute("data-set-cursors") && window.SamukaPresence) window.SamukaPresence.cursors(t.checked);
+    else if (t.hasAttribute("data-set-streak") && window.SamukaStreak) window.SamukaStreak.setEnabled(t.checked);
   });
   document.addEventListener("input", function (e) {
     var el = root(), t = e.target;
