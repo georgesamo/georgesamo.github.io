@@ -597,12 +597,13 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 /* ---------- phones: every tap target at least 40px tall ----------
    Buttons grow; inline links get invisible padding (cancelled by a negative margin) so the
    layout doesn't move. Inputs at 16px also stop iOS zooming in on focus. :root because the page
-   stylesheets (blog, news, features) load after this one. */
+   stylesheets (blog, news, features) load after this one. Leaderboard names are left out: .lb__name
+   clips overflow for its "…", which would cut the extra tap area off anyway. */
 @media (max-width: 760px) {
   :root .pr-filter__btn, :root .lb__tabs button, :root .code-card__run { min-height: 40px; height: auto; }
   :root .news__search { height: 40px; font-size: 16px; }
   :root .request input { min-height: 40px; font-size: 16px; }
-  :root .home-head__more, :root .update__title a, :root .lb__name a, :root .contact__kv a, :root .request__alt a,
+  :root .home-head__more, :root .update__title a, :root .contact__kv a, :root .request__alt a,
   :root .news__sources li a { display: inline-block; padding-block: 11px; margin-block: -11px; }
   :root .news__sources summary, :root .news-row__title { padding-block: 10px; margin-block: -10px; }   /* display kept: the ▸ marker stays, titles still wrap */
   :root .news-row__save { width: 40px; height: 40px; }
