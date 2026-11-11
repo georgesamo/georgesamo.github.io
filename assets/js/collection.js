@@ -95,6 +95,7 @@
   window.addEventListener("samuka:auth", paint);
   window.addEventListener("samuka:game", function (e) { if (e.detail && (e.detail.name === "over" || e.detail.name === "closed")) setTimeout(paint, 50); });
   window.addEventListener("samuka:theme", paint);
+  window.addEventListener("samuka:music-ready", paint);   // the soundtrack loads on demand (music.js)
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", paint); else paint();
   // lofi.js and achievements load alongside; one late pass catches them
   window.addEventListener("load", function () { setTimeout(paint, 300); });

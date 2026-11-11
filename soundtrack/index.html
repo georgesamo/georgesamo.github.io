@@ -49,7 +49,7 @@ sitemap: false
             </div>
             <p class="stp__keys muted">space play/pause · ← → 10 s · P / N previous / next · R repeat · M mute</p>
           </div>
-          <div class="st" data-soundtrack></div>
+          <div class="st" data-soundtrack data-needs-music></div>
         </div>
       </section>
       <style>
@@ -120,6 +120,7 @@ sitemap: false
           var L = window.SamukaLofi, A = window.SamukaAuth;
           if (!root) return;
           if ((!L || !A) && document.readyState !== "complete") { window.addEventListener("load", boot, { once: true }); return; }   // site scripts load after the page body
+          if (!L && window.SamukaMusic) { window.SamukaMusic.ready(function () { boot(); }); return; }   // the soundtrack loads on demand (music.js)
           // seamless navigation runs this again on every visit: everything it hangs on window/document goes when the page does
           var ac = window.AbortController ? new AbortController() : null, own = ac ? { signal: ac.signal } : false;
           window.addEventListener("samuka:page", function () { if (!document.body.contains(root) && ac) ac.abort(); }, own);

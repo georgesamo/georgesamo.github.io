@@ -379,7 +379,10 @@
       close(); setTimeout(function () { window.SamukaAdmin && window.SamukaAdmin.open(); }, 60); return "rails admin …";
     },
     music: function (a) {
-      var L = window.SamukaLofi; if (!L) return "audio not available in this browser";
+      var L = window.SamukaLofi, M = window.SamukaMusic;
+      // the soundtrack loads on demand (music.js): fetch it, then run the command again
+      if (!L && M && (window.AudioContext || window.webkitAudioContext)) { M.ready(function () { COMMANDS.music(a); }); return "♪ loading the soundtrack…"; }
+      if (!L) return "audio not available in this browser";
       if (a[0] === "off" || a[0] === "stop") { L.stop(); return "♪ off"; }
       if (a[0] === "suite") {
         var th = L.theme ? L.theme() : "phthalo";
@@ -392,6 +395,7 @@
     },
     patchbay: function (a) {
       var P = window.SamukaPatchBay; if (!P) return "not loaded";
+      if (!window.SamukaLofi && window.SamukaMusic) { close(); window.SamukaMusic.ready(function () { P.open(a[0]); }); return "bin/patchbay …"; }
       close(); setTimeout(function () { P.open(a[0]); }, 60); return "bin/patchbay …";
     },
     cursors: function (a) {
