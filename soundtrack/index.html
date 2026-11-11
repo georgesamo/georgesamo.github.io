@@ -12,7 +12,7 @@ sitemap: false
         <header class="section__head">
           <p class="section__path">team/<b>soundtrack.wav</b></p>
           <h1 class="section__title">Soundtrack</h1>
-          <p class="section__cmd"><span class="prompt">$</span> bin/music --list <span class="muted"># every track lives here; on the site each theme shuffles only its own five. A sixth hides in each theme, and each arcade game you finish adds a bonus track to all of them</span></p>
+          <p class="section__cmd"><span class="prompt">$</span> bin/music --list <span class="muted"># every track lives here; on the site each theme plays its own five, then its hidden sixth once you've opened it, then every bonus track you've unlocked. Each arcade game you finish adds one to all themes, and so does one gem on Samuka's page</span></p>
         </header>
         <div data-st-gate><p class="muted">checking your badge…</p></div>
         <div data-st-room hidden>
@@ -160,7 +160,7 @@ sitemap: false
               var plays = th.theme === "phthalo" ? "plays for everyone" : th.theme === "knight" ? "plays on Samuka's theme" : "plays on Nino's theme";
               return '<div class="st__theme st__theme--' + th.theme + (th.theme === mine ? " is-mine" : "") + '"><h3>' + th.name + ' <small>' + plays + '</small></h3><ol class="st__list">' + th.songs.slice().sort(function (a, b) { return a.no - b.no; }).map(function (s) {
                 if (s.bonus && s.locked) return '<li class="st__row is-locked"><span class="st__play" aria-hidden="true">🔒</span>' +
-                  '<span><span class="st__title">' + s.no + '. ??? <span class="st__tag">bonus</span></span><span class="st__meta">finish a run of ' + s.gameName + ' to unlock it in every theme</span></span></li>';
+                  '<span><span class="st__title">' + s.no + '. ??? <span class="st__tag">bonus</span></span><span class="st__meta">' + (s.hint || "finish a run of " + s.gameName + " to unlock it in every theme") + '</span></span></li>';
                 if (s.locked) return '<li class="st__row is-locked"><button class="st__play" type="button" data-pb-theme="' + th.theme + '" aria-label="Open the patch bay">🔒</button>' +
                   '<span><span class="st__title">6. ??? <span class="st__tag">secret</span></span><span class="st__meta">' + (s.heard < 5 ? "heard " + s.heard + "/5 · the patch bay wakes when you've heard all five" : "the patch bay is warm · press 🔒 to patch it together") + '</span></span></li>';
                 return '<li class="st__row' + (s.suite ? " is-suite" : "") + '" data-st="' + th.theme + ':' + s.si + '"><button class="st__play" type="button" aria-label="Play ' + s.title + '">▶</button>' +

@@ -400,6 +400,9 @@
       g.classList.remove("is-installing"); g.classList.add("is-installed");
     }
     bundleOut.innerHTML += '<span class="ok">Bundle complete! ' + gems.length + " Gemfile dependencies, " + gems.length + " gems now installed.</span>\nUse `bundle info [gemname]` to see where a bundled gem is installed.";
+    // a hidden gem: the first bundle install unlocks The Monologue (bonus track 11) in every theme
+    var Lo = window.SamukaLofi;
+    if (Lo && Lo.bonus && Lo.bonus.unlock("bundle")) bundleOut.innerHTML += '\n<span class="ok">♪ Installing monologue 1.0.0 (a hidden gem) · it\'s in the ♪ player now</span>';
     bundleOut.scrollTop = bundleOut.scrollHeight;
     setTimeout(function () { gems.forEach(function (g) { g.classList.remove("is-installed"); }); bundleBtn.disabled = false; }, 800);
   });
