@@ -17,6 +17,6 @@ sitemap: false
 </main>
 <script>
   // /u/<name>/ only exists for players on the boards (scripts/player-cards.mjs); anyone else's card lives at /u/?n=<name>
-  (function () { var m = location.pathname.match(/^\/u\/([A-Za-z0-9._-]{1,24})\/?(?:card\.png)?$/); if (m && !/\.png$/.test(location.pathname)) location.replace("/u/?n=" + encodeURIComponent(m[1]) + location.hash); })();
+  (function () { var m = location.pathname.match(/^\/u\/([A-Za-z0-9._-]{1,24})\/?$/); if (m) location.replace("/u/?n=" + encodeURIComponent(m[1]) + location.hash); })();
   document.querySelectorAll("[data-path]").forEach(function (e) { e.textContent = location.pathname; });
 </script>

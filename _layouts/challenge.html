@@ -1,13 +1,13 @@
 <!doctype html>
 {%- comment -%}
   /c/<game>/?c=<code>: the link a challenge is shared as. Chat apps read the preview tags here
-  (the game's challenge card, assets/og/challenge-<game>.png); people are sent straight on to
+  (the game's challenge card, assets/og/challenge-<game>.jpg); people are sent straight on to
   /games/?c=<code>, where challenge.js opens the invite. Front matter: game (an id in _data/games.yml).
 {%- endcomment -%}
 {%- assign g = site.data.games | where: "id", page.game | first -%}
 {%- capture title %}You've been challenged at {{ g.name }} · Samuka's Arcade{% endcapture -%}
 {%- capture desc %}{{ g.tagline }} Same board, one try to beat their score. Plays in your browser, no sign-up.{% endcapture -%}
-{%- capture img %}{{ site.url }}/assets/og/challenge-{{ g.id }}.png{% endcapture -%}
+{%- capture img %}{{ site.url }}/assets/og/challenge-{{ g.id }}.jpg{% endcapture -%}
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ title }}</title>

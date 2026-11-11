@@ -2,9 +2,9 @@
 // Chat apps don't run JavaScript, and /u/?n=<name> is one static page for everyone, so for each
 // player on the all-time boards this writes:
 //   _site/u/<name>/index.html   preview tags (title, description, 1200x630 image), then sends people on to /u/?n=<name>
-//   _site/u/<name>/card.png     the card, drawn by player.js's own drawCard() in headless Chrome
+//   _site/u/<name>/card.jpg     the card, drawn by player.js's own drawCard() in headless Chrome
 //   _site/u/cards.json          who has a page (player.js uses it to pick the short share link)
-//   _site/assets/og/challenge-<game>.png   the preview image of /c/<game>/ (the link a challenge is shared as)
+//   _site/assets/og/challenge-<game>.jpg   the preview image of /c/<game>/ (the link a challenge is shared as)
 // Names outside [A-Za-z0-9._-] keep the query link. A failure only warns: the site still deploys.
 //
 // usage: node scripts/player-cards.mjs [_site]      (needs Chrome; PW_CHANNEL=chromium for Playwright's own)
@@ -80,13 +80,13 @@ function page(card) {
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${ORIGIN}/u/${esc(name)}/">
-<meta property="og:image" content="${ORIGIN}/u/${esc(name)}/card.png">
+<meta property="og:image" content="${ORIGIN}/u/${esc(name)}/card.jpg">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="${esc(name)}'s player card: best scores and badges">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
-<meta name="twitter:image" content="${ORIGIN}/u/${esc(name)}/card.png">
+<meta name="twitter:image" content="${ORIGIN}/u/${esc(name)}/card.jpg">
 <meta name="robots" content="noindex">
 <style>body{margin:0;display:grid;place-items:center;min-height:100vh;background:#07110c;color:#e4efe8;font:15px system-ui,sans-serif}a{color:#d9b45a}</style>
 <script>location.replace(${JSON.stringify(card_url)} + location.hash);</script>
@@ -118,7 +118,7 @@ async function challenges(pg, base) {
   const games = await pg.evaluate(() => JSON.parse(document.getElementById("home-games").textContent));
   for (const g of games) {
     const data = await pg.evaluate(drawChallenge, { g, host: HOST });
-    await writeFile(path.join(out, "challenge-" + g.id + ".png"), Buffer.from(data.split(",")[1], "base64"));
+    await writeFile(path.join(out, "challenge-" + g.id + ".jpg"), Buffer.from(data.split(",")[1], "base64"));
   }
   console.log("challenge previews: " + games.map((g) => g.id).join(", "));
 }
@@ -130,10 +130,10 @@ async function playerPreviews(pg, base) {
   await pg.evaluate(() => document.fonts.ready);
   const done = [];
   for (const c of cards) {
-    const data = await pg.evaluate(({ c, host }) => window.SamukaPlayer.draw(c, { og: true, host }).toDataURL("image/png"), { c, host: HOST });
+    const data = await pg.evaluate(({ c, host }) => window.SamukaPlayer.draw(c, { og: true, host }).toDataURL("image/jpeg", 0.86), { c, host: HOST });
     const dir = path.join(site, "u", c.name);
     await mkdir(dir, { recursive: true });
-    await writeFile(path.join(dir, "card.png"), Buffer.from(data.split(",")[1], "base64"));
+    await writeFile(path.join(dir, "card.jpg"), Buffer.from(data.split(",")[1], "base64"));
     await writeFile(path.join(dir, "index.html"), page(c));
     done.push(c.name);
   }
@@ -179,7 +179,7 @@ function drawChallenge({ g, host }) {
   x.fillStyle = hl; x.font = "700 30px Inter, sans-serif"; x.fillText("Same board. One try to beat their score.", 140, 490);
   x.fillStyle = muted; x.font = "22px 'JetBrains Mono', monospace"; x.fillText(host, 140, 552);
   x.textAlign = "right"; x.fillStyle = hl; x.fillText("Samuka's Arcade", 1060, 552);
-  return cv.toDataURL("image/png");
+  return cv.toDataURL("image/jpeg", 0.86);
 }
 
 main().catch((e) => {
