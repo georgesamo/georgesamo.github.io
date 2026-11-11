@@ -218,6 +218,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .corner__ring b { font: 800 26px var(--mono); color: var(--text); }
 .corner__ring span { font: 11px var(--mono); color: var(--muted); }
 .corner__closed { padding: 60px 0; text-align: center; }
+.corner__closed-title { margin: 0.6em 0; font-size: 1.5em; }   /* the page heading (h1) at the size it had as an h2 */
 
 /* ---------- case-study summary card on posts ---------- */
 .case-card { margin: 18px 0; padding: 18px 20px; border: 1px solid var(--line-strong); border-radius: 14px; background: radial-gradient(500px circle at 100% 0%, var(--accent-soft), transparent 60%), var(--bg-elev); }

@@ -14,7 +14,7 @@
 
   function finder(msg) {
     var a = A(), me = a && a.user() ? a.publicName() : null;
-    root.innerHTML = (msg ? '<p class="muted">' + msg + "</p>" : "") +
+    root.innerHTML = '<h1 class="section__title">Player cards</h1>' + (msg ? '<p class="muted">' + msg + "</p>" : "") +
       '<form class="pcard-find" data-pcard-find><input name="n" maxlength="24" placeholder="nickname" aria-label="Player nickname" required><button class="btn btn--primary" type="submit">find player</button></form>' +
       (me ? '<a class="btn" href="?n=' + encodeURIComponent(me) + '">🪪 my card</a>' : (a && a.enabled ? '<button class="btn" type="button" data-pcard-signin>sign in to get your card</button>' : ""));
   }

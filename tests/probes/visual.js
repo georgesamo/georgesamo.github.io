@@ -112,23 +112,20 @@
     }
   }
 
-  // a toolbar mixing colour emoji with flat glyphs, or icons of very different visual size
+  // a toolbar mixing colour emoji with flat glyphs (icon heights are not compared: a chevron and a
+  // list icon are rightly different sizes)
   const mixedIconStyles = [];
   for (const [grp, items] of groups) {
     if (items.length < 2) continue;
     const emo = items.filter((i) => i.emoji), flat = items.filter((i) => !i.emoji);
     if (emo.length && flat.length) mixedIconStyles.push(`${label(grp)}: colour emoji ${emo.map((i) => i.el).join(", ")} next to flat ${flat.map((i) => i.el).join(", ")}`);
-    const sameBox = items.filter((i) => Math.abs(i.box - items[0].box) < 2);
-    if (sameBox.length > 1) {
-      const hs = sameBox.map((i) => i.h), lo = Math.min(...hs), hi = Math.max(...hs);
-      if (lo > 0 && hi / lo > 1.6) mixedIconStyles.push(`${label(grp)}: icon heights ${lo.toFixed(0)}–${hi.toFixed(0)}px in same-size buttons`);
-    }
   }
 
   // text cut off without an ellipsis (labels, tabs, track titles, names)
   const clipped = [...root.querySelectorAll("*")].filter((el) => {
     if (el === document.documentElement || el === document.body || !el.firstChild || !visible(el) || !textNodes(el).length) return false;
     const s = getComputedStyle(el);
+    if (s.webkitLineClamp && s.webkitLineClamp !== "none") return false;   // line-clamp draws its own "…"
     const hidesX = /hidden|clip/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1 && s.textOverflow !== "ellipsis";
     const hidesY = /hidden|clip/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 2 && !/-webkit-box/.test(s.display);
     return hidesX || hidesY;
