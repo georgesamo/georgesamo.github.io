@@ -20,14 +20,14 @@ Goal: find real bugs a player (Nino, a guest, a phone user) would hit, and prove
 
 1. `preview_start {name: "tests"}` (127.0.0.1:4100, no-cache) → open `/tests/` → wait, then read `window.__testResults` with `javascript_tool`. Any failure is a finding (quote the test name + message). This server is plain static — it does not run Jekyll, so use it only for the unit tests.
 2. `preview_start {name: "jekyll"}` (127.0.0.1:4000) — the real site. If it fails, read `preview_logs` and report; don't try to fix the toolchain silently.
-3. Read [probe.js](probe.js) once. For every "probe" below, pass its full text to `javascript_tool`; it returns JSON (overflow, broken links/images, missing modules, unnamed controls, duplicate ids, small touch targets, duplicated singletons, theme/role/music state).
+3. Read [tests/probes/page.js](../../../tests/probes/page.js) once. For every "probe" below, pass its full text to `javascript_tool`; it returns JSON (overflow, broken links/images, missing modules, unnamed controls, duplicate ids, small touch targets, duplicated singletons, theme/role/music state).
 4. Before each page check, clear the console baseline: note the count from `read_console_messages`, and after the step read only new entries (`onlyErrors: true`). Also check `read_network_requests` for 4xx/5xx on same-origin URLs.
 
 ## 2. Smoke matrix (always runs, also the whole of `smoke`)
 
 Pages: `/`, `/games/`, `/leaderboards/`, `/events/`, `/samuka/`, `/blog/`, the newest post under `/blog/` (from the sidebar), `/u/`, `/nino/`, `/soundtrack/`, `/offline/`, `/404.html`, plus a junk URL like `/does-not-exist/` (expect the 404 page).
 
-Also run [visual.js](visual.js) on each page × viewport and report its `misaligned` and `mixedIconStyles` (cheap, no screenshots — the looking pass is in the visual section).
+Also run [tests/probes/visual.js](../../../tests/probes/visual.js) on each page × viewport and report its `misaligned` and `mixedIconStyles` (cheap, no screenshots — the looking pass is in the visual section).
 
 Viewports: **desktop** (`resize_window preset: desktop`, pane size) and **phone** (`preset: mobile`, 375×812 — emulates touch + Android UA; **reload after switching** so load-time device gates re-run). Also run each page once in `colorScheme: light` vs `dark` on one viewport.
 
@@ -104,7 +104,7 @@ Text reading can't see these, so this section measures and then looks.
 
 **How to look.** Screenshots need the pane visible (`tabs_context` says "displayed"). If it's hidden, the screenshot only captures the top-left part of the viewport at 2×. Ask the user to show the pane. If they're away, temporarily shift the element into the top-left for inspection only (`el.style.translate = "-400px -100px"`), screenshot, then clear the style. `computer zoom` takes screenshot-frame coordinates, so convert from CSS px with the factor the screenshot reports.
 
-**1. Measure** — read [visual.js](visual.js) and pass it to `javascript_tool`. Set `window.__vtRoot = ".mdock"` first to scope it to one area, and `window.__vtAll = true` to get every measurement. It finds small square/round icon buttons and compares the icon's **ink** (canvas `measureText` bounds for glyphs on the real baseline, shape bounds for SVG) with the button's centre. It returns:
+**1. Measure** — read [tests/probes/visual.js](../../../tests/probes/visual.js) and pass it to `javascript_tool`. Set `window.__vtRoot = ".mdock"` first to scope it to one area, and `window.__vtAll = true` to get every measurement. It finds small square/round icon buttons and compares the icon's **ink** (canvas `measureText` bounds for glyphs on the real baseline, shape bounds for SVG) with the button's centre. It returns:
 - `misaligned`: icons more than 1.5px (or 6% of the button) off centre, or spilling outside the button, with `offPx` (+x = right, +y = low) and a `zoom` box.
 - `mixedIconStyles`: a toolbar mixing colour emoji (⏪ 🔁 🔊 as blue/yellow tiles) with flat glyphs (⏮ ⏸ ⏹), or icons of very different visual size in same-size buttons.
 - `unmeasuredCssIcons`: icons drawn with CSS (`<i class="fi">`, `::before`, the eq bars on the ♪ button while playing, the theme toggle). These need the screenshot check.
@@ -112,7 +112,7 @@ Text reading can't see these, so this section measures and then looks.
 
 **2. Look** — zoom screenshot every flagged item, every `unmeasuredCssIcons` entry, and this fixed set, which is always checked even when the probe is clean:
 - the header: ♪ music button (stopped AND playing), theme toggle, avatar/sign-in, command-palette button
-- the music dock open and playing: transport row (⏮ ⏪ ⏸/▶ ⏩ ⏭), repeat/mute/stop row, volume and seek thumbs, the track list's current-track marker, and the secret-track progress marks
+- the music dock open and playing: the SVG transport row (shuffle, prev, play/pause, next), the list/min buttons, volume and seek thumbs, the track list's current-track marker, and the secret-track progress marks
 - a game modal: × close, score/HUD, the game-over overlay and its buttons
 - the phone bottom bar (`.mnav`) and the "more" sheet, the account window tabs
 - arcade cards on `/`, leaderboard rows with a long name, the 404 page
@@ -140,3 +140,6 @@ Finish with `wrap_up`, then a report in chat:
 - **Not verified** list: anything the tools couldn't exercise (hidden-tab audio, true offline, real Supabase writes, iOS Safari specifics — the pane is Chromium).
 - If findings exist, ask which to fix (wrap_up question). Don't fix or commit during the test run.
 - For a long report, offer once to publish it as a private Artifact page.
+
+## In CI
+`tests/deep.mjs` is the automated half of this skill. It uses the same probes (`tests/probes/`) on every page × desktop/phone, plus the nav, theme, games, music, palette, more-sheet and mock-role flows. It runs in `.github/workflows/pages.yml` after the unit tests and the smoke test, against the exact built artifact that gets deployed, and blocks the deploy on errors. Visual and a11y findings are warnings there; they show in the run's job summary, with screenshots in the `deep-report` artifact. When asked to look into a failed or warning-heavy deploy, start from that report: `gh run download <run-id> -n deep-report`. Then reproduce locally with this skill. The judgment parts — looking at screenshots per skin, real interactions, edge cases — stay with the skill.

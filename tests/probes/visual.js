@@ -1,4 +1,5 @@
-// deep-test visual probe. Paste the whole file into javascript_tool on any page of the site.
+// deep-test visual probe: shared by the /deep-test skill (pasted into javascript_tool) and
+// tests/deep.mjs in CI (page.evaluate). Must stay one self-contained expression.
 // Finds small icon buttons (♪, ▶ ⏸ ⏭, ×, avatar, bottom-bar icons…) and measures where the
 // icon's actual ink sits inside its button, not its text box, because glyph boxes include
 // font padding that hides real misalignment. Also flags clipped text.

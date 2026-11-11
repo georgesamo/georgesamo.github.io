@@ -3,6 +3,7 @@ name: Deploy site to GitHub Pages
 on:
   push:
     branches: [main]
+  # any branch can be run by hand: everything but the deploy runs, so CI changes can be tried first
   workflow_dispatch:
   # rebuild every 3 hours so /news/ stays fresh (the feeds are fetched at build time, not committed)
   schedule:
@@ -14,11 +15,20 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  NODE_VERSION: "20"
+  NPM_TOOLS: esbuild@0.24.0 playwright@1.49.1
+  NPM_CACHE: npm-esbuild-0.24.0-playwright-1.49.1   # bump together with NPM_TOOLS
+
+# test ─┐
+#       ├─ deep (smoke + deep test of the built site) ─ deploy (main only)
+# build ┘
+# Unit tests and the build run side by side; the deep test needs both, the deploy needs it.
 jobs:
-  # browser tests (tests/index.html) in headless Chrome; a failure stops the deploy
+  # browser unit tests (tests/index.html) in headless Chrome
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -26,19 +36,24 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Cache npm downloads
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-${{ env.NPM_CACHE }}
       - name: Install Playwright (uses the runner's Chrome, no browser download)
-        run: npm install --no-save --no-package-lock --no-audit --no-fund playwright@1.49.1
+        run: npm install --no-save --no-package-lock --no-audit --no-fund ${{ env.NPM_TOOLS }}
       - name: Serve the repo on 127.0.0.1:4100
         run: |
           python3 tests/serve.py 4100 > /tmp/http.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:4100/tests/ > /dev/null && break; sleep 0.5; done
-      - name: Run tests
+      - name: Unit tests
         run: node tests/ci.mjs http://127.0.0.1:4100/tests/
 
   build:
-    needs: test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
@@ -71,20 +86,64 @@ jobs:
           JEKYLL_ENV: production
       - uses: actions/setup-node@v7
         with:
-          node-version: "20"
-      - name: Install build tools (esbuild, Playwright with the runner's Chrome)
-        run: npm install --no-save --no-package-lock --no-audit --no-fund esbuild@0.24.0 playwright@1.49.1
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Cache npm downloads
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-${{ env.NPM_CACHE }}
+      - name: Install build tools
+        run: npm install --no-save --no-package-lock --no-audit --no-fund ${{ env.NPM_TOOLS }}
       - name: Optimize (minify JS/CSS, content-hash asset links)
         run: node scripts/optimize.mjs _site
-      - name: Smoke-test the optimized site
-        run: |
-          (cd _site && python3 ../tests/serve.py 4200 > /tmp/site.log 2>&1 &)
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4200/ > /dev/null && break; sleep 0.5; done
-          node tests/smoke.mjs http://127.0.0.1:4200
+      # the exact files that get deployed; the deep job tests this same artifact
       - uses: actions/upload-pages-artifact@v5
 
+  # smoke + deep test of the built, optimized site (tests/deep.mjs = the automated half of /deep-test)
+  deep:
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: tests
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Cache npm downloads
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-${{ env.NPM_CACHE }}
+      - name: Install Playwright
+        run: npm install --no-save --no-package-lock --no-audit --no-fund ${{ env.NPM_TOOLS }}
+      - name: Download the built site
+        uses: actions/download-artifact@v8
+        with:
+          name: github-pages
+          path: /tmp/pages
+      - name: Serve it on 127.0.0.1:4200
+        run: |
+          mkdir -p _site && tar -xf /tmp/pages/artifact.tar -C _site
+          (cd _site && python3 ../tests/serve.py 4200 > /tmp/site.log 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4200/ > /dev/null && break; sleep 0.5; done
+      - name: Smoke test
+        run: node tests/smoke.mjs http://127.0.0.1:4200
+      - name: Deep test
+        run: node tests/deep.mjs http://127.0.0.1:4200
+      - name: Keep the deep-test report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: deep-report
+          path: deep-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
   deploy:
-    needs: build
+    needs: [test, deep]
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

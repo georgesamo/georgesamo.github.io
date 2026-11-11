@@ -1,4 +1,5 @@
-// deep-test page probe. Paste the whole file into javascript_tool on any page of the site.
+// deep-test page probe: shared by the /deep-test skill (pasted into javascript_tool) and
+// tests/deep.mjs in CI (page.evaluate). Must stay one self-contained expression.
 // Returns one JSON report about the CURRENT page at the CURRENT viewport. Read-only: it never
 // clicks, submits or writes storage. Internal links are checked with GET (same origin only).
 (async () => {
