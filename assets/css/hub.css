@@ -395,3 +395,16 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   .update { grid-template-columns: auto minmax(0, 1fr); }
   .update .update__body { grid-column: 1 / -1; }
 }
+
+/* ---------- games page: filters, metadata, how to play ---------- */
+.games-filter { margin: -12px 0 18px; }
+.arcade-card[hidden] { display: none; }
+.games-more { margin-top: 20px; }
+.game-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; padding: 0; list-style: none; }
+.game-meta li { padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; font: 11px var(--mono); color: var(--text-2); background: var(--bg-soft); white-space: nowrap; }
+.game-how { margin: 10px 0 2px; font-size: 14px; }
+.game-how summary { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font: 12px var(--mono); color: var(--accent); list-style: none; }
+.game-how summary::-webkit-details-marker { display: none; }
+.game-how summary::before { content: "▸"; transition: transform 0.15s; }
+.game-how[open] summary::before { transform: rotate(90deg); }
+.game-how ol { margin: 8px 0 0; padding-left: 20px; color: var(--text-2); display: grid; gap: 4px; }

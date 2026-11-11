@@ -108,6 +108,20 @@
     document.querySelectorAll("[data-update-tag]").forEach(function (li) { li.hidden = !!tag && li.getAttribute("data-update-tag") !== tag; });
   });
 
+  /* ---------- games page filters (solo / 1v1 / daily / quick / long) ---------- */
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-games-filter]");
+    if (!b) return;
+    var f = b.getAttribute("data-games-filter"), shown = 0;
+    document.querySelectorAll("[data-games-filter]").forEach(function (x) { var on = x === b; x.classList.toggle("is-active", on); x.setAttribute("aria-pressed", String(on)); });
+    document.querySelectorAll("[data-game-card]").forEach(function (c) {
+      var modes = (c.getAttribute("data-modes") || "").split(" ");
+      var ok = !f || modes.indexOf(f) > -1 || c.getAttribute("data-length") === f;
+      c.hidden = !ok; if (ok) shown++;
+    });
+    var empty = document.querySelector("[data-games-empty]"); if (empty) empty.hidden = shown > 0;
+  });
+
   var timer = null;
   function boot() {
     paintNext(); paintDaily(); paintUpdates();
