@@ -446,6 +446,11 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .next-steps__label { font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
 .next-steps__link { margin-left: auto; font: 12.5px var(--mono); }
 
+/* ---------- a game's code on its way (arcade.js loads games on demand) ---------- */
+.arcade__loading { display: grid; place-items: center; height: 100%; min-height: 200px; margin: 0; font: 13px var(--mono); color: var(--muted); animation: arcadeLoad 1.2s ease-in-out infinite alternate; }
+@keyframes arcadeLoad { from { opacity: 0.45; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .arcade__loading { animation: none; } }
+
 /* ---------- challenge a friend (challenge.js) ---------- */
 .chal { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; }
 .chal__backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px); }

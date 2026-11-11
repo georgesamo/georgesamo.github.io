@@ -2,6 +2,11 @@
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
 - date: 2026-11-11
+  tag: fix
+  title: Lighter pages
+  text: A game's code now loads when you open it (or hover its play button), instead of all four on every page.
+
+- date: 2026-11-11
   tag: feature
   title: A simpler bottom bar on phones
   text: Home, Games, Today, Me and More. Today gathers the daily puzzle, live races, the leaderboards and this week's challenge in one place.
