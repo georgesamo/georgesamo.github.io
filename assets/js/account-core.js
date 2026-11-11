@@ -283,6 +283,7 @@
       { label: "Your collection", hint: "bests, badges, music", href: "/me/", kw: "me collection unlocks secrets bonus tracks" },
       { label: "Settings", hint: "look, sound, account", href: SETTINGS_HREF, kw: "preferences options theme skin dark light mode music volume sound shuffle cursors glitches" },
       { label: "Calm mode", hint: "settings", href: SETTINGS_HREF + "#set-comfort", kw: "reduce reduced motion animation shake glitch accessibility comfort still" },
+      { label: "Take the tour", hint: "3 quick pointers", href: "/?tour=1", kw: "help tour guide intro start new how" },
       { label: "What's new", hint: "site updates", href: "/whats-new/", kw: "changelog updates new release notes" },
       { label: "Guestbook", hint: "visitors wall", href: "/#wall", kw: "guestbook wall commit visitors" },
       { label: "Find a player", hint: "player cards", href: "/u/", kw: "card search user" },

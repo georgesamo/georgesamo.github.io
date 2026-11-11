@@ -69,7 +69,8 @@
     var now = k.pref === "auto" ? "Following your device: reduced motion is " + (k.system ? "on, so calm mode is on." : "off, so calm mode is off.") : "Calm mode is " + (k.on ? "on." : "off.");
     return '<div class="set__row set__row--stack"><span class="set__label">Calm mode<small>no screen shake, glitches, spinning or sliding animations</small></span>' +
       '<div class="acct__modes set__modes3" role="radiogroup" aria-label="Calm mode">' + opts + "</div>" +
-      '<p class="set__note" data-set-calm-now>' + now + "</p></div>";
+      '<p class="set__note" data-set-calm-now>' + now + "</p></div>" +
+      '<div class="set__row"><span class="set__label">Quick tour<small>three pointers to find your way around</small></span><a class="btn" href="/?tour=1">show it again</a></div>';
   }
   function accountHtml(c) {
     if (!c.auth) return '<p class="muted">Accounts aren\'t available right now. Your scores and settings stay on this device.</p>';
