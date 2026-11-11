@@ -2,6 +2,12 @@
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
 - date: 2026-11-11
+  tag: feature
+  title: One Settings page
+  text: Light or dark, skin, music, live cursors and your account now live together on one page. Find it in the sidebar, under More on phones, or in your avatar menu.
+  link: /settings/
+
+- date: 2026-11-11
   tag: fix
   title: Lighter pages
   text: A game's code now loads when you open it (or hover its play button), instead of all four on every page.
