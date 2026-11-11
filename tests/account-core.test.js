@@ -194,11 +194,11 @@
   describe("account-core: avatar menu", function () {
     function keys(c) { return C.menuItems(c).map(function (i) { return i.key; }); }
     it("gives every player their card, ranks, badges, appearance, settings and sign out", function () {
-      expect(keys({ name: "bob", role: "user" })).toEqual(["card", "ranks", "badges", "appearance", "profile", "signout"]);
+      expect(keys({ name: "bob", role: "user" })).toEqual(["card", "ranks", "badges", "settings", "profile", "signout"]);
     });
     it("adds the board for the team and admin only for the owner", function () {
-      expect(keys({ name: "n", role: "nino" })).toEqual(["card", "ranks", "badges", "appearance", "profile", "board", "signout"]);
-      expect(keys({ name: "s", role: "samuka" })).toEqual(["card", "ranks", "badges", "appearance", "profile", "board", "admin", "signout"]);
+      expect(keys({ name: "n", role: "nino" })).toEqual(["card", "ranks", "badges", "settings", "profile", "board", "signout"]);
+      expect(keys({ name: "s", role: "samuka" })).toEqual(["card", "ranks", "badges", "settings", "profile", "board", "admin", "signout"]);
     });
     it("shows the badge count as a hint", function () {
       var b = C.menuItems({ name: "x", role: "user", ach: { n: 4, total: 30 } }).filter(function (i) { return i.key === "badges"; })[0];
@@ -287,7 +287,7 @@
       expect(s.querySelector(".msheet__who small").textContent).toBe("nino · PM · 2/9 badges");
       expect(s.querySelectorAll(".msheet__quick > *").length).toBe(4);
       expect(s.querySelector('.msheet__quick a[href="/u/?n=neo"]')).toBeTruthy();
-      expect(s.querySelector('.msheet__quick [data-me-act="profile"]')).toBeTruthy();
+      expect(s.querySelector('.msheet__quick a[href="/settings/"]')).toBeTruthy();
     });
   });
 })();
