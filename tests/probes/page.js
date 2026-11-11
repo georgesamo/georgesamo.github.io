@@ -8,7 +8,7 @@
   const vw = document.documentElement.clientWidth, vh = window.innerHeight;
   const visible = (el) => {
     const r = el.getBoundingClientRect(), s = getComputedStyle(el);
-    return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none" && !el.closest("[hidden]");
+    return r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > -window.scrollY && s.visibility !== "hidden" && s.display !== "none" && +s.opacity !== 0 && !el.closest("[hidden], [aria-hidden=true]");
   };
   const label = (el) => {
     const id = el.id ? "#" + el.id : "";

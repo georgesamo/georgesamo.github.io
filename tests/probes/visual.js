@@ -12,7 +12,7 @@
   const ctx = document.createElement("canvas").getContext("2d");
   const visible = (el) => {
     const r = el.getBoundingClientRect(), s = getComputedStyle(el);
-    return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none" && +s.opacity !== 0 && !el.closest("[hidden]");
+    return r.width > 0 && r.height > 0 && r.right > 0 && s.visibility !== "hidden" && s.display !== "none" && +s.opacity !== 0 && !el.closest("[hidden]");
   };
   const label = (el) => {
     const cls = typeof el.className === "string" && el.className.trim() ? "." + el.className.trim().split(/\s+/).slice(0, 2).join(".") : "";
@@ -21,7 +21,7 @@
   };
   const textNodes = (el) => {
     const out = [], w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    for (let n; (n = w.nextNode());) if (n.nodeValue.trim() && visible(n.parentElement)) out.push(n);
+    for (let n; (n = w.nextNode());) if (n.nodeValue.trim() && !n.parentElement.closest("script, style, noscript, template, textarea, svg") && visible(n.parentElement)) out.push(n);
     return out;
   };
 
@@ -82,6 +82,9 @@
     const cx = b.left + parseFloat(s.borderLeftWidth) + (b.width - parseFloat(s.borderLeftWidth) - parseFloat(s.borderRightWidth)) / 2;
     const cy = b.top + parseFloat(s.borderTopWidth) + (b.height - parseFloat(s.borderTopWidth) - parseFloat(s.borderBottomWidth)) / 2;
     let ink = null;
+    // a CSS-drawn shape (<i>, e.g. a Gem Match gem or the playing-eq bars) is the real icon and its ink is
+    // invisible to these tools; any text on it is a label placed on purpose. Leave those to the screenshot pass.
+    if ([...el.querySelectorAll("i")].some(visible)) { unmeasured.push(label(el)); continue; }
     for (const t of textNodes(el)) ink = union(ink, textInk(t));
     for (const svg of el.querySelectorAll("svg")) if (visible(svg)) ink = union(ink, svgInk(svg));
     for (const img of el.querySelectorAll("img")) if (visible(img)) { const r = img.getBoundingClientRect(); ink = union(ink, { left: r.left, right: r.right, top: r.top, bottom: r.bottom, kind: "img" }); }
@@ -124,7 +127,7 @@
 
   // text cut off without an ellipsis (labels, tabs, track titles, names)
   const clipped = [...root.querySelectorAll("*")].filter((el) => {
-    if (!el.firstChild || !visible(el) || !textNodes(el).length) return false;
+    if (el === document.documentElement || el === document.body || !el.firstChild || !visible(el) || !textNodes(el).length) return false;
     const s = getComputedStyle(el);
     const hidesX = /hidden|clip/.test(s.overflowX) && el.scrollWidth > el.clientWidth + 1 && s.textOverflow !== "ellipsis";
     const hidesY = /hidden|clip/.test(s.overflowY) && el.scrollHeight > el.clientHeight + 2 && !/-webkit-box/.test(s.display);
