@@ -597,8 +597,9 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
 /* ---------- phones: every tap target at least 40px tall ----------
    Buttons grow; inline links get invisible padding (cancelled by a negative margin) so the
    layout doesn't move. Inputs at 16px also stop iOS zooming in on focus. :root because the page
-   stylesheets (blog, news, features) load after this one. Leaderboard names are left out: .lb__name
-   clips overflow for its "…", which would cut the extra tap area off anyway. */
+   stylesheets (blog, news, features) load after this one. Leaderboard names can't use that trick:
+   .lb__name clips overflow for its "…", which would cut the extra area off. So the name link is made
+   tall instead (line-height) and the row gives up its vertical padding: rows stay the same height. */
 @media (max-width: 760px) {
   :root .pr-filter__btn, :root .lb__tabs button, :root .code-card__run { min-height: 40px; height: auto; }
   :root .news__search { height: 40px; font-size: 16px; }
@@ -607,4 +608,7 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
   :root .news__sources li a { display: inline-block; padding-block: 11px; margin-block: -11px; }
   :root .news__sources summary, :root .news-row__title { padding-block: 10px; margin-block: -10px; }   /* display kept: the ▸ marker stays, titles still wrap */
   :root .news-row__save { width: 40px; height: 40px; }
+  :root .lb__row { padding-block: 3px; }
+  :root .lb-mini .lb__row { padding-block: 0; }
+  :root .lb__name a { display: inline-block; vertical-align: middle; max-width: 100%; line-height: 34px; overflow: hidden; text-overflow: ellipsis; }
 }
