@@ -56,6 +56,15 @@
       expect(d.querySelector("[data-set-cursors]")).toBe(null);
       expect(d.querySelector('[data-me-act="delete"]')).toBe(null);
     });
+    it("shows calm mode with the saved choice and what it means now", function () {
+      var d = dom(St.html(base({ calm: { pref: "auto", on: true, system: true } })));
+      expect([].map.call(d.querySelectorAll(".set__h"), function (h) { return h.id; })).toEqual(["set-look", "set-comfort", "set-sound", "set-account"]);
+      expect(d.querySelector('input[name="calm"]:checked').value).toBe("auto");
+      expect(d.querySelector("[data-set-calm-now]").textContent).toContain("reduced motion is on");
+      d = dom(St.html(base({ calm: { pref: "off", on: false, system: true } })));
+      expect(d.querySelector('input[name="calm"]:checked').value).toBe("off");
+      expect(d.querySelector("[data-set-calm-now]").textContent).toBe("Calm mode is off.");
+    });
     it("escapes the player's name", function () {
       var d = dom(St.html(base({ user: true, name: "<b>x</b>", role: "user" })));
       expect(d.querySelector(".set__label b").textContent).toBe("<b>x</b>");
@@ -87,6 +96,14 @@
         expect(calls).toEqual(["mode:light"]);
       } finally { teardown(); }
     });
+    it("sets calm mode through SamukaCalm", function () {
+      stub("SamukaCalm", { pref: function () { return "auto"; }, on: function () { return false; }, system: function () { return false; }, set: function (v) { calls.push("calm:" + v); } });
+      setup();
+      try {
+        var r = box.querySelector('input[name="calm"][value="on"]'); r.checked = true; fire(r, "change");
+        expect(calls).toEqual(["calm:on"]);
+      } finally { teardown(); }
+    });
     it("plays, pauses and resumes the music", function () {
       setup();
       try {
@@ -114,6 +131,7 @@
       expect(dom(C.sheetHtml({ enabled: true, signedIn: true, name: "neo", role: "user" })).querySelector('a[href="/settings/"]')).toBeTruthy();
       var p = C.searchPalette(C.paletteItems({ games: [] }), "volume");
       expect(p[0].href).toBe("/settings/");
+      expect(C.searchPalette(C.paletteItems({ games: [] }), "motion")[0].href).toBe("/settings/#set-comfort");
     });
   });
 })();

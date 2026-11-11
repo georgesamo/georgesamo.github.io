@@ -30,7 +30,8 @@
       role: user && A.role ? A.role() : "guest",
       glitches: prof.glitches !== false,
       cursors: user && P && P.cursors ? P.cursors() : null,
-      music: L ? music(L) : null
+      music: L ? music(L) : null,
+      calm: window.SamukaCalm ? { pref: window.SamukaCalm.pref(), on: window.SamukaCalm.on(), system: window.SamukaCalm.system() } : null
     };
   }
   function music(L) {
@@ -57,6 +58,18 @@
       '<input type="range" class="set__range" min="0" max="100" step="5" value="' + Math.round(m.vol * 100) + '" data-set-volume aria-label="Music volume"></label>' +
       toggle("data-set-shuffle", m.shuffle, "Shuffle", "play tracks in a random order");
   }
+  var CALM = [["auto", "auto"], ["on", "on"], ["off", "off"]];
+  function calmHtml(k) {
+    if (!k) return "";
+    var opts = CALM.map(function (o) {
+      var on = o[0] === k.pref;
+      return '<label class="acct__mode' + (on ? " is-on" : "") + '"><input type="radio" name="calm" value="' + o[0] + '"' + (on ? " checked" : "") + "><span>" + o[1] + "</span></label>";
+    }).join("");
+    var now = k.pref === "auto" ? "Following your device: reduced motion is " + (k.system ? "on, so calm mode is on." : "off, so calm mode is off.") : "Calm mode is " + (k.on ? "on." : "off.");
+    return '<div class="set__row set__row--stack"><span class="set__label">Calm mode<small>no screen shake, glitches, spinning or sliding animations</small></span>' +
+      '<div class="acct__modes set__modes3" role="radiogroup" aria-label="Calm mode">' + opts + "</div>" +
+      '<p class="set__note" data-set-calm-now>' + now + "</p></div>";
+  }
   function accountHtml(c) {
     if (!c.auth) return '<p class="muted">Accounts aren\'t available right now. Your scores and settings stay on this device.</p>';
     if (!c.user) {
@@ -71,6 +84,7 @@
   }
   function html(c) {
     return section("look", "Look", c.user ? "" : "this device", C.appearanceHtml({ mode: c.mode, skin: c.skin, skins: c.skins, secretLeft: c.secretLeft, local: !c.user })) +
+      (c.calm ? section("comfort", "Comfort", "this device", calmHtml(c.calm)) : "") +
       section("sound", "Sound", "this device", soundHtml(c.music)) +
       section("account", "Account", "", accountHtml(c));
   }
@@ -108,6 +122,7 @@
     var S = window.Samuka, L = window.SamukaLofi;
     if (t.name === "mode" && S) S.setMode(t.value, { user: true });
     else if (t.name === "skin" && S) S.setSkin(t.value, { user: true });
+    else if (t.name === "calm" && window.SamukaCalm) window.SamukaCalm.set(t.value);
     else if (t.hasAttribute("data-set-shuffle") && L) L.shuffle(t.checked);
     else if (t.hasAttribute("data-set-glitches") && window.SamukaAuth) window.SamukaAuth.savePrefs({ glitches: t.checked });
     else if (t.hasAttribute("data-set-cursors") && window.SamukaPresence) window.SamukaPresence.cursors(t.checked);
@@ -130,6 +145,7 @@
   window.addEventListener("samuka:page", paint);
   window.addEventListener("samuka:auth", paint);
   window.addEventListener("samuka:theme", paint);
+  window.addEventListener("samuka:calm", paint);
   window.addEventListener("samuka:lofi", paintMusic);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", paint); else paint();
   window.addEventListener("load", function () { setTimeout(paint, 300); });

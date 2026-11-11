@@ -4,7 +4,7 @@
 
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }   // calm mode (live)
   var data = {};
   try { data = JSON.parse($("#resume-data").textContent); } catch (e) {}
 
@@ -75,8 +75,9 @@
 
   /* ---------- cursor spotlight ---------- */
   var spot = $(".spotlight"), spotQueued = false, mx = 0, my = 0;
-  if (spot && !reduced) {
+  if (spot) {   // hidden by CSS in calm mode; the listener skips the work then
     window.addEventListener("pointermove", function (e) {
+      if (reduced()) return;
       mx = e.clientX; my = e.clientY;
       if (spotQueued) return;
       spotQueued = true;
@@ -91,7 +92,7 @@
   /* ---------- boot sequence ---------- */
   function boot() {
     var el = $("#boot"), log = $("#boot-log");
-    if (!el || reduced || store.sget("samuka-booted")) return Promise.resolve();
+    if (!el || reduced() || store.sget("samuka-booted")) return Promise.resolve();
     store.sset("samuka-booted", "1");
     el.classList.add("is-on");
     document.documentElement.style.overflow = "hidden";
@@ -142,7 +143,7 @@
   /* ---------- scramble name ---------- */
   function scramble(el) {
     var target = el.getAttribute("data-scramble");
-    if (reduced) { el.textContent = target; return; }
+    if (reduced()) { el.textContent = target; return; }
     var glyphs = "<>/{}[]=+*#$%&_01";
     var frame = 0, total = 34;
     function tick() {
@@ -266,7 +267,7 @@
   function drawGraphProgress() {
     if (!gitlog || !lens[0]) return;
     var r = gitlog.getBoundingClientRect();
-    var p = reduced ? 1 : Math.min(1, Math.max(0, (window.innerHeight * 0.72 - r.top) / r.height));
+    var p = reduced() ? 1 : Math.min(1, Math.max(0, (window.innerHeight * 0.72 - r.top) / r.height));
     paths[0].style.strokeDashoffset = lens[0] * (1 - p);
     if (lens[1]) paths[1].style.strokeDashoffset = lens[1] * (1 - p);
   }
@@ -362,7 +363,7 @@
     if (!e.target.closest("[data-trace-jump]")) return;
     var first = $(".commit.is-hit"); if (!first) return;
     if (!first.classList.contains("is-open")) $("button.commit__head", first).click();
-    first.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+    first.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "center" });
   });
   function initGems() {
   traceBody = $("[data-trace-body]"); hitLines = [];
@@ -389,14 +390,14 @@
     var gems = $$(".gem");
     bundleOut.hidden = false;
     bundleOut.innerHTML = "Fetching gem metadata from https://georgesamo.github.io/" ;
-    for (var d = 0; d < 6; d++) { await wait(reduced ? 0 : 70); bundleOut.innerHTML += "."; }
+    for (var d = 0; d < 6; d++) { await wait(reduced() ? 0 : 70); bundleOut.innerHTML += "."; }
     bundleOut.innerHTML += "\nResolving dependencies...\n";
     for (var i = 0; i < gems.length; i++) {
       var g = gems[i], name = g.textContent.replace(/"/g, "");
       g.classList.add("is-installing");
       bundleOut.innerHTML += "Installing " + esc(name.toLowerCase().replace(/[^a-z0-9.]+/g, "-")) + " " + ver(name) + "\n";
       bundleOut.scrollTop = bundleOut.scrollHeight;
-      await wait(reduced ? 0 : 55);
+      await wait(reduced() ? 0 : 55);
       g.classList.remove("is-installing"); g.classList.add("is-installed");
     }
     bundleOut.innerHTML += '<span class="ok">Bundle complete! ' + gems.length + " Gemfile dependencies, " + gems.length + " gems now installed.</span>\nUse `bundle info [gemname]` to see where a bundled gem is installed.";
@@ -448,14 +449,14 @@
 
   /* ---------- public API (used by terminal.js / gem.js) ---------- */
   window.Samuka = {
-    data: data, years: years, reduced: reduced,
+    data: data, years: years, get reduced() { return reduced(); },
     setTheme: setTheme, setMode: setMode, setSkin: setSkin,
     theme: currentMode, mode: currentMode, skin: currentSkin, skins: SKINS,
     availableSkins: availableSkins, canUseSkin: canUseSkin,
     canUseTheme: function (t) { return t === "dark" || t === "light" || canUseSkin(t); },
     go: function (id) {
       var el = document.getElementById(id);
-      if (el) { el.scrollIntoView({ behavior: reduced ? "auto" : "smooth" }); return; }
+      if (el) { el.scrollIntoView({ behavior: reduced() ? "auto" : "smooth" }); return; }
       // the section lives on the other page: arcade hub (/) or the creator's profile (/samuka/)
       var hub = { lobby: 1, games: 1, boards: 1, wall: 1, arcade: 1 };
       var to = hub[id] ? "/#" + (id === "arcade" ? "games" : id) : "/samuka/#" + (id === "hero" ? "" : id);
@@ -466,7 +467,7 @@
         if (window.SamukaNav) { window.SamukaNav.go("/samuka/#contact"); window.addEventListener("samuka:page", function () { setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, 400); }, { once: true }); }
         else location.href = "/samuka/#contact";
         return;
-      } this.go("contact"); setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, reduced ? 0 : 650); }
+      } this.go("contact"); setTimeout(function () { form && form.elements.name.focus({ preventScroll: true }); }, reduced() ? 0 : 650); }
   };
 
   /* ---------- page parts (re-run after a seamless page switch) ---------- */

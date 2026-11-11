@@ -29,6 +29,29 @@
       if (s === "crt" && localStorage.getItem("samuka-konami") === "1") d.dataset.skin = s; // secret skin
       d.dataset.treeClosed = localStorage.getItem("samuka-tree-closed") || "";   // collapsed sidebar folders
     } catch (e) {}
+    // calm mode: no motion, shakes or glitches. "on" / "off" in samuka-calm, otherwise it follows
+    // the system's reduced-motion setting. Scripts and CSS read <html data-calm>, so a change is live.
+    (function () {
+      var d = document.documentElement, mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+      function pref() { try { var v = localStorage.getItem("samuka-calm"); return v === "on" || v === "off" ? v : "auto"; } catch (e) { return "auto"; } }
+      function apply() {
+        var p = pref(), on = p === "on" || (p === "auto" && !!(mq && mq.matches));
+        if (on) d.setAttribute("data-calm", ""); else d.removeAttribute("data-calm");
+        return on;
+      }
+      apply();
+      if (mq && mq.addEventListener) mq.addEventListener("change", function () { if (pref() === "auto") { apply(); fire(); } });
+      function fire() { try { window.dispatchEvent(new CustomEvent("samuka:calm", { detail: { on: d.hasAttribute("data-calm"), pref: pref() } })); } catch (e) {} }
+      window.SamukaCalm = {
+        on: function () { return d.hasAttribute("data-calm"); },
+        pref: pref,
+        system: function () { return !!(mq && mq.matches); },
+        set: function (v) {
+          try { if (v === "on" || v === "off") localStorage.setItem("samuka-calm", v); else localStorage.removeItem("samuka-calm"); } catch (e) {}
+          apply(); fire();
+        }
+      };
+    })();
     document.documentElement.classList.add("js");
   </script>
   {% seo title=false %}

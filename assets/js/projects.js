@@ -6,7 +6,7 @@
   var API = "https://api.github.com";
   var TTL = 30 * 60 * 1000; // unauthenticated limit is 60 req/hour, so cache for 30 min
   var MAX = 6;
-  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }   // calm mode (live)
 
   var esc = function (s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -116,7 +116,7 @@
 
   /* ---------- reveal (bars grow in when the card scrolls into view) ---------- */
   function observe(cards) {
-    if (reduced || !("IntersectionObserver" in window)) {
+    if (reduced() || !("IntersectionObserver" in window)) {
       cards.forEach(function (c) { c.classList.add("is-in"); });
       return;
     }

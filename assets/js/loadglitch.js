@@ -28,7 +28,7 @@
     return el.childNodes.length === 1 && el.firstChild.nodeType === 3 && el.textContent.trim().length > 0 && el.textContent.length <= 60;
   }
   function wanted() {
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+    if (window.SamukaCalm ? window.SamukaCalm.on() : window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
     var A = window.SamukaAuth, p = A && A.profile && A.profile();
     return !(p && p.glitches === false);
   }

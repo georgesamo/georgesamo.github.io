@@ -24,6 +24,11 @@
   .lofi-eq i:nth-child(2) { transform: scaleY(0.9); }
   .lofi-eq i:nth-child(3) { transform: scaleY(0.65); }
 }
+/* calm mode (data-calm on <html>, set in default.html) */
+:root[data-calm] .lofi-eq i { animation: none; }
+:root[data-calm] .lofi-eq i:nth-child(1) { transform: scaleY(0.5); }
+:root[data-calm] .lofi-eq i:nth-child(2) { transform: scaleY(0.9); }
+:root[data-calm] .lofi-eq i:nth-child(3) { transform: scaleY(0.65); }
 
 /* ---------- the player dock (assets/js/musicdock.js), opened from ♪ ---------- */
 .mdock { --md: var(--accent); --ic-w: 1.8; --ic-cap: square; --ic-join: miter; --btn-r: 10px; --play-r: 14px;

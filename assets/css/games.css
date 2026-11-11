@@ -135,6 +135,7 @@
 .pw__tower li.is-odd { background: var(--bg-soft); }
 .pw__tower:empty { min-height: 40px; }
 @media (prefers-reduced-motion: reduce) { .pw__tower li { transition: none; } }
+:root[data-calm] .pw__tower li { transition: none; }
 .pw__pitlane { fill: none; stroke: var(--muted); stroke-width: 4; stroke-linecap: round; opacity: 0.35; }
 .pw__sccar rect { fill: #f2c14e; stroke: #1b1404; stroke-width: 0.8; }
 .pw__sccar { z-index: 4; width: 16px; height: 12px; margin: -6px 0 0 -8px; }
@@ -146,6 +147,7 @@
 .pw__main[data-weather="wet"] .pw__rain { opacity: 1; background: rgba(74, 163, 240, 0.1); }
 @keyframes pwRain { to { transform: translate3d(-11px, 40px, 0); } }
 @media (prefers-reduced-motion: reduce) { .pw__rain::before { animation: none; } }
+:root[data-calm] .pw__rain::before { animation: none; }
 .pw__ers { height: 32px; padding: 0 12px; border: 1px solid #3ad08f; border-radius: 8px; background: rgba(58, 208, 143, 0.12); color: var(--text); font: 700 12px var(--mono); cursor: pointer; }
 .pw__ers:disabled { opacity: 0.4; cursor: default; border-color: var(--line-strong); background: transparent; }
 .pw__modes-menu { display: grid; gap: 8px; margin: 12px 0; }
@@ -236,6 +238,7 @@
   .pw__box { flex: 1 1 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .pw__box.is-armed { animation: none; } }
+:root[data-calm] .pw__box.is-armed { animation: none; }
 .pv-pw { position: absolute; inset: 0; display: grid; place-items: center; }
 .pv-pw > * { grid-area: 1 / 1; }
 .pv-pw svg { width: 82%; height: auto; }
