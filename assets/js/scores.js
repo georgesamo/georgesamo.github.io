@@ -106,6 +106,7 @@
   }
   function afterSave(game, period) {
     cache = {};
+    window.dispatchEvent(new CustomEvent("samuka:scored", { detail: { game: game, period: period || "all" } }));
     fillMinis(game, period);
     loadAll();
     // podium check across the boards the score could land on
@@ -277,6 +278,15 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
   window.addEventListener("samuka:page", boot);
 
+  // your place on a board: { rank, behind } (points to the next place up), or null when you're not in the top `limit`
+  function rankOf(game, period, limit) {
+    return fetchBoard(game, period || "all", limit || 100).then(function (rows) {
+      for (var i = 0; i < rows.length; i++) if (rows[i].me) return { rank: rows[i].rank, behind: i > 0 ? Math.max(0, rows[i - 1].score - rows[i].score) : 0, of: rows.length };
+      return null;
+    }, function () { return null; });
+  }
+  function dailyDone(game) { return !!store.get(dailyKey(game || "gems")); }
   window.SamukaScores = { fillMini: fillMinis, games: GAMES, dailyIntro: dailyIntro, dailyCard: dailyCard, openDaily: openDaily, board: fetchBoard, reload: function () { cache = {}; loadAll(); },
+    rankOf: rankOf, dailyDone: dailyDone,
     guestScores: guestScores, keepGuestScore: keepGuestScore, flushPending: flushPending };
 })();

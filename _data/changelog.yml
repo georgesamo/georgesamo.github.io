@@ -2,6 +2,12 @@
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
 - date: 2026-11-11
+  tag: game
+  title: What next, after every game
+  text: The end-of-game card now shows what you just unlocked, where you rank on the all-time board, and one idea for what to play next.
+  link: /games/
+
+- date: 2026-11-11
   tag: feature
   title: A friendlier lobby and clearer menus
   text: Everything has a plain name now (Home, Games, News…), the lobby gets you into a game in one click, and this page tells you what changed.
