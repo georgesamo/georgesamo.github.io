@@ -1,5 +1,6 @@
 /* Generated lo-fi music toggle (assets/js/lofi.js) */
-.icon-btn.lofi-btn { display: inline-flex; font-size: 14px; line-height: 1; }
+.icon-btn.lofi-btn, .icon-btn.lofi-stub { display: inline-flex; font-size: 14px; line-height: 1; }
+.icon-btn.lofi-stub.is-loading { opacity: 0.6; cursor: progress; }   /* music.js: the stand-in ♪ while lofi.js loads */
 .icon-btn.lofi-btn[hidden] { display: none; }
 .icon-btn.lofi-btn.is-on { color: var(--accent); border-color: var(--accent); }
 .icon-btn.lofi-btn.is-on:hover { color: var(--hl); border-color: var(--hl); }

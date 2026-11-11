@@ -2,6 +2,11 @@
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
 - date: 2026-11-12
+  tag: fix
+  title: The music player loads when you want it
+  text: The soundtrack is the biggest part of the site; it now loads the first time you reach for ♪ (or open a page that shows the music), so every other page starts faster.
+
+- date: 2026-11-12
   tag: feature
   title: Link previews for cards and challenges
   text: Paste a player card or a challenge into a chat app and it now shows a proper preview, with the card itself or the game you've been challenged at.

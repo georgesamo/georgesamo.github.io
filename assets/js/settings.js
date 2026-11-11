@@ -150,6 +150,7 @@
   window.addEventListener("samuka:auth", paint);
   window.addEventListener("samuka:theme", paint);
   window.addEventListener("samuka:calm", paint);
+  window.addEventListener("samuka:music-ready", paint);   // the soundtrack loads on demand (music.js)
   window.addEventListener("samuka:lofi", paintMusic);
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", paint); else paint();
   window.addEventListener("load", function () { setTimeout(paint, 300); });
