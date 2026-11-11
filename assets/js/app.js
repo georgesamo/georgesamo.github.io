@@ -28,7 +28,7 @@
   //   mode (data-theme): dark | light, toggled by everyone
   //   skin (data-skin):  phthalo for everyone; knight (role samuka) and golden (role nino),
   //                      each with its own dark AND light version
-  var MODES = { dark: "dark mode", light: "light mode" };
+  var MODES = { dark: "Dark mode", light: "Light mode" };
   var SKINS = {
     phthalo: { meta: { dark: "#07110c", light: "#f3f6f1" } },
     knight: { meta: { dark: "#050506", light: "#f2efe6" }, role: "samuka" },
@@ -195,8 +195,9 @@
   function setActive(sec) {
     var file = sec.getAttribute("data-file");
     var parts = file.split("/");
-    if (tabName) tabName.textContent = parts[parts.length - 1];
-    if (tabCrumbs) tabCrumbs.textContent = parts.join(" › ");
+    var named = parts.filter(Boolean);
+    if (tabName) tabName.textContent = (named[named.length - 1] || "") + (file.slice(-1) === "/" ? "/" : "");
+    if (tabCrumbs) tabCrumbs.textContent = named.join(" › ");
     if (tabIcon) tabIcon.className = "fi fi--" + sec.getAttribute("data-icon");
     if (statusFile) statusFile.textContent = file;
     $$("[data-nav]").forEach(function (a) { a.classList.toggle("is-active", a.getAttribute("data-nav") === sec.id); });
