@@ -51,6 +51,7 @@
     stub.type = "button";
     stub.className = "icon-btn lofi-btn lofi-stub";
     stub.setAttribute("aria-haspopup", "dialog");
+    stub.setAttribute("aria-expanded", "false");
     stub.setAttribute("aria-label", "Soundtrack player");
     stub.textContent = "♪";
     var warm = function () { load().catch(function () {}); };

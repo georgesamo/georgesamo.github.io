@@ -84,6 +84,12 @@
       var ide = document.querySelector(".ide");
       ide.setAttribute("data-page", newIde.getAttribute("data-page") || "");
       swap(".tree__nav", doc); swap(".tabs__files", doc); swap(".mnav", doc);
+      // the sidebar's home link sits outside the swapped parts: carry its "you are here" over
+      var home = document.querySelector(".tree__home"), newHome = doc.querySelector(".tree__home");
+      if (home && newHome) {
+        home.classList.toggle("is-here", newHome.classList.contains("is-here"));
+        if (newHome.hasAttribute("aria-current")) home.setAttribute("aria-current", "page"); else home.removeAttribute("aria-current");
+      }
       var sheet = document.getElementById("msheet"); if (sheet) sheet.hidden = true;
       swap("[data-tab-crumbs]", doc, "text"); swap("[data-status-file]", doc, "text");
       var main = document.querySelector("#main");
@@ -96,7 +102,11 @@
         if (target) setTimeout(function () { target.scrollIntoView(); }, 30); else toTop(0);
       } else toTop(opts.scroll || 0);
       window.dispatchEvent(new CustomEvent("samuka:page", { detail: { url: u.href } }));
-      var h = main.querySelector("h1, h2"); if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+      // keyboard and screen-reader users land on the new page's heading, and hear which page opened
+      var h = main.querySelector("h1, h2");
+      if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
+      else { main.setAttribute("tabindex", "-1"); main.focus({ preventScroll: true }); }
+      if (window.SamukaA11y) window.SamukaA11y.announce(document.title);
     } catch (err) {
       location.href = u.href;   // anything odd: just load the page normally
       return;

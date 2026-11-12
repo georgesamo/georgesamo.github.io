@@ -89,7 +89,9 @@
   function close(keepFocus) {
     if (!el || el.hidden) return;
     el.hidden = true;
-    if (!keepFocus && lastFocus && lastFocus.isConnected && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+    if (keepFocus) return;
+    if (window.SamukaA11y) window.SamukaA11y.restore(lastFocus);
+    else if (lastFocus && lastFocus.isConnected && lastFocus.focus) lastFocus.focus({ preventScroll: true });
   }
   function isOpen() { return !!(el && !el.hidden); }
 

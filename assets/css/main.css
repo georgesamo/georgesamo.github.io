@@ -129,6 +129,8 @@ kbd {
 .ka { font-family: var(--ka); }
 .skip { position: absolute; left: -9999px; top: 8px; z-index: 999; background: var(--phthalo); color: var(--on-phthalo); padding: 8px 12px; border-radius: 6px; }
 .skip:focus { left: 8px; }
+/* read by screen readers, never seen (the page-change announcer in a11y.js) */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 button { font: inherit; color: inherit; }
 
 /* syntax */

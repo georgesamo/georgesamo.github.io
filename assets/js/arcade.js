@@ -249,13 +249,16 @@
   window.addEventListener("samuka:auth", showBests);
   function close() {
     if (!modal || modal.hidden) return;
+    var was = currentId;
     teardown();
     showBests();
     modal.hidden = true;
     document.documentElement.style.overflow = "";
     document.documentElement.classList.remove("is-arcade");
     watchPreviews();   // the previews in view start again
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    // back to the play button that opened it; if the page redrew that card meanwhile, its new copy
+    if (lastFocus && !lastFocus.isConnected && was) lastFocus = document.querySelector('#main [data-play="' + was + '"]') || lastFocus;
+    if (window.SamukaA11y) window.SamukaA11y.restore(lastFocus); else if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
   document.addEventListener("keydown", function (e) {
