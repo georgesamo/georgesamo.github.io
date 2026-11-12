@@ -25,9 +25,8 @@
         expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(326);
       });
     });
-    it("is a full-length piece: about as long as all five songs together", function () {
-      var s = L().catalog()[0].songs, five = s.slice(0, 5).reduce(function (a, x) { return a + x.secs; }, 0);
-      expect(Math.abs(s[5].secs - five) < 60).toBe(true);
+    it("is a full-length piece, longer than any one song", function () {
+      var s = L().catalog()[0].songs;
       expect(s[5].secs).toBeGreaterThan(Math.max.apply(null, s.slice(0, 5).map(function (x) { return x.secs; })));
       expect(s[5].bpm).toBe("60–172");
     });
@@ -69,9 +68,9 @@
     it("knows where every file-backed track hands over, for the phone player's files", function () {
       var h = L().handoffs();
       expect(Object.keys(h).length).toBe(30);
-      // an outro keeps its song's tempo: Ring Zero hands over after 64 + 4 bars at 110 bpm (the file starts at 0.05 s)
-      expect(Math.abs(h["phthalo-1"] - (0.05 + 68 * 4 * 60 / 110)) < 0.01).toBe(true);
-      expect(Math.abs(h["golden-4"] - (0.05 + 100 * 4 * 60 / (172 * 1.1))) < 0.01).toBe(true);
+      // an outro keeps its song's tempo: Ring Zero hands over after 88 + 4 bars at 110 bpm (the file starts at 0.05 s)
+      expect(Math.abs(h["phthalo-1"] - (0.05 + 92 * 4 * 60 / 110)) < 0.01).toBe(true);
+      expect(Math.abs(h["golden-4"] - (0.05 + 144 * 4 * 60 / (172 * 1.1))) < 0.01).toBe(true);
       expect(h["knight-6"] > 600).toBe(true);
     });
     it("starts with shuffle off and remembers the choice", function () {
@@ -87,12 +86,9 @@
       });
       expect(L().order.prev("phthalo", 5)).toBe(4);   // nothing unlocked: back to the last song
     });
-    it("runs to the asked lengths: techno 3-4 min, the crescendo about 3, the dark loop about 3, the race 4", function () {
-      expect(secs(6) >= 180 && secs(6) <= 240).toBe(true);
-      expect(secs(7) >= 165 && secs(7) <= 185).toBe(true);
-      expect(secs(8) >= 175 && secs(8) <= 200).toBe(true);
+    it("runs every song and bonus track 3-4 minutes", function () {
+      [0, 1, 2, 3, 4, 6, 7, 8, 9].forEach(function (si) { expect(secs(si) >= 180 && secs(si) <= 240).toBe(true); });
       expect(L().catalog()[0].songs[8].bpm).toBe(123);
-      expect(Math.abs(secs(9) - 240) <= 6).toBe(true);
     });
     it("runs the race backwards for 15-20 seconds, about halfway through, in every palette", function () {
       ["phthalo", "knight", "golden"].forEach(function (th) {
