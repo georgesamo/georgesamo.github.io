@@ -47,13 +47,24 @@ async function openPage(context, path, label) {
   const page = await context.newPage();
   const errors = [], failed = [], consoleErrors = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  // GitHub's public API rate-limits shared CI runners (403/429 without a token). /samuka/ already
+  // falls back when that happens, so the browser's own "Failed to load resource" line for it isn't a site bug.
+  let rateLimited = 0;
   page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text().slice(0, 200)); });
   page.on("response", (r) => {
-    try { const u = new URL(r.url()); if (u.origin === origin && r.status() >= 400) failed.push(`${r.status()} ${u.pathname}${u.search}`); } catch (e) {}
+    try {
+      const u = new URL(r.url());
+      if (u.origin === origin && r.status() >= 400) failed.push(`${r.status()} ${u.pathname}${u.search}`);
+      if (u.hostname === "api.github.com" && (r.status() === 403 || r.status() === 429)) rateLimited++;
+    } catch (e) {}
   });
   const res = await page.goto(base + path, { waitUntil: "load" });
   await page.waitForTimeout(900);   // deferred scripts, auth boot, load glitch
   const done = async () => {
+    // drop one browser "Failed to load resource … 403/429" line per rate-limited GitHub API response
+    for (let i = consoleErrors.length - 1; i >= 0 && rateLimited > 0; i--) {
+      if (/^Failed to load resource: .*status of (403|429)\b/.test(consoleErrors[i])) { consoleErrors.splice(i, 1); rateLimited--; }
+    }
     if (errors.length) add("error", label, "page errors", errors.join(" | "));
     if (failed.length) add("error", label, "failed same-origin requests", [...new Set(failed)].join(", "));
     if (consoleErrors.length) add("warn", label, "console errors", [...new Set(consoleErrors)].slice(0, 5).join(" | "));

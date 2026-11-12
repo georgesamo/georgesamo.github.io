@@ -44,7 +44,7 @@
         // ...score, worker tokens
       }
   related: [schema, gems]
-  lesson: "TODO(owner): one sentence on what building this taught you, or what you'd change"
+  lesson: "Seeding every run was the decision that paid off most: the same seed gives fair live races, fair challenge links, and a bug I can replay exactly."
 
 - id: gems
   source: assets/js/games/gem-match.js
@@ -79,7 +79,7 @@
         return set;
       }
   related: [sidekiq, pitwall]
-  lesson: "TODO(owner): one sentence on what building this taught you, or what you'd change"
+  lesson: "The hard part of a match-3 isn't finding matches, it's the order things happen in. Treating chain reactions as a queue is what makes every combo resolve the same way every time."
 
 - id: schema
   source: assets/js/games/schema-stack.js
@@ -108,7 +108,7 @@
         if (n) score += n * 15 * level;   // every pending migration of the table runs at once
       }
   related: [sidekiq, gems]
-  lesson: "TODO(owner): one sentence on what building this taught you, or what you'd change"
+  lesson: "The best game rule is one the player already knows: anyone who has run a migration before its create_table gets the pending mechanic without a tutorial."
 
 - id: pitwall
   source: assets/js/games/pit-wall.js
@@ -145,4 +145,4 @@
         return t + (extra || 0);
       }
   related: [sidekiq, gems]
-  lesson: "TODO(owner): one sentence on what building this taught you, or what you'd change"
+  lesson: "Keeping the simulation apart from the drawing is what made it workable: I could keep tuning the race model without cars ever jumping on screen."
