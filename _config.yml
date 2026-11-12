@@ -33,6 +33,11 @@ defaults:
 # the very first submission sends a one-time activation email to this address.
 contact_endpoint: "https://formsubmit.co/ajax/giorgisamo@gmail.com"
 
+# Offline app (sw.js). Emergency kill switch: set to false and deploy. sw.js then deletes its
+# caches and unregisters itself on every visitor's next page load, and install.js stops
+# registering it. Set back to true (or remove) to turn it on again.
+service_worker: true
+
 # Accounts (Supabase). Both values are public by design; leave empty to
 # disable sign-in (the arcade then stays open to everyone).
 # NEVER put the service_role / secret key here.
