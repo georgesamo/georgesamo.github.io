@@ -54,16 +54,35 @@
   window.addEventListener("samuka:page", syncFolders);   // nav.js swaps the sidebar markup
   syncFolders();
 
-  // phone "more" sheet
+  // phone "more" sheet: a modal dialog. Opening moves focus into it (a11y.js keeps Tab inside),
+  // Esc or the backdrop closes it and gives focus back to the "more" button.
+  function sheetOpen(btn) {
+    var sheet = document.getElementById("msheet"); if (!sheet) return;
+    sheet.hidden = false;
+    if (btn) btn.setAttribute("aria-expanded", "true");
+    var A = window.SamukaA11y, first = A ? A.focusables(sheet.querySelector(".msheet__card") || sheet)[0] : sheet.querySelector(".msheet__card a");
+    if (first) first.focus({ preventScroll: true });
+  }
+  function sheetClose(refocus) {
+    var sheet = document.getElementById("msheet"); if (!sheet || sheet.hidden) return;
+    sheet.hidden = true;
+    var btn = document.querySelector("[data-mnav-more]");
+    if (btn) { btn.setAttribute("aria-expanded", "false"); if (refocus) btn.focus({ preventScroll: true }); }
+  }
   document.addEventListener("click", function (e) {
     var sheet = document.getElementById("msheet"); if (!sheet) return;
     var btn = e.target.closest("[data-mnav-more]");
-    if (btn) { sheet.hidden = !sheet.hidden; btn.setAttribute("aria-expanded", String(!sheet.hidden)); return; }
-    if (!sheet.hidden && (e.target.closest("[data-mnav-close]") || e.target.closest(".msheet__card a, .msheet__card button"))) {
-      setTimeout(function () { sheet.hidden = true; }, e.target.closest("[data-toggle-theme]") ? 250 : 0);
+    if (btn) { if (sheet.hidden) sheetOpen(btn); else sheetClose(true); return; }
+    if (!sheet.hidden && e.target.closest("[data-mnav-close]")) { sheetClose(true); return; }
+    if (!sheet.hidden && e.target.closest(".msheet__card a, .msheet__card button")) {
+      // links: nav.js moves focus to the new page; search/terminal take focus themselves;
+      // the theme switch stays on this page, so focus goes back to "more"
+      var theme = !!e.target.closest("[data-toggle-theme]");
+      setTimeout(function () { sheetClose(theme); }, theme ? 250 : 0);
     }
   });
-  document.addEventListener("keydown", function (e) { var sheet = document.getElementById("msheet"); if (e.key === "Escape" && sheet && !sheet.hidden) sheet.hidden = true; });
+  document.addEventListener("keydown", function (e) { var sheet = document.getElementById("msheet"); if (e.key === "Escape" && sheet && !sheet.hidden) { e.preventDefault(); sheetClose(true); } });
+  window.SamukaSheet = { open: sheetOpen, close: sheetClose };
   document.addEventListener("click", function (e) {
     var a = e.target.closest("[data-acct-open]");
     if (a && !a.closest("[data-wall], [data-pcard]")) { e.preventDefault(); var A = window.SamukaAuth; if (A) A.open(); }

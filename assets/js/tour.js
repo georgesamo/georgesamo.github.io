@@ -36,13 +36,15 @@
     return null;
   }
 
-  var box = null, at = -1, anchor = null;
+  var box = null, at = -1, anchor = null, lastFocus = null;
   function render() {
     var s = STEPS[at], last = at === STEPS.length - 1;
-    box.innerHTML = '<p class="tour__n">' + (at + 1) + " / " + STEPS.length + "</p><b>" + s.title + "</b><span>" + s.text + "</span>" +
+    box.innerHTML = '<p class="tour__n">' + (at + 1) + " / " + STEPS.length + '</p><b id="tour-title">' + s.title + '</b><span id="tour-text">' + s.text + "</span>" +
       '<div class="tour__btns"><button type="button" class="tour__skip" data-tour-skip>' + (last ? "" : "skip tour") + "</button>" +
       '<button type="button" class="btn btn--primary" data-tour-next>' + (last ? "done" : "next →") + "</button></div>";
     if (last) box.querySelector("[data-tour-skip]").remove();
+    // keyboard: focus sits on "next" every step (the old button was just replaced)
+    box.querySelector("[data-tour-next]").focus({ preventScroll: true });
   }
   function place() {
     if (!box || !anchor) return;
@@ -69,15 +71,25 @@
     box = document.createElement("div");
     box.className = "tour";
     box.setAttribute("role", "dialog");
-    box.setAttribute("aria-label", "Quick tour");
+    box.setAttribute("aria-modal", "true");   // a11y.js keeps Tab inside until next / skip / Esc
+    box.setAttribute("aria-labelledby", "tour-title");
+    box.setAttribute("aria-describedby", "tour-text");
+    lastFocus = document.activeElement;
     document.body.appendChild(box);
     show(0);
+    window.SamukaTrack && window.SamukaTrack("tour:start");
   }
-  function end() {
+  function end(how) {
+    if (box) window.SamukaTrack && window.SamukaTrack("tour:" + (how || "closed"));
     set("done");
     document.querySelectorAll(".tour-target").forEach(function (e) { e.classList.remove("tour-target"); });
-    if (box) { box.remove(); box = null; }
-    at = -1; anchor = null;
+    if (box) {
+      // focus was in the card: give it back to where it was before the tour (left alone if they clicked away)
+      var had = box.contains(document.activeElement) || document.activeElement === document.body;
+      box.remove(); box = null;
+      if (had && lastFocus && lastFocus !== document.body && lastFocus.isConnected && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+    }
+    at = -1; anchor = null; lastFocus = null;
   }
 
   function lobby() { var ide = document.querySelector(".ide"); return !!(ide && ide.getAttribute("data-page") === "lobby"); }
@@ -97,16 +109,16 @@
 
   document.addEventListener("click", function (e) {
     if (!box || !e.target.closest) return;
-    if (e.target.closest("[data-tour-next]")) { if (at >= STEPS.length - 1) end(); else show(at + 1); return; }
-    if (e.target.closest("[data-tour-skip]")) { end(); return; }
+    if (e.target.closest("[data-tour-next]")) { if (at >= STEPS.length - 1) end("done"); else show(at + 1); return; }
+    if (e.target.closest("[data-tour-skip]")) { end("skip"); return; }
     // following what a step points at ends the tour (they're exploring)
-    if (anchor && anchor.contains(e.target)) end();
+    if (anchor && anchor.contains(e.target)) end("explore");
   });
-  document.addEventListener("keydown", function (e) { if (box && e.key === "Escape") end(); });
+  document.addEventListener("keydown", function (e) { if (box && e.key === "Escape") { e.preventDefault(); end("skip"); } });
   window.addEventListener("resize", place);
   window.addEventListener("scroll", place, { passive: true, capture: true });
-  window.addEventListener("samuka:page", function () { if (box) end(); setTimeout(maybeStart, 1200); });
-  window.addEventListener("samuka:game", function (e) { if (box && e.detail && e.detail.name === "start") end(); });
+  window.addEventListener("samuka:page", function () { if (box) end("left"); setTimeout(maybeStart, 1200); });
+  window.addEventListener("samuka:game", function (e) { if (box && e.detail && e.detail.name === "start") end("game"); });
   function boot() { setTimeout(maybeStart, 1500); }
   if (document.readyState === "complete") boot(); else window.addEventListener("load", boot);
 

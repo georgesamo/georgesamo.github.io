@@ -1,7 +1,8 @@
 /* Samuka · /news/ hub
  * The list itself is rendered by Jekyll from _data/news.json (scripts/fetch_news.rb refreshes it
  * on every deploy and every few hours). This adds, on the page:
- *   - section tabs (tech / gaming / dev / saved) and a grep box, combined
+ *   - section tabs (tech / gaming / dev / markets / saved) and a grep box, combined
+ *     (markets is its own list, from _data/markets.json via scripts/fetch_markets.rb)
  *   - day headings and "3 h ago" times in the visitor's own timezone
  *   - "new since your last visit" marks (last visit kept on this device)
  *   - ☆ save for later (kept on this device, outlives the story dropping off the feed)
@@ -63,12 +64,17 @@
   function apply() {
     var r = root(); if (!r) return;
     var main = r.querySelector("[data-news-list]"), savedList = paintSavedList(r);
-    var onSaved = state.section === "saved", list = onSaved ? savedList : main;
-    main.hidden = onSaved; savedList.hidden = !onSaved;
+    var mk = r.querySelector("[data-news-markets]"), mkList = r.querySelector("[data-news-markets-list]");
+    var onSaved = state.section === "saved", onMk = state.section === "markets" && !!mkList;
+    var list = onSaved ? savedList : onMk ? mkList : main;
+    main.hidden = onSaved || onMk; savedList.hidden = !onSaved;
+    if (mk) mk.hidden = !onMk;
+    // the feeds' "updated · sources" line and empty note belong to the other tabs
+    r.querySelectorAll(":scope > .news__meta, :scope > .news__empty").forEach(function (el) { el.hidden = onMk; });
     var q = state.q.trim().toLowerCase(), shown = 0, lastDay = null;
     list.querySelectorAll(".news-row, .news-day").forEach(function (el) {
       if (el.classList.contains("news-day")) { el.hidden = true; lastDay = el; return; }
-      var ok = (onSaved || !state.section || el.dataset.section === state.section) &&
+      var ok = (onSaved || onMk || !state.section || el.dataset.section === state.section) &&
         (!q || el.textContent.toLowerCase().indexOf(q) > -1);
       el.hidden = !ok;
       if (ok) { shown++; if (lastDay) lastDay.hidden = false; }
@@ -78,7 +84,10 @@
       b.classList.toggle("is-active", on); b.setAttribute("aria-pressed", String(on));
     });
     var none = r.querySelector("[data-news-none]");
-    if (none) { none.hidden = shown > 0; none.textContent = onSaved && !q ? "# nothing saved yet: tap ☆ on a story to keep it here" : "# no stories match"; }
+    if (none) {
+      none.hidden = shown > 0 || (onMk && !q && !mkList.children.length);   // an empty markets tab says so itself
+      none.textContent = onSaved && !q ? "# nothing saved yet: tap ☆ on a story to keep it here" : "# no stories match";
+    }
   }
   function decorate(r) {
     var list = r.querySelector("[data-news-list]");
@@ -99,8 +108,14 @@
       var b = row.querySelector("[data-news-save]"), on = isSaved(row.dataset.url);
       if (b) { b.classList.toggle("is-on", on); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? "★" : "☆"; }
     });
-    var ago_ = r.querySelector("[data-news-ago]");
-    if (ago_) { var g = Date.parse(ago_.getAttribute("datetime")); if (g) ago_.textContent = ago(g); }
+    r.querySelectorAll("[data-news-ago]").forEach(function (el) { var g = Date.parse(el.getAttribute("datetime")); if (g) el.textContent = ago(g); });
+    // markets tab: local "3 h ago" times and ☆ state (no day headings or "new" marks there)
+    r.querySelectorAll("[data-news-markets-list] .news-row").forEach(function (row) {
+      var at = Date.parse(row.dataset.at), t = row.querySelector(".news-row__meta time");
+      if (at && t) { t.textContent = ago(at); t.title = new Date(at).toLocaleString(); }
+      var b = row.querySelector("[data-news-save]"), on = isSaved(row.dataset.url);
+      if (b) { b.classList.toggle("is-on", on); b.setAttribute("aria-pressed", String(on)); b.textContent = on ? "★" : "☆"; }
+    });
     var nc = r.querySelector("[data-news-newcount]");
     if (nc) nc.textContent = lastSeen ? (fresh ? fresh + " new since your last visit" : "nothing new since your last visit") : "welcome: ☆ saves a story for later";
     if (newest) store.set(SEEN, String(newest));
@@ -108,7 +123,7 @@
   function boot() {
     var r = root(); if (!r) return;
     var tab = store.get(TAB) || "";
-    state = { section: /^(tech|gaming|dev|saved)?$/.test(tab) ? tab : "", q: "" };
+    state = { section: /^(tech|gaming|dev|markets|saved)?$/.test(tab) ? tab : "", q: "" };
     var input = r.querySelector("[data-news-q]"); if (input) input.value = "";
     decorate(r);
     apply();

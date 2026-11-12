@@ -1,0 +1,57 @@
+# /news/ · markets tab (scripts/fetch_markets.rb)
+#
+# tickers: what gets quotes, company news and tracked calls. Sector names are free text,
+#          but keep them to the list under `sectors` so the pressure strip groups them.
+# events:  scheduled catalysts no free API lists cleanly (central banks, macro data, tech
+#          conferences). Earnings dates for the tickers are added automatically.
+#          Check dates against the official source.
+
+tickers:
+  AAPL:  { name: Apple, sector: Technology }
+  MSFT:  { name: Microsoft, sector: Technology }
+  NVDA:  { name: NVIDIA, sector: Semiconductors }
+  AMD:   { name: AMD, sector: Semiconductors }
+  AVGO:  { name: Broadcom, sector: Semiconductors }
+  TSM:   { name: TSMC, sector: Semiconductors }
+  GOOGL: { name: Alphabet, sector: Communication }
+  META:  { name: Meta, sector: Communication }
+  NFLX:  { name: Netflix, sector: Communication }
+  AMZN:  { name: Amazon, sector: Consumer Discretionary }
+  TSLA:  { name: Tesla, sector: Consumer Discretionary }
+  WMT:   { name: Walmart, sector: Consumer Staples }
+  JPM:   { name: JPMorgan Chase, sector: Financials }
+  GS:    { name: Goldman Sachs, sector: Financials }
+  V:     { name: Visa, sector: Financials }
+  XOM:   { name: Exxon Mobil, sector: Energy }
+  CVX:   { name: Chevron, sector: Energy }
+  LLY:   { name: Eli Lilly, sector: Healthcare }
+  UNH:   { name: UnitedHealth, sector: Healthcare }
+  CAT:   { name: Caterpillar, sector: Industrials }
+  BA:    { name: Boeing, sector: Industrials }
+  SPY:   { name: S&P 500, sector: Index }
+  QQQ:   { name: Nasdaq 100, sector: Index }
+
+sectors:
+  - Technology
+  - Semiconductors
+  - Communication
+  - Consumer Discretionary
+  - Consumer Staples
+  - Financials
+  - Energy
+  - Healthcare
+  - Industrials
+  - Materials
+  - Utilities
+  - Real Estate
+  - Crypto
+  - Index
+
+events:
+  - id: fomc-2026-12
+    name: FOMC rate decision
+    kind: macro
+    starts_on: 2026-12-08
+    ends_on: 2026-12-09
+    importance: 3
+    details: Last Fed meeting of 2026; statement, dot plot and press conference on day two (federalreserve.gov).

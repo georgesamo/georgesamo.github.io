@@ -34,11 +34,10 @@
       });
       expect(L().catalog()[0].songs[5].bpm).toBe("60–172");
     });
-    it("makes every song about half a minute longer with a section of its own", function () {
-      var want = [["rise", "soar"], ["the chase", "cornered"], ["skyline", "open sky"], ["liquid", "rush"], ["letters"]];
+    it("makes every song its motif, passed between voices, three to four minutes long", function () {
+      var want = [["boot", "pulse", "theme", "break", "drive", "decay"], ["dark room", "it hunts", "hide", "found", "black"], ["3 AM", "memory", "the truth", "becoming", "after"], ["login", "exploit", "stalemate", "root", "logout"], ["remember", "grief", "last light"]];
       want.forEach(function (ids, si) { var got = L().layout("phthalo", si).bars.map(function (b) { return b.id; }); ids.forEach(function (id) { expect(got.indexOf(id) >= 0).toBe(true); }); });
-      var secs = L().catalog()[0].songs.slice(0, 5).map(function (x) { return x.secs; });
-      expect(secs.every(function (x) { return x >= 155; })).toBe(true);
+      L().catalog().forEach(function (th) { th.songs.slice(0, 5).forEach(function (x) { expect(x.secs >= 180 && x.secs <= 240).toBe(true); }); });
     });
     it("plays Golden 10% slower than before (0.99x), so Ring Zero runs at 109", function () {
       expect(L().catalog()[2].songs[0].bpm).toBe(109);
@@ -82,9 +81,9 @@
     it("knows where every file-backed track hands over, for the phone player's files", function () {
       var h = L().handoffs();
       expect(Object.keys(h).length).toBe(33);
-      // an outro keeps its song's tempo: Ring Zero hands over after 80 + 4 bars at 110 bpm (the file starts at 0.05 s)
-      expect(Math.abs(h["phthalo-1"] - (0.05 + 84 * 4 * 60 / 110)) < 0.01).toBe(true);
-      expect(Math.abs(h["golden-4"] - (0.05 + 124 * 4 * 60 / (172 * 0.99))) < 0.01).toBe(true);
+      // an outro keeps its song's tempo: Ring Zero hands over after 88 + 4 bars at 110 bpm (the file starts at 0.05 s)
+      expect(Math.abs(h["phthalo-1"] - (0.05 + 92 * 4 * 60 / 110)) < 0.01).toBe(true);
+      expect(Math.abs(h["golden-4"] - (0.05 + 144 * 4 * 60 / (172 * 0.99))) < 0.01).toBe(true);
       expect(h["knight-6"] > 500).toBe(true);
     });
     it("starts with shuffle off and remembers the choice", function () {
@@ -100,28 +99,23 @@
       });
       expect(L().order.prev("phthalo", 5)).toBe(4);   // nothing unlocked: back to the last song
     });
-    it("runs to the asked lengths: about three minutes each, the race faster (116 bpm), the monologue short", function () {
-      expect(secs(6) >= 180 && secs(6) <= 210).toBe(true);
-      expect(L().catalog()[0].songs[6].bpm).toBe("124–146");
-      expect(secs(7) >= 160 && secs(7) <= 185).toBe(true);
-      expect(secs(8) >= 150 && secs(8) <= 180).toBe(true);
-      expect(L().catalog()[0].songs[8].bpm).toBe("136–160");
-      expect(Math.abs(secs(9) - 223) <= 6).toBe(true);
-      expect(L().catalog()[0].songs[9].bpm).toBe(116);
+    it("runs every bonus track three to four minutes, the monologue short", function () {
+      L().catalog().forEach(function (th) { th.songs.slice(6, 10).forEach(function (x) { expect(x.secs >= 180 && x.secs <= 240).toBe(true); }); });
+      expect([6, 7, 8, 9].map(function (si) { return L().catalog()[0].songs[si].bpm; })).toEqual([132, 81, 123, 100]);
       expect(secs(10) >= 90 && secs(10) <= 110).toBe(true);
     });
-    it("follows each game: three queues and a Redis flush, matches and power-ups, levels and a rollback", function () {
+    it("tells each bonus track's motif through its sections: drops, the open sea, the drop-out, the race", function () {
       var ids = function (si) { return L().layout("phthalo", si).bars.map(function (b) { return b.id; }); };
-      ["workers", "backlog", "autoscale", "rate limit", "redis flush", "batch ×2", "drained"].forEach(function (id) { expect(ids(6).indexOf(id) >= 0).toBe(true); });
-      ["new board", "matching", "cascade", "power-ups", "bundle", "last moves", "board clear"].forEach(function (id) { expect(ids(7).indexOf(id) >= 0).toBe(true); });
-      ["level 1", "level up", "level 2", "db:rollback", "level 3", "four rows", "deployed"].forEach(function (id) { expect(ids(8).indexOf(id) >= 0).toBe(true); });
+      ["boot", "groove", "build", "drop", "breakdown", "tunnel"].forEach(function (id) { expect(ids(6).indexOf(id) >= 0).toBe(true); });
+      ["the call", "the hull", "full sail", "open sea", "the hole", "the ends of the earth", "landfall"].forEach(function (id) { expect(ids(7).indexOf(id) >= 0).toBe(true); });
+      ["the stack", "lock-in", "the riff", "the drop-out", "back in", "the pickup", "madness"].forEach(function (id) { expect(ids(8).indexOf(id) >= 0).toBe(true); });
     });
-    it("runs the race's replay for half a minute (backwards, scrubbing, fast-forwarding), about halfway through, in every palette", function () {
+    it("runs the race backwards for 15-20 seconds, about halfway through, in every palette", function () {
       ["phthalo", "knight", "golden"].forEach(function (th) {
         var lay = L().layout(th, 9), rep = lay.bars.filter(function (b) { return b.id === "the replay"; });
-        expect(rep).toHaveLength(15);
-        var a = rep[0].t, b = lay.bars[lay.bars.indexOf(rep[14]) + 1].t, mid = (a + b) / 2 / lay.end;
-        expect(b - a >= 28 && b - a <= 36).toBe(true);
+        expect(rep).toHaveLength(7);
+        var a = rep[0].t, b = lay.bars[lay.bars.indexOf(rep[6]) + 1].t, mid = (a + b) / 2 / lay.end;
+        expect(b - a >= 15 && b - a <= 20).toBe(true);
         expect(mid > 0.4 && mid < 0.6).toBe(true);
       });
     });

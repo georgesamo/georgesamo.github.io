@@ -1,0 +1,148 @@
+# One short case study per arcade game, for people who won't play: /games/<id>/about/
+# (_layouts/case-study.html renders it; the page files only name the game).
+#   id       the game id in _data/games.yml (name, icon, play button come from there)
+#   source   the game's file in the repo (linked on GitHub)
+#   pitch    one line
+#   shows    3-5 bullets: what it demonstrates technically
+#   how      a few short paragraphs (inline `code` is allowed)
+#   code     optional excerpt: { file, text } (copied from the source, trimmed, nothing invented)
+#   related  other game ids
+#   lesson   optional "looking back" line
+# Any value that starts with "TODO(owner)" is a gap for the owner to fill: the page leaves it out.
+
+- id: sidekiq
+  source: assets/js/games/sidekiq-rush.js
+  pitch: Background jobs as a game. Route hospital jobs to the right Sidekiq queue before Redis runs out of memory.
+  shows:
+    - title: Queues with different costs
+      text: Three queues (critical, default, mailers), each with its own processing time and score. Full queues refuse new jobs.
+    - title: Concurrency as a budget
+      text: Workers run jobs in parallel, up to four per queue. You earn more as you go, and an autoscale power-up adds temporary ones.
+    - title: Retries and a dead set
+      text: A job can raise. It's retried up to twice, then lands in the DeadSet with a penalty, a small copy of how Sidekiq treats failing jobs.
+    - title: Backpressure
+      text: Redis memory only grows once the backlog passes eight jobs, and drains when you catch up. A traffic spike hits about every 30 seconds.
+    - title: Live 1v1 on Supabase Realtime
+      text: The host sends a seed, both players get the same jobs at the same time and see each other's score live. Nothing is stored but the final score.
+  how:
+    - "The job names come from the kind of work on my CV: `ChargeInsuranceClaimJob`, `SyncFhirPatientJob`, `AppointmentReminderMailer`. Critical jobs are the ones a patient or a partner is waiting on."
+    - The game runs on one `requestAnimationFrame` loop. Each frame calls `step(dt)` with the time since the last frame (capped at 0.1 s, so a background tab doesn't jump), which moves workers, spawns jobs and updates memory. Only then is the screen touched.
+    - Each job keeps its own DOM element for its whole life and is moved from the inbox to a queue to a worker. Nothing is re-rendered from scratch, so it stays smooth on a phone.
+    - Every run has a seed. The same seed gives the same jobs, which is what makes live races and challenge links fair.
+  code:
+    file: assets/js/games/sidekiq-rush.js
+    text: |-
+      function finish(laneId, wk) {
+        var job = wk.job; wk.job = null;
+        if (rng() < 0.06 && !job.wrong) {           // the job raised: Sidekiq retries it
+          if (job.retries >= 2) { S.dead++; S.score = Math.max(0, S.score - 20); api.toast(job.klass + " → DeadSet (-20)", "err"); return; }
+          S.retries++; api.emit("retry");
+          spawn(job.type, job.retries + 1, job.klass);
+          return;
+        }
+        S.done++;
+        // ...score, worker tokens
+      }
+  related: [schema, gems]
+  lesson: "Seeding every run was the decision that paid off most: the same seed gives fair live races, fair challenge links, and a bug I can replay exactly."
+
+- id: gems
+  source: assets/js/games/gem-match.js
+  pitch: A match-3 with gems from a Rails Gemfile, power-ups that set each other off, and a daily board that's the same for everyone.
+  shows:
+    - title: Grid algorithms
+      text: Finds every run of three or more on an 8×8 board, then sorts them into power-ups. Four in a line, an L or T shape, and five in a line each make a different one.
+    - title: Chain reactions with a queue
+      text: A power-up caught in another one's blast fires too. It's a breadth-first walk over the board, so long chains resolve in order and nothing fires twice.
+    - title: Boards that are always playable
+      text: A new board never starts with a match and always has at least one move. When you run out of moves it reshuffles.
+    - title: Same board for everyone
+      text: The daily puzzle, live races and challenge links all come from a seeded random generator. Same seed, same board, same refills.
+    - title: Cheap to render, kind to players
+      text: Each repaint writes only the cells that changed and restarts their animations with one layout pass. Calm mode shortens the animations to almost nothing, and every cell has a label for screen readers.
+  how:
+    - A move is a swap. If it makes no match, the gems swap back and no move is used. If it does, the board resolves in a loop until it settles.
+    - "Each pass of the loop: find the runs, decide which gems clear and which power-ups are born, clear them (firing any power-ups caught in the blast), drop what's left, fill the gaps from the top. Every extra pass raises the combo multiplier."
+    - Swapping two power-ups together makes a combo, from a cross to clearing the whole board.
+  code:
+    file: assets/js/games/gem-match.js
+    text: |-
+      /* chain reaction: any power-up caught in a blast fires too */
+      function expand(set, fired) {
+        var queue = Object.keys(set).map(Number);
+        while (queue.length) {
+          var i = queue.shift(), g = board[i];
+          if (!g || fired[i] || !(g.sp || g.t === COLOR)) continue;
+          fired[i] = true;
+          effect(i, g).forEach(function (j) { if (!set[j]) { set[j] = true; queue.push(j); } });
+        }
+        return set;
+      }
+  related: [sidekiq, pitwall]
+  lesson: "The hard part of a match-3 isn't finding matches, it's the order things happen in. Treating chain reactions as a queue is what makes every combo resolve the same way every time."
+
+- id: schema
+  source: assets/js/games/schema-stack.js
+  pitch: A falling-block game where migrations have dependencies. Change a table before its create_table and the change waits.
+  shows:
+    - title: A domain rule as a game rule
+      text: A migration for a table that doesn't exist yet lands pending and blocks its row. When that table's create_table lands, every pending change to it runs at once.
+    - title: A small, clear engine
+      text: The board is one flat array. Collision, rotation and row clearing are each a few lines.
+    - title: Rules for randomness
+      text: "Pieces are weighted, with rules on top: no power-ups in the first eight pieces, never two in a row, about 7% after that."
+    - title: Its own pieces
+      text: An original set of one- to four-cell shapes, plus power-ups named after Rails commands (hotfix, db:migrate:redo, squash).
+  how:
+    - "There are three tables: users, orders and invoices. Each falling piece is either a `create_table` or a change to one of them (`add_column`, `add_index`, `rename_column` and so on)."
+    - A row deploys only when it's full and nothing in it is pending. A row made of one table only is a clean migration and scores triple.
+    - The game ends the way a Rails app does when you forget to migrate, with `ActiveRecord::PendingMigrationError`.
+  code:
+    file: assets/js/games/schema-stack.js
+    text: |-
+      var pend = piece.kind === "change" && !created[piece.table];
+      abs(piece).forEach(function (c) { if (c[1] >= 0) board[c[1] * W + c[0]] = { t: piece.table, pending: pend, create: piece.kind === "create" }; });
+      if (piece.kind === "create") {
+        created[piece.table] = true;
+        var n = 0; board.forEach(function (b) { if (b && b.t === piece.table && b.pending) { b.pending = false; n++; } });
+        if (n) score += n * 15 * level;   // every pending migration of the table runs at once
+      }
+  related: [sidekiq, gems]
+  lesson: "The best game rule is one the player already knows: anyone who has run a migration before its create_table gets the pending mechanic without a tutorial."
+
+- id: pitwall
+  source: assets/js/games/pit-wall.js
+  pitch: A race strategy simulation. You're the engineer for one of ten cars, calling pit stops, tyres and ERS while the race runs.
+  shows:
+    - title: A simulation model
+      text: "Lap time comes from pace, tyre compound, wear (with a cliff), fuel, weather and driving mode. A separate risk model turns pushing, old tyres and slicks in the rain into spins, punctures and crashes."
+    - title: Geometry from an SVG path
+      text: Each circuit is sampled into a 1,600-point table. Its curvature gives a target speed, with limits on braking and acceleration, so cars slow into corners and speed out.
+    - title: Motion from a plan, not easing
+      text: Every lap is a time-to-distance plan, with pit stops and spins as real stops at a spot on track. Each frame reads the plan, so cars never lag or jump.
+    - title: Rival strategies
+      text: Nine computer cars plan their stops around tyre life, react to rain and safety cars, and push or save as the race goes on.
+    - title: Smooth on modest hardware
+      text: Each car is its own small layer moved with a CSS transform, and the timing tower only rewrites the fields that changed.
+  how:
+    - "Three ways to play: a quick race, a Grand Prix where you pick the circuit and weather, or a ten-round championship saved on your device. All teams and circuits are made up."
+    - The simulation and the drawing are kept apart. The simulation decides when each car will be where on this lap; the renderer asks where every car is at this exact moment and puts it there.
+    - Live 1v1 uses the same seed for both players, so both get the same circuit, grid, weather and incidents, and only the strategy differs.
+  code:
+    file: assets/js/games/pit-wall.js
+    text: |-
+      function lapTime(c, extra) {
+        if (sc) return BASE + 14 + rnd(-0.2, 0.2) + (extra || 0);
+        var ty = TYRES[c.tyre], t = BASE + c.pace + ty.delta, cliff = cliffOf(c.tyre);
+        var degMul = c.mode === "push" ? 1.6 : c.mode === "save" ? 0.55 : 1;
+        if (!ty.dry && weather === "dry") degMul *= 4;
+        t += ty.deg * WEAR * c.age * degMul;
+        if (c.age > cliff) t += (c.age - cliff) * 1.5;   // the cliff
+        t += WX[weather][c.tyre];
+        t += 0.06 * (LAPS - c.lap);                     // fuel load
+        t += c.mode === "push" ? -0.45 : c.mode === "save" ? 0.45 : 0;
+        t += rnd(-0.25, 0.25);
+        return t + (extra || 0);
+      }
+  related: [sidekiq, gems]
+  lesson: "Keeping the simulation apart from the drawing is what made it workable: I could keep tuning the race model without cars ever jumping on screen."

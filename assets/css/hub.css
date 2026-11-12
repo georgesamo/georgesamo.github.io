@@ -154,7 +154,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 /* ---------- seamless page switch: thin progress line under the tabs ---------- */
 .nav-bar { position: fixed; left: 0; top: 0; z-index: 500; height: 2px; width: 0; background: linear-gradient(90deg, var(--accent), var(--hl)); box-shadow: 0 0 10px var(--accent); opacity: 0; transition: width 0.35s ease, opacity 0.3s; pointer-events: none; }
 .nav-bar.is-on { width: 70%; opacity: 1; transition: width 2.5s cubic-bezier(.1,.7,.2,1), opacity 0.1s; }
-#main h1:focus, #main h2:focus { outline: none; }
+#main:focus, #main h1:focus, #main h2:focus { outline: none; }
 
 /* ---------- testimonials ---------- */
 .tm__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
@@ -278,6 +278,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
     touch-action: manipulation;
   }
   .mnav__item { display: grid; place-items: center; align-content: center; gap: 3px; border: 0; background: transparent; color: var(--muted); font: 10.5px var(--mono); text-decoration: none; cursor: pointer; position: relative; }
+  .mnav__item:focus-visible { outline-offset: -3px; border-radius: 10px; }   /* the bar sits on the screen edge: keep the ring inside it */
   .mnav__item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .mnav__item.is-here { color: var(--text); }
   .mnav__item.is-here svg { stroke: var(--accent); filter: drop-shadow(0 0 6px var(--accent-soft)); }
@@ -365,6 +366,22 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .today__big { margin: 0; font: 700 18px/1.25 var(--sans); }
 .today__live [data-hub-players] { flex: 1; }
 .today .players { max-height: 132px; overflow: auto; }
+/* "your week" recap (recap.js): full width under the three cards; no motion of its own beyond .reveal */
+.today__recap { grid-column: 1 / -1; }
+.recap__sub { margin: 0 0 6px !important; font-size: 13px; color: var(--text-2); }
+.recap__games, .recap__stats { list-style: none; margin: 0; padding: 0; }
+.recap__games { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; margin-bottom: 12px; }
+.recap__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-soft); }
+.recap__game { font-size: 14px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recap__best { font: 700 16px var(--mono); color: var(--text); text-align: right; }
+.recap__up, .recap__vs { grid-column: 1 / -1; font: 12px var(--mono); color: var(--text-2); }
+.recap__up { color: var(--link); font-weight: 700; }
+.recap__stats { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px; color: var(--text-2); }
+.recap__stats b { color: var(--text); }
+.recap__chip { display: inline-block; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 13px; color: var(--text); }
+.recap__nudge { font-size: 14.5px; color: var(--text-2); }
+.recap__link { padding: 0; border: 0; background: none; font: inherit; color: var(--link); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.recap__link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 
 .updates { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .update { display: grid; grid-template-columns: 62px 70px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg-elev); position: relative; }
@@ -526,6 +543,34 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .hire__career span { grid-column: 1; font-size: 13.5px; color: var(--text-2); }
 .hire__career time { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 12.5px var(--mono); color: var(--muted); white-space: nowrap; }
 .hire__side { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--text-2); }
+.hire__cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+
+/* ---------- /games/<id>/about/: one case study per game (_layouts/case-study.html) ---------- */
+.cs__pitch { margin: 0 0 16px; font-size: 17px; line-height: 1.5; color: var(--text); }
+.cs__meta { margin: 14px 0 0; font: 12.5px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.cs__meta code { font: inherit; color: var(--text-2); }
+.cs__how { min-width: 0; font-size: 15px; line-height: 1.6; color: var(--text-2); }
+.cs__how p { margin: 0 0 12px; max-width: 68ch; }
+.cs__how code { padding: 1px 5px; border-radius: 5px; background: var(--bg-soft); color: var(--text); font: 0.9em var(--mono); overflow-wrap: anywhere; }
+.cs__code { margin: 16px 0; min-width: 0; }
+.cs__code figcaption { margin-bottom: 6px; font: 12px var(--mono); color: var(--muted); }
+.cs__code pre { margin: 0; max-width: 100%; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--code-bg); color: var(--text); overflow-x: auto; font: 12.5px/1.6 var(--mono); font-variant-ligatures: none; }
+.cs__code pre code { padding: 0; background: none; color: inherit; font: inherit; overflow-wrap: normal; }
+.cs__common, .cs__lesson { font-size: 14.5px; }
+.cs__lesson b { color: var(--text); }
+.cs__related, .hire__cases { margin: 0; padding: 0; list-style: none; }
+.cs__related { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.cs__related a, .hire__cases a { display: grid; gap: 4px; height: 100%; box-sizing: border-box; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-elev); color: inherit; text-decoration: none; }
+.cs__related a:hover, .cs__related a:focus-visible, .hire__cases a:hover, .hire__cases a:focus-visible { border-color: var(--accent); }
+.cs__related b, .hire__cases b { font-size: 15px; color: var(--text); }
+.cs__related span:not([aria-hidden]), .hire__cases span:not([aria-hidden]) { font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.cs .home-foot { margin-top: 24px; }
+.game-about { display: inline-block; margin: 8px 0 0; font: 12px var(--mono); color: var(--accent); }
+@media (max-width: 560px) {
+  .hire__cases, .cs__related { grid-template-columns: minmax(0, 1fr); }
+  .cs__code pre { font-size: 11.5px; padding: 12px; }
+}
+
 @media (max-width: 560px) {
   .hire__card { padding: 16px; }
   .hire__hl { grid-template-columns: 1fr; }
@@ -546,9 +591,19 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .streak-note--kept { background: transparent; color: var(--text-2); }
 .streak-note__x { flex: none; width: 24px; height: 24px; margin: -3px -4px -3px 0; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 16px; line-height: 1; cursor: pointer; }
 .streak-note__x:hover { color: var(--text); background: var(--bg-soft); }
-.tree__nav a.has-streak-dot .nav-l::after, .mnav__item.has-streak-dot::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff8a3d; box-shadow: 0 0 0 2px var(--bg); }
-.tree__nav a.has-streak-dot .nav-l::after { margin-left: 6px; vertical-align: 2px; }
-.mnav__item.has-streak-dot::after { position: absolute; top: 8px; left: calc(50% + 8px); }
+.tree__nav a.has-streak-dot .nav-l::after, .mnav__item.has-streak-dot::after,
+.tree__nav a.has-chal-dot .nav-l::after, .mnav__item.has-chal-dot::after { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #ff8a3d; box-shadow: 0 0 0 2px var(--bg); }
+.tree__nav a.has-streak-dot .nav-l::after, .tree__nav a.has-chal-dot .nav-l::after { margin-left: 6px; vertical-align: 2px; }
+.mnav__item.has-streak-dot::after, .mnav__item.has-chal-dot::after { position: absolute; top: 8px; left: calc(50% + 8px); }
+/* a challenge you sent was beaten (challenge.js) */
+.chal-note { max-width: 560px; margin: 14px 0 0; animation: termIn 0.35s var(--ease) both; }
+.chal-note > .chal-note__icon { flex: none; }
+.chal-note__body { flex: 1; display: grid; gap: 4px; }
+.chal-note__line a { white-space: nowrap; font-weight: 600; }
+.section__head + .chal-note { margin: 0 0 18px; }
+.chal-out__fine { margin: 10px 0 0 !important; font-size: 12.5px !important; color: var(--muted) !important; }
+@media (prefers-reduced-motion: reduce) { .chal-note { animation: none; } }
+:root[data-calm] .chal-note { animation: none; }
 
 /* ---------- first-visit tour (tour.js) ---------- */
 .tour { --ax: 50%; position: fixed; z-index: 130; display: grid; gap: 6px; width: min(300px, calc(100vw - 16px)); padding: 12px 14px; border: 1px solid var(--hl); border-radius: 12px; background: var(--bg-elev); box-shadow: var(--shadow); font-size: 13.5px; line-height: 1.45; color: var(--text-2); animation: termIn 0.3s var(--ease) both; }

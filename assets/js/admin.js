@@ -19,7 +19,7 @@
     dlg.hidden = true;
     dlg.innerHTML = '<div class="adm__backdrop" data-adm-close></div><div class="adm__win" role="dialog" aria-modal="true" aria-labelledby="adm-title">' +
       '<div class="adm__bar"><span class="dots"><i data-adm-close></i><i></i><i></i></span><span id="adm-title">rails admin</span><button class="arcade__x" type="button" data-adm-close aria-label="Close admin">esc</button></div>' +
-      '<div class="adm__tabs" role="tablist"><button type="button" role="tab" data-adm-tab="users">users</button><button type="button" role="tab" data-adm-tab="wall">wall</button><button type="button" role="tab" data-adm-tab="analytics">analytics</button><button type="button" role="tab" data-adm-tab="tm">testimonials</button></div>' +
+      '<div class="adm__tabs" role="tablist"><button type="button" role="tab" data-adm-tab="users">users</button><button type="button" role="tab" data-adm-tab="wall">wall</button><button type="button" role="tab" data-adm-tab="analytics">analytics</button><button type="button" role="tab" data-adm-tab="tm">testimonials</button><button type="button" role="tab" data-adm-tab="errors">errors</button></div>' +
       '<div class="adm__body" data-adm-body></div></div>';
     document.body.appendChild(dlg);
     dlg.addEventListener("click", onClick);
@@ -73,9 +73,10 @@
       if (t === "users") { await loadUsers(); paintUsers(); }
       else if (t === "analytics") await paintAnalytics();
       else if (t === "tm") await paintTm();
+      else if (t === "errors") await paintErrors();
       else { await loadWall(); paintWall(); }
     } catch (err) {
-      body('<p class="adm__err">' + esc(err.message || String(err)) + '</p><p class="muted">If this says the function does not exist, run <code>supabase/features.sql</code> in the Supabase SQL editor.</p>');
+      body('<p class="adm__err">' + esc(err.message || String(err)) + '</p><p class="muted">If this says the function does not exist, run <code>supabase/' + (t === "errors" ? "errors" : "features") + '.sql</code> in the Supabase SQL editor.</p>');
     }
   }
   /* ---------- analytics ---------- */
@@ -100,14 +101,30 @@
   }
   async function paintAnalytics() {
     var c = db(), d;
-    if (!c) d = { totals: { views: 12, visitors: 5 }, days: [{ day: "2026-11-07", views: 4, visitors: 2 }, { day: "2026-11-08", views: 8, visitors: 3 }], pages: [{ path: "/", views: 7 }, { path: "/samuka/", views: 5 }], sections: [{ name: "experience", reads: 3 }], referrers: [{ host: "linkedin.com", visitors: 2 }], plays: [{ game: "gems", plays: 4 }] };
+    if (!c) d = { totals: { views: 12, visitors: 5 }, days: [{ day: "2026-11-07", views: 4, visitors: 2 }, { day: "2026-11-08", views: 8, visitors: 3 }], pages: [{ path: "/", views: 7 }, { path: "/samuka/", views: 5 }], sections: [{ name: "experience", reads: 3 }], referrers: [{ host: "linkedin.com", visitors: 2 }], plays: [{ game: "gems", plays: 4 }], uses: [{ name: "tour:done", uses: 3 }, { name: "feeds:open", uses: 2 }] };
     else { var r = await c.rpc("analytics_summary", { p_days: anDays }); if (r.error) throw r.error; d = r.data; }
     body('<div class="adm__stats">' + [7, 30, 90].map(function (n) { return '<button class="wall__mod" type="button" data-an-days="' + n + '"' + (n === anDays ? ' style="color:var(--hl)"' : "") + ">" + n + " days</button>"; }).join("") + '<span class="muted">no cookies · no IPs · per-tab ids only</span></div>' +
       '<div class="an-tiles"><div><b>' + d.totals.views + "</b><span>page views</span></div><div><b>" + d.totals.visitors + "</b><span>visits</span></div><div><b>" +
       (d.plays || []).reduce(function (n, p) { return n + p.plays; }, 0) + "</b><span>games started</span></div></div>" +
       chart(d.days || []) +
       '<div class="an-lists">' + listBox("pages", d.pages || [], "path", "views") + listBox("profile sections read", d.sections || [], "name", "reads") +
-      listBox("came from", d.referrers || [], "host", "visitors") + listBox("games", d.plays || [], "game", "plays") + "</div>");
+      listBox("came from", d.referrers || [], "host", "visitors") + listBox("games", d.plays || [], "game", "plays") +
+      listBox("features used", d.uses || [], "name", "uses") + "</div>");
+  }
+  /* ---------- JavaScript errors from players' browsers (errors.js → supabase/errors.sql) ---------- */
+  var errDays = 7;
+  async function paintErrors() {
+    var c = db(), rows;
+    if (!c) rows = [{ kind: "error", message: "TypeError: x is undefined", source: "/assets/js/app.js", line: 12, col: 4, hits: 3, loads: 2, last_seen: new Date().toISOString(), paths: ["/"], browsers: ["Safari 17 · iOS"], build: "1762900000", stack: null }];
+    else { var r = await c.rpc("client_error_summary", { p_days: errDays }); if (r.error) throw r.error; rows = r.data || []; }
+    body('<div class="adm__stats">' + [1, 7, 30].map(function (n) { return '<button class="wall__mod" type="button" data-err-days="' + n + '"' + (n === errDays ? ' style="color:var(--hl)"' : "") + ">" + n + (n === 1 ? " day" : " days") + "</button>"; }).join("") +
+      (rows.length ? '<button class="wall__mod" type="button" data-err-clear>clear all</button>' : "") + '<span class="muted">grouped by message + file:line · no personal data</span></div>' +
+      (rows.length ? '<ol class="adm__wall">' + rows.map(function (e) {
+        var where = e.source ? e.source + (e.line ? ":" + e.line + (e.col ? ":" + e.col : "") : "") : "(no file)";
+        return "<li><b>" + esc(e.message) + "</b> <small>" + esc(e.kind) + " · " + esc(where) + "</small><br><small>" + e.hits + "× on " + e.loads + " page loads · last " + esc(String(e.last_seen).replace("T", " ").slice(0, 16)) +
+          " · " + esc((e.paths || []).join(", ")) + " · " + esc((e.browsers || []).join(", ")) + (e.build ? " · build " + esc(e.build) : "") + "</small>" +
+          (e.stack ? '<details><summary class="muted">stack</summary><pre style="white-space:pre-wrap;font-size:11px;margin:4px 0 0">' + esc(e.stack) + "</pre></details>" : "") + "</li>";
+      }).join("") + "</ol>" : '<p class="muted">No JavaScript errors reported in this period. 🎉</p>'));
   }
   /* ---------- testimonials ---------- */
   var tms = [];
@@ -140,6 +157,12 @@
     if (e.target.closest("[data-adm-close]")) return close();
     var t = e.target.closest("[data-adm-tab]"); if (t) return show(t.getAttribute("data-adm-tab"));
     var nd = e.target.closest("[data-an-days]"); if (nd) { anDays = +nd.getAttribute("data-an-days"); return show("analytics"); }
+    var ed = e.target.closest("[data-err-days]"); if (ed) { errDays = +ed.getAttribute("data-err-days"); return show("errors"); }
+    if (e.target.closest("[data-err-clear]")) {
+      if (!confirm("Delete every error report? This can't be undone.")) return;
+      if (db()) { var rc = await db().rpc("client_errors_clear"); if (rc.error) { alert(rc.error.message); return; } }
+      return show("errors");
+    }
     var tmEl = e.target.closest("[data-adm-tm]");
     if (tmEl && db()) {
       var tid = +tmEl.getAttribute("data-adm-tm"), tm = tms.filter(function (x) { return x.id === tid; })[0], rr;

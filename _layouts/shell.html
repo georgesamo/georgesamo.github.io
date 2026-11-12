@@ -46,23 +46,23 @@ layout: default
       {%- comment -%} folders collapse (state in <html data-tree-closed>, set before paint in default.html) {%- endcomment %}
       <button type="button" class="tree__dir" data-tree-dir="arcade" aria-expanded="true">arcade</button>
       <div class="tree__group" data-tree-group="arcade">
-        <a href="{{ '/' | relative_url }}"{% if on_lobby %} data-nav="lobby"{% endif %}{% if tab == "lobby" %} class="is-here"{% endif %}><i class="fi fi--rb"></i><span class="nav-l">Home</span><small class="nav-f">lobby.rb</small></a>
-        <a href="{{ '/games/' | relative_url }}"{% if tab == "games" %} class="is-here"{% endif %}><i class="fi fi--log"></i><span class="nav-l">Games</span><small class="nav-f">games/</small></a>
-        <a href="{{ '/leaderboards/' | relative_url }}"{% if tab == "leaderboards" %} class="is-here"{% endif %}><i class="fi fi--yml"></i><span class="nav-l">Leaderboards</span><small class="nav-f">leaderboards.yml</small></a>
-        <a href="{{ '/events/' | relative_url }}"{% if tab == "events" %} class="is-here"{% endif %}><i class="fi fi--rb"></i><span class="nav-l">Today</span><small class="nav-f">events.rb</small></a>
-        <a href="{{ '/me/' | relative_url }}"{% if tab == "me" %} class="is-here"{% endif %}><i class="fi fi--gem"></i><span class="nav-l">Collection</span><small class="nav-f">me/</small></a>
-        <a href="{{ '/settings/' | relative_url }}"{% if tab == "settings" %} class="is-here"{% endif %}><i class="fi fi--yml"></i><span class="nav-l">Settings</span><small class="nav-f">settings.yml</small></a>
+        <a href="{{ '/' | relative_url }}"{% if on_lobby %} data-nav="lobby"{% endif %}{% if tab == "lobby" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--rb"></i><span class="nav-l">Home</span><small class="nav-f">lobby.rb</small></a>
+        <a href="{{ '/games/' | relative_url }}"{% if tab == "games" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--log"></i><span class="nav-l">Games</span><small class="nav-f">games/</small></a>
+        <a href="{{ '/leaderboards/' | relative_url }}"{% if tab == "leaderboards" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--yml"></i><span class="nav-l">Leaderboards</span><small class="nav-f">leaderboards.yml</small></a>
+        <a href="{{ '/events/' | relative_url }}"{% if tab == "events" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--rb"></i><span class="nav-l">Today</span><small class="nav-f">events.rb</small></a>
+        <a href="{{ '/me/' | relative_url }}"{% if tab == "me" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--gem"></i><span class="nav-l">Collection</span><small class="nav-f">me/</small></a>
+        <a href="{{ '/settings/' | relative_url }}"{% if tab == "settings" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--yml"></i><span class="nav-l">Settings</span><small class="nav-f">settings.yml</small></a>
       </div>
       <button type="button" class="tree__dir" data-tree-dir="feeds" aria-expanded="true">feeds</button>
       <div class="tree__group" data-tree-group="feeds">
-        <a href="{{ '/news/' | relative_url }}"{% if tab == "news" %} class="is-here"{% endif %}><i class="fi fi--rss"></i><span class="nav-l">News</span><small class="nav-f">news.rss</small></a>
-        <a href="{{ '/watch/' | relative_url }}"{% if tab == "watch" %} class="is-here"{% endif %}><i class="fi fi--mp4"></i><span class="nav-l">Trailers</span><small class="nav-f">trailers.mp4</small></a>
-        <a href="{{ '/whats-new/' | relative_url }}" data-updates-latest="{{ site.data.changelog[0].date }}"{% if tab == "updates" %} class="is-here"{% endif %}><i class="fi fi--md"></i><span class="nav-l">What's new</span><small class="nav-f">CHANGELOG.md</small></a>
+        <a href="{{ '/news/' | relative_url }}"{% if tab == "news" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--rss"></i><span class="nav-l">News</span><small class="nav-f">news.rss</small></a>
+        <a href="{{ '/watch/' | relative_url }}"{% if tab == "watch" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--mp4"></i><span class="nav-l">Trailers</span><small class="nav-f">trailers.mp4</small></a>
+        <a href="{{ '/whats-new/' | relative_url }}" data-updates-latest="{{ site.data.changelog[0].date }}"{% if tab == "updates" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--md"></i><span class="nav-l">What's new</span><small class="nav-f">CHANGELOG.md</small></a>
       </div>
       <button type="button" class="tree__dir" data-tree-dir="about" aria-expanded="true">about</button>
       <div class="tree__group" data-tree-group="about">
-        <a href="{% if on_profile %}#hero{% else %}{{ '/samuka/' | relative_url }}{% endif %}"{% if on_profile %} data-nav="hero"{% endif %}{% if tab == "samuka" %} class="is-here"{% endif %}><i class="fi fi--rb"></i><span class="nav-l">About Samuka</span><small class="nav-f">samuka.rb</small></a>
-        <a href="{{ '/hire/' | relative_url }}"{% if tab == "hire" %} class="is-here"{% endif %}><i class="fi fi--md"></i><span class="nav-l">Hiring? Start here</span><small class="nav-f">HIRE.md</small></a>
+        <a href="{% if on_profile %}#hero{% else %}{{ '/samuka/' | relative_url }}{% endif %}"{% if on_profile %} data-nav="hero"{% endif %}{% if tab == "samuka" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--rb"></i><span class="nav-l">About Samuka</span><small class="nav-f">samuka.rb</small></a>
+        <a href="{{ '/hire/' | relative_url }}"{% if tab == "hire" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--md"></i><span class="nav-l">Hiring? Start here</span><small class="nav-f">HIRE.md</small></a>
         {%- if on_profile %}
         <a class="tree__sub" href="#experience" data-nav="experience"><span class="nav-l">Experience</span><small class="nav-f">career.log</small></a>
         <a class="tree__sub" href="#skills" data-nav="skills"><span class="nav-l">Skills</span><small class="nav-f">Gemfile</small></a>
@@ -71,17 +71,17 @@ layout: default
         <a class="tree__sub" href="#projects" data-nav="projects"><span class="nav-l">Projects</span><small class="nav-f">repos/</small></a>
         <a class="tree__sub" href="#contact" data-nav="contact"><span class="nav-l">Contact</span><small class="nav-f">routes.rb</small></a>
         {%- endif %}
-        <a href="{{ '/blog/' | relative_url }}"{% if tab == "pulls" and page.url == "/blog/" %} class="is-here"{% endif %}><i class="fi fi--pr"></i><span class="nav-l">Blog</span><small class="nav-f">pulls/</small></a>
+        <a href="{{ '/blog/' | relative_url }}"{% if tab == "pulls" and page.url == "/blog/" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--pr"></i><span class="nav-l">Blog</span><small class="nav-f">pulls/</small></a>
         {%- if tab == "pulls" %}
         {%- for p in site.posts limit: 12 %}
-        <a href="{{ p.url | relative_url }}" class="tree__sub blog-tree__post{% if p.url == page.url %} is-here{% endif %}">{{ p.title | escape }}</a>
+        <a href="{{ p.url | relative_url }}" class="tree__sub blog-tree__post{% if p.url == page.url %} is-here{% endif %}"{% if p.url == page.url %} aria-current="page"{% endif %}>{{ p.title | escape }}</a>
         {%- endfor %}
         {%- endif %}
       </div>
       <button type="button" class="tree__dir" data-tree-dir="team" aria-expanded="true" data-team-only hidden>team</button>
       <div class="tree__group" data-tree-group="team" data-team-only hidden>
-        <a href="{{ '/nino/' | relative_url }}"{% if tab == "nino" %} class="is-here"{% endif %}><i class="fi fi--md"></i><span class="nav-l">Nino's corner</span><small class="nav-f">ninos-corner.md</small></a>
-        <a href="{{ '/soundtrack/' | relative_url }}"{% if tab == "soundtrack" %} class="is-here"{% endif %}><i class="fi fi--log"></i><span class="nav-l">Soundtrack</span><small class="nav-f">soundtrack.wav</small></a>
+        <a href="{{ '/nino/' | relative_url }}"{% if tab == "nino" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--md"></i><span class="nav-l">Nino's corner</span><small class="nav-f">ninos-corner.md</small></a>
+        <a href="{{ '/soundtrack/' | relative_url }}"{% if tab == "soundtrack" %} class="is-here" aria-current="page"{% endif %}><i class="fi fi--log"></i><span class="nav-l">Soundtrack</span><small class="nav-f">soundtrack.wav</small></a>
       </div>
     </nav>
     <div class="tree__foot">
@@ -150,7 +150,7 @@ layout: default
 </nav>
 <div class="msheet" id="msheet" hidden>
   <div class="msheet__backdrop" data-mnav-close></div>
-  <div class="msheet__card" role="dialog" aria-label="More">
+  <div class="msheet__card" role="dialog" aria-modal="true" aria-label="More">
     <div class="msheet__me" data-me-sheet hidden></div>
     <a href="{{ '/leaderboards/' | relative_url }}"><i class="fi fi--yml"></i>Leaderboards <small>top players</small></a>
     <a href="{{ '/samuka/' | relative_url }}"><i class="fi fi--rb"></i>About Samuka <small>the creator</small></a>

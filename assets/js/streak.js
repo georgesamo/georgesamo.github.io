@@ -63,6 +63,7 @@
   }
   document.addEventListener("click", function (e) {
     if (!e.target.closest || !e.target.closest("[data-streak-hide]")) return;
+    window.SamukaTrack && window.SamukaTrack("streak:hide");
     set(HIDE_KEY, utcDay(Date.now()));
     paint();
   });

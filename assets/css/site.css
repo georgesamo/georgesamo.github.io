@@ -1,0 +1,17 @@
+---
+# One render-blocking stylesheet for every page: the files below, in this order (the cascade
+# depends on it). One request instead of ten and one gzip stream (~14% smaller), which matters
+# most on a phone's first visit. Edit the individual files; the build inlines them here, and
+# scripts/optimize.mjs minifies and content-hashes the result like any other asset.
+---
+{% include_relative fonts.css %}
+{% include_relative main.css %}
+{% include_relative arcade.css %}
+{% include_relative themes.css %}
+{% include_relative projects.css %}
+{% include_relative blog.css %}
+{% include_relative lofi.css %}
+{% include_relative features.css %}
+{% include_relative hub.css %}
+{% include_relative games.css %}
+{% include_relative news.css %}

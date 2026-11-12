@@ -1,0 +1,65 @@
+---
+layout: shell
+tab: games
+icon: md
+---
+{%- comment -%}
+  A short case study of one arcade game, for people who'd rather read than play.
+  Content lives in _data/case_studies.yml; the page only sets `game: <id>`.
+  Values starting with "TODO(owner)" are gaps the owner hasn't filled yet: they're skipped.
+{%- endcomment -%}
+{%- assign cs = site.data.case_studies | where: "id", page.game | first -%}
+{%- assign g = site.data.games | where: "id", page.game | first -%}
+{%- assign repo = site.data.resume.person.github | append: "/georgesamo.github.io/blob/main/" -%}
+      <section class="section hire cs" id="case-study" data-file="games/{{ g.id }}/ABOUT.md" data-icon="md">
+        <header class="section__head reveal">
+          <p class="section__path">games/{{ g.id }}/<b>ABOUT.md</b></p>
+          <h1 class="section__title"><span aria-hidden="true">{{ g.icon }}</span> {{ g.name }}</h1>
+          <p class="section__cmd"><span class="muted"># a short case study, for people who'd rather read than play</span></p>
+        </header>
+
+        <div class="hire__card cs__card">
+          <p class="cs__pitch">{{ cs.pitch }}</p>
+          <div class="hire__actions">
+            <button class="btn btn--primary" type="button" data-play="{{ g.id }}"><span class="btn__prompt">▶</span> Play it</button>
+            <a class="btn" href="{{ repo }}{{ cs.source }}" rel="noopener" target="_blank">Read the source ↗</a>
+            <a class="btn btn--ghost" href="{{ '/hire/' | relative_url }}">Hiring? Start here</a>
+          </div>
+          <p class="cs__meta">⏱ {{ g.minutes }} · 🎮 {{ g.controls }} · <code>{{ cs.source }}</code></p>
+        </div>
+
+        <h2 class="hire__h">What it shows</h2>
+        <ul class="hire__hl cs__shows">
+          {%- for x in cs.shows %}
+          <li><b>{{ x.title }}</b><span>{{ x.text }}</span></li>
+          {%- endfor %}
+        </ul>
+
+        <h2 class="hire__h">How it works</h2>
+        <div class="cs__how">
+          {%- for para in cs.how %}
+          {{ para | markdownify }}
+          {%- endfor %}
+          {%- if cs.code %}
+          <figure class="cs__code">
+            <figcaption>{{ cs.code.file }}</figcaption>
+            <pre><code>{{ cs.code.text | escape }}</code></pre>
+          </figure>
+          {%- endif %}
+          <p class="cs__common">Like every game here, it's plain JavaScript with no framework. It loads only when you open it and plugs into one shared arcade window, which gives it a seed, keeps the score and draws the game-over card.</p>
+          {%- if cs.lesson and cs.lesson != "" %}{% unless cs.lesson contains "TODO(owner)" %}
+          <p class="cs__lesson"><b>Looking back:</b> {{ cs.lesson }}</p>
+          {%- endunless %}{% endif %}
+        </div>
+
+        <h2 class="hire__h">Related games</h2>
+        <ul class="cs__related">
+          {%- for rid in cs.related %}
+          {%- assign rg = site.data.games | where: "id", rid | first -%}
+          {%- assign rc = site.data.case_studies | where: "id", rid | first %}
+          <li><a href="{{ '/games/' | append: rid | append: '/about/' | relative_url }}"><b><span aria-hidden="true">{{ rg.icon }}</span> {{ rg.name }}</b><span>{{ rc.pitch }}</span></a></li>
+          {%- endfor %}
+        </ul>
+
+        <p class="home-foot"><a href="{{ '/games/' | relative_url }}">All games</a> · <a href="{{ '/hire/' | relative_url }}">Hiring? Start here</a> · <a href="{{ '/samuka/' | relative_url }}">Full profile</a></p>
+      </section>

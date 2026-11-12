@@ -123,6 +123,8 @@
     var el = root(), t = e.target;
     if (!el || !el.contains(t)) return;
     var S = window.Samuka, L = window.SamukaLofi;
+    var what = t.name ? t.name + ":" + t.value : ([].slice.call(t.attributes).map(function (a) { return a.name; }).filter(function (n) { return n.indexOf("data-set-") === 0; })[0] || "other").replace("data-set-", "") + ":" + (t.checked ? "on" : "off");
+    window.SamukaTrack && window.SamukaTrack("settings:" + what);
     if (t.name === "mode" && S) S.setMode(t.value, { user: true });
     else if (t.name === "skin" && S) S.setSkin(t.value, { user: true });
     else if (t.name === "calm" && window.SamukaCalm) window.SamukaCalm.set(t.value);

@@ -60,31 +60,30 @@
   <link rel="manifest" href="{{ '/assets/manifest.webmanifest' | relative_url }}">
   <link rel="apple-touch-icon" href="{{ '/assets/icons/apple-touch-icon.png' | relative_url }}">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Samuka">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  {%- comment -%} service worker kill switch: `service_worker: false` in _config.yml (install.js + sw.js read it) {%- endcomment %}
+  <meta name="samuka-sw" content="{% if site.service_worker == false %}off{% else %}on{% endif %}">
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  {%- comment -%} fonts load without blocking the first paint (display=swap shows system fonts until they arrive) {%- endcomment %}
-  {%- assign fonts = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Noto+Sans+Georgian:wght@500&display=swap" %}
-  <link rel="preload" as="style" href="{{ fonts }}">
-  <link rel="stylesheet" href="{{ fonts }}" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="{{ fonts }}"></noscript>
-  <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/arcade.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/themes.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/projects.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/blog.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/lofi.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/features.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/hub.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/games.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/news.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+  {%- if site.supabase.url != "" %}
+  {%- comment -%} the leaderboard / player card / sign-in calls go here right after the scripts run: open the connection while the page loads {%- endcomment %}
+  <link rel="preconnect" href="{{ site.supabase.url }}" crossorigin>
+  {%- endif %}
+  {%- comment -%} self-hosted fonts (@font-face in assets/css/fonts.css, display=swap shows system fonts until they arrive).
+       Every page uses the latin Inter and JetBrains Mono files, so start them now instead of after site.css is parsed. {%- endcomment %}
+  <link rel="preload" as="font" type="font/woff2" href="{{ '/assets/fonts/inter-latin.woff2' | relative_url }}" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="{{ '/assets/fonts/jetbrains-mono-latin.woff2' | relative_url }}" crossorigin>
+  {%- comment -%} all styles in one render-blocking file: site.css inlines fonts, main, arcade, themes, projects, blog, lofi, features, hub, games and news (in that order) {%- endcomment %}
+  <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}?v={{ site.time | date: '%s' }}">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
   {{ content }}
   <script id="resume-data" type="application/json">{{ site.data.resume | jsonify }}</script>
-  <script>window.SITE = { contactEndpoint: {{ site.contact_endpoint | jsonify }}, resumePdf: {{ '/assets/samuka-resume.pdf' | relative_url | jsonify }}, supabase: {{ site.supabase | jsonify }} };</script>
+  <script>window.SITE = { contactEndpoint: {{ site.contact_endpoint | jsonify }}, resumePdf: {{ '/assets/samuka-resume.pdf' | relative_url | jsonify }}, supabase: {{ site.supabase | jsonify }}, build: {{ site.time | date: '%s' | jsonify }} };</script>
+  {%- comment -%} error reporting first and not deferred, so it sees errors from every script after it {%- endcomment %}
+  <script src="{{ '/assets/js/errors.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
   {%- if site.supabase.url != "" and site.supabase.anon_key != "" %}
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js" defer></script>
   {%- endif %}
@@ -125,6 +124,7 @@
   <script src="{{ '/assets/js/collection.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/settings.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/streak.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  <script src="{{ '/assets/js/recap.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/tour.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/feeds.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/player.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
@@ -135,6 +135,7 @@
   <script src="{{ '/assets/js/news.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/watch.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/chat.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  <script src="{{ '/assets/js/a11y.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/nav.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/analytics.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/testimonials.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>

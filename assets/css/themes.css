@@ -10,12 +10,13 @@
   --bg: #060506; --bg-elev: #0d0b0c; --bg-soft: #141112; --bg-hover: #1b1617;
   --line: #201a1b; --line-strong: #33282a;
   --text: #ece6e4; --text-2: #b3a9a7; --muted: #867c7a;
-  --accent: #e5383b; --accent-2: #ff6b6b; --accent-soft: rgba(229, 56, 59, 0.13);
+  /* #e94245 (was #e5383b): ≥ 4.5:1 on every knight dark background, hover rows included */
+  --accent: #e94245; --accent-2: #ff6b6b; --accent-soft: rgba(229, 56, 59, 0.13);
   --gold: #9aa3ad; --gold-soft: rgba(154, 163, 173, 0.14);
   --blue: #9aa3ad; --blue-soft: rgba(154, 163, 173, 0.12);
   --green: #d6c9c4; --green-soft: rgba(214, 201, 196, 0.05);
   --amber: #c9a27a; --violet: #b7a9b8; --cyan: #a8b7bd; --link: #ff6b6b; --ruby-red: #ff4b4b;
-  --hl: #e5383b; --hl-soft: rgba(229, 56, 59, 0.16);
+  --hl: #e94245; --hl-soft: rgba(229, 56, 59, 0.16);
   --chrome: #000000; --code-bg: #030202; --status-ink: #ff4b4b;
   --dot: rgba(229, 56, 59, 0.05);
   --shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9);
@@ -294,6 +295,8 @@
 .acct__theme.is-on { border-color: var(--hl); background: var(--hl-soft); }
 .acct__theme.is-on small { color: var(--text-2); }   /* --muted on the tinted card was 3.7:1 */
 .acct__theme input { position: absolute; opacity: 0; pointer-events: none; }
+/* the radios themselves are invisible: show the keyboard focus ring on the card around them */
+.acct__mode:has(input:focus-visible), .acct__theme:has(input:focus-visible) { outline: 2px solid var(--hl); outline-offset: 2px; }
 .acct__theme b { display: block; font: 600 14px var(--sans); color: var(--text); }
 .acct__theme small { font: 11.5px var(--mono); color: var(--muted); }
 /* swatch: left half = dark version, right half = light version */

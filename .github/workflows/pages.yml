@@ -80,6 +80,27 @@ jobs:
             _data/news.json
             _data/videos.json
           key: feeds-${{ github.run_id }}
+      # /news/ markets tab: Claude-analyzed market catalysts, tracked calls and their scorecard.
+      # Its own cache entry (headlines, calls and scores carry over between runs; the committed
+      # _data/markets.json is the fallback). Without the two secrets the step keeps the last copy.
+      - name: Test the markets script
+        run: bundle exec ruby tests/fetch_markets_test.rb
+      - name: Restore the last run's markets
+        uses: actions/cache/restore@v6
+        with:
+          path: _data/markets.json
+          key: markets-${{ github.run_id }}
+          restore-keys: markets-
+      - name: Fetch and analyze market news
+        run: bundle exec ruby scripts/fetch_markets.rb || echo "::warning::markets fetch failed, building with the last copy"
+        env:
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Keep the markets for the next run
+        uses: actions/cache/save@v6
+        with:
+          path: _data/markets.json
+          key: markets-${{ github.run_id }}
       - name: Build with Jekyll
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:

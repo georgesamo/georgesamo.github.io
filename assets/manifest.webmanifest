@@ -3,7 +3,7 @@
   "short_name": "Samuka",
   "description": "Small games about the Rails stack, live 2-player, leaderboards, and the profile of Samuka, Senior Ruby on Rails engineer.",
   "id": "/",
-  "start_url": "/?source=app",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#07110c",
