@@ -41,6 +41,16 @@
 .pv-sr__lane:nth-child(2) i { animation-duration: 4.1s; }
 .pv-sr__lane:nth-child(3) i { animation-duration: 2.6s; }
 @keyframes pvJob { from { transform: translateX(-60px); } to { transform: translateX(calc(100% + 6px)); } }
+/* no motion (calm mode or the system setting): park the jobs mid-lane, clear of the queue names
+   (stopped, they'd sit at the start of the lane, right on top of them) */
+@media (prefers-reduced-motion: reduce) {
+  .pv-sr__lane i { animation: none; transform: translateX(40%); }
+  .pv-sr__lane i:nth-child(2) { transform: translateX(60%); }
+  .pv-sr__lane i:nth-child(3) { transform: translateX(80%); }
+}
+:root[data-calm] .pv-sr__lane i { animation: none; transform: translateX(40%); }
+:root[data-calm] .pv-sr__lane i:nth-child(2) { transform: translateX(60%); }
+:root[data-calm] .pv-sr__lane i:nth-child(3) { transform: translateX(80%); }
 
 /* preview: gem grid */
 .pv-gm { position: absolute; inset: 0; display: grid; place-content: center; grid-template-columns: repeat(7, 34px); gap: 6px; }
