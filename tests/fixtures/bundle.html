@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>bundle install fixture</title></head>
+<body>
+  <!-- Samuka's Gemfile card (samuka/index.html) with music.js + app.js, for tests/music.test.js.
+       ?real loads the real lofi.js on demand instead of fake-lofi.js. -->
+  <div class="tabs__actions"><button type="button" data-toggle-theme>theme</button></div>
+  <button type="button" data-bundle>bundle install</button>
+  <pre><code><span class="s gem" data-skill="ruby">"Ruby"</span> <span class="s gem" data-skill="rails">"Rails"</span></code></pre>
+  <pre class="bundle-out" data-bundle-out hidden></pre>
+  <script>
+    window.SamukaCalm = { on: function () { return true; } };   // calm: bundle install skips its typing pauses
+    window.SamukaMusicSrc = /[?&]real\b/.test(location.search) ? "../../assets/js/lofi.js" : "fake-lofi.js";
+  </script>
+  <script src="../../assets/js/music.js"></script>
+  <script src="../../assets/js/app.js"></script>
+</body></html>
