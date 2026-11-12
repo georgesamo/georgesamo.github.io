@@ -143,8 +143,8 @@
     it("runs an item's action and closes", function () {
       var b = mount('<button id="av">me</button>').querySelector("#av");
       M.menu.open(b);
-      M.menu.el().querySelector('[data-me-item="appearance"]').click();
-      expect(calls).toEqual([["open", { tab: "appearance" }]]);
+      M.menu.el().querySelector('[data-me-item="profile"]').click();
+      expect(calls).toEqual([["open", { tab: "profile" }]]);
       expect(M.menu.isOpen()).toBe(false);
     });
     it("closes when a page link inside it is followed", function () {

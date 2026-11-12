@@ -49,7 +49,7 @@ sitemap: false
             </div>
             <p class="stp__keys muted">space play/pause · ← → 10 s · P / N previous / next · R repeat · M mute</p>
           </div>
-          <div class="st" data-soundtrack></div>
+          <div class="st" data-soundtrack data-needs-music></div>
         </div>
       </section>
       <style>
@@ -120,6 +120,7 @@ sitemap: false
           var L = window.SamukaLofi, A = window.SamukaAuth;
           if (!root) return;
           if ((!L || !A) && document.readyState !== "complete") { window.addEventListener("load", boot, { once: true }); return; }   // site scripts load after the page body
+          if (!L && window.SamukaMusic) { window.SamukaMusic.ready(function () { boot(); }); return; }   // the soundtrack loads on demand (music.js)
           // seamless navigation runs this again on every visit: everything it hangs on window/document goes when the page does
           var ac = window.AbortController ? new AbortController() : null, own = ac ? { signal: ac.signal } : false;
           window.addEventListener("samuka:page", function () { if (!document.body.contains(root) && ac) ac.abort(); }, own);
@@ -158,11 +159,11 @@ sitemap: false
             cat = L.catalog();
             root.innerHTML = cat.map(function (th) {
               var plays = th.theme === "phthalo" ? "plays for everyone" : th.theme === "knight" ? "plays on Samuka's theme" : "plays on Nino's theme";
-              return '<div class="st__theme st__theme--' + th.theme + (th.theme === mine ? " is-mine" : "") + '"><h3>' + th.name + ' <small>' + plays + '</small></h3><ol class="st__list">' + th.songs.slice().sort(function (a, b) { return a.no - b.no; }).map(function (s) {
+              return '<div class="st__theme st__theme--' + th.theme + (th.theme === mine ? " is-mine" : "") + '"><h3>' + th.name + ' <small>' + plays + '</small></h3><ol class="st__list">' + th.songs.slice().sort(function (a, b) { return a.ord - b.ord; }).map(function (s) {
                 if (s.bonus && s.locked) return '<li class="st__row is-locked"><span class="st__play" aria-hidden="true">🔒</span>' +
-                  '<span><span class="st__title">' + s.no + '. ??? <span class="st__tag">bonus</span></span><span class="st__meta">' + (s.hint || "finish a run of " + s.gameName + " to unlock it in every theme") + '</span></span></li>';
+                  '<span><span class="st__title">??? <span class="st__tag">bonus</span></span><span class="st__meta">' + (s.hint || "finish a run of " + s.gameName + " to unlock it in every theme") + '</span></span></li>';
                 if (s.locked) return '<li class="st__row is-locked"><button class="st__play" type="button" data-pb-theme="' + th.theme + '" aria-label="Open the patch bay">🔒</button>' +
-                  '<span><span class="st__title">6. ??? <span class="st__tag">secret</span></span><span class="st__meta">' + (s.heard < 5 ? "heard " + s.heard + "/5 · the patch bay wakes when you've heard all five" : "the patch bay is warm · press 🔒 to patch it together") + '</span></span></li>';
+                  '<span><span class="st__title">??? <span class="st__tag">secret</span></span><span class="st__meta">' + (s.heard < 5 ? "heard " + s.heard + "/5 · the patch bay wakes when you've heard all five" : "the patch bay is warm · press 🔒 to patch it together") + '</span></span></li>';
                 return '<li class="st__row' + (s.suite ? " is-suite" : "") + '" data-st="' + th.theme + ':' + s.si + '"><button class="st__play" type="button" aria-label="Play ' + s.title + '">▶</button>' +
                   '<span><span class="st__title">' + s.no + '. ' + s.title + (s.suite ? ' <span class="st__tag">suite</span>' : s.bonus ? ' <span class="st__tag">bonus</span>' : "") + '</span><span class="st__meta">' + s.mood + ' · ' + s.bpm + ' bpm · ' + fmt(s.secs) + '</span></span></li>';
               }).join("") + "</ol></div>";

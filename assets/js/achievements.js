@@ -138,6 +138,7 @@
     if (n === th.length) unlock("conductor");
   }
   window.addEventListener("samuka:suite", function (e) { if (e.detail && e.detail.type === "unlocked") suites(); });
+  window.addEventListener("samuka:music-ready", function () { suites(); });   // the soundtrack loads on demand (music.js)
   // a glitch is "witnessed" when its overlay appears
   new MutationObserver(function (ms) {
     if (!uid || got.glitch) return;

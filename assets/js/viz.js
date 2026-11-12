@@ -1,7 +1,7 @@
 /* Samuka · status-bar visualizer for the generated lo-fi: mirrored spectrum bars in the skin's colours */
 (function () {
   "use strict";
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }   // calm mode (live)
   var slot = null, cv = null, g = null, raf = 0, data = null;
   function colors() {
     var cs = getComputedStyle(document.documentElement);
@@ -30,7 +30,7 @@
     slot = document.querySelector("[data-viz]");
     if (!slot || cv) return;
     col = colors();
-    if (reduced) { slot.textContent = "♪ playing"; return; }
+    if (reduced()) { slot.textContent = "♪ playing"; return; }
     var dpr = Math.min(window.devicePixelRatio || 1, 2);
     cv = document.createElement("canvas");
     cv.width = 120 * dpr; cv.height = 16 * dpr;

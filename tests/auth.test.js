@@ -68,7 +68,7 @@
       expect(w.SamukaAuth.isOpen()).toBe(false);
       var name = w.SamukaAuth.publicName();
       expect(q(w, '#me-menu [data-me-item="card"]').getAttribute("href")).toBe("/u/?n=" + encodeURIComponent(name));
-      expect(qa(w, "#me-menu [data-me-item]").map(function (e) { return e.getAttribute("data-me-item"); })).toEqual(["card", "ranks", "badges", "appearance", "profile", "signout"]);
+      expect(qa(w, "#me-menu [data-me-item]").map(function (e) { return e.getAttribute("data-me-item"); })).toEqual(["card", "ranks", "badges", "settings", "profile", "signout"]);
       b.click();
       expect(w.SamukaMe.menu.isOpen()).toBe(false);
     }));

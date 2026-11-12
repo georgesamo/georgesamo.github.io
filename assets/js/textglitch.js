@@ -8,7 +8,7 @@
  */
 (function () {
   "use strict";
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }   // calm mode (live)
   var role = "guest", on = false, timer = 0;
   var rand = function (a, b) { return a + Math.random() * (b - a); };
   var pick = function (a) { return a[(Math.random() * a.length) | 0]; };
@@ -65,7 +65,7 @@
 
   function fire(force) {
     if (!force && (!on || blocked())) return false;
-    if (reduced || role === "guest") return false;
+    if (reduced() || role === "guest") return false;
     if (document.querySelector(".tg-ghost")) return false;
     var names = nameEls();
     if (role === "nino" && names.length && (force || Math.random() < 0.65)) {

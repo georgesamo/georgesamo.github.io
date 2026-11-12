@@ -27,6 +27,7 @@
   window.addEventListener("samuka:game", function (e) {
     var d = e.detail || {};
     if (d.name !== "over" || !GAMES[d.game]) return;
+    if (d.mode === "challenge") return;   // a friend's known board: head-to-head only (challenge.js), never the boards
     if (!user()) { keepGuestScore(d); return; }
     if (d.mode === "daily") store.set(dailyKey(d.game), JSON.stringify({ score: d.score, grid: d.game === "gems" ? grid(d.log || []) : "" }));
     var c = db();

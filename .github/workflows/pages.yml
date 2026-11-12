@@ -96,6 +96,10 @@ jobs:
         run: npm install --no-save --no-package-lock --no-audit --no-fund ${{ env.NPM_TOOLS }}
       - name: Optimize (minify JS/CSS, content-hash asset links)
         run: node scripts/optimize.mjs _site
+      # /u/<name>/ preview pages + card images for players on the boards, and the /c/<game>/ challenge images
+      # (drawn by the site's own code in headless Chrome; only warns if Supabase or Chrome misbehave)
+      - name: Link previews (player cards, challenges)
+        run: node scripts/player-cards.mjs _site
       # the exact files that get deployed; the deep job tests this same artifact
       - uses: actions/upload-pages-artifact@v5
 
@@ -131,7 +135,9 @@ jobs:
       - name: Smoke test
         run: node tests/smoke.mjs http://127.0.0.1:4200
       - name: Deep test
-        run: node tests/deep.mjs http://127.0.0.1:4200
+        # --strict: warnings (visual, a11y, tap targets) block the deploy too, not just errors.
+        # To ship past a known false alarm, drop the flag in a PR and say why.
+        run: node tests/deep.mjs http://127.0.0.1:4200 --strict
       - name: Keep the deep-test report and screenshots
         if: always()
         uses: actions/upload-artifact@v7

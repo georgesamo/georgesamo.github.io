@@ -1,0 +1,72 @@
+---
+layout: shell
+title: Hiring? Start here
+description: "Samuka (Giorgi Samukashvili), Senior Ruby on Rails engineer in Tbilisi: a one-page summary for recruiters with experience, stack, highlights and contact."
+permalink: /hire/
+tab: hire
+file: HIRE.md
+icon: md
+---
+{%- assign r = site.data.resume -%}
+{%- assign p = r.person -%}
+{%- assign h = r.hire -%}
+{%- assign now = r.experience | first -%}
+      <section class="section hire" id="hire" data-file="HIRE.md" data-icon="md">
+        <header class="section__head reveal">
+          <p class="section__path"><b>HIRE.md</b></p>
+          <h1 class="section__title">Hiring? Start here</h1>
+          <p class="section__cmd"><span class="muted"># the one-page version. The full story is on the <a href="{{ '/samuka/' | relative_url }}">profile</a>.</span></p>
+        </header>
+
+        <div class="hire__card">
+          <div class="hire__who">
+            <span class="maker__avatar" aria-hidden="true">S</span>
+            <div>
+              <b class="hire__name">{{ p.full_name }} <span class="muted">· “{{ p.handle }}”</span></b>
+              <span class="hire__role">{{ p.role }} · {{ p.location }}</span>
+            </div>
+          </div>
+          <p class="hire__intro">{{ h.intro }}</p>
+          <div class="hire__actions">
+            <a class="btn btn--primary" href="mailto:{{ p.email }}">✉ email me</a>
+            <a class="btn" href="{{ '/assets/samuka-resume.pdf' | relative_url }}" download="Samuka - Giorgi Samukashvili - Resume.pdf">↓ resume.pdf</a>
+            <a class="btn" href="{{ '/samuka/#contact' | relative_url }}">write a message</a>
+            <a class="btn btn--ghost" href="{{ p.github }}" rel="me noopener" target="_blank">GitHub ↗</a>
+          </div>
+        </div>
+
+        <dl class="hire__facts">
+          <div><dt>Experience</dt><dd><span data-years>8</span> years in production</dd></div>
+          <div><dt>Now</dt><dd>{{ now.role }}, {{ now.company }}</dd></div>
+          <div><dt>Domain</dt><dd>Healthcare: hospitals, clinics, insurance</dd></div>
+          {%- assign msc = r.education | where: "id", "msc" | first -%}
+          {%- assign cert = r.education | where: "id", "ruby-silver" | first %}
+          <div><dt>Education</dt><dd>MSc Computer Science, {{ msc.school | remove: "Ivane Javakhishvili " }}</dd></div>
+          <div><dt>Certified</dt><dd>{{ cert.title }}</dd></div>
+          <div><dt>Languages</dt><dd>{{ r.languages.mother_tongue }} (native){% for l in r.languages.other %}, {{ l.name }} ({{ l.spoken_interaction }}){% endfor %}</dd></div>
+        </dl>
+
+        <h2 class="hire__h">What I do well</h2>
+        <ul class="hire__hl">
+          {%- for x in h.highlights %}
+          <li><b>{{ x.title }}</b><span>{{ x.text }}</span></li>
+          {%- endfor %}
+        </ul>
+
+        <h2 class="hire__h">Core stack</h2>
+        <ul class="hire__stack">
+          {%- for s in h.stack %}<li>{{ s }}</li>{% endfor %}
+        </ul>
+
+        <h2 class="hire__h">Career</h2>
+        <ol class="hire__career">
+          {%- for e in r.experience %}
+          <li><b>{{ e.role }}</b><span>{{ e.company }}</span><time>{{ e.period }}</time></li>
+          {%- endfor %}
+        </ol>
+
+        <h2 class="hire__h">Side project</h2>
+        <p class="hire__side">{{ h.side_project }} <a href="{{ '/' | relative_url }}">Try the arcade →</a></p>
+
+        <p class="home-foot">Want the long version? <a href="{{ '/samuka/' | relative_url }}">Full profile</a> · <a href="{{ '/samuka/#experience' | relative_url }}">experience</a> · <a href="{{ '/samuka/#projects' | relative_url }}">projects on GitHub</a> · <a href="{{ '/samuka/#kind-words' | relative_url }}">kind words</a></p>
+      </section>

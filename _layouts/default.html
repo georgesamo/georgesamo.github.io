@@ -29,6 +29,29 @@
       if (s === "crt" && localStorage.getItem("samuka-konami") === "1") d.dataset.skin = s; // secret skin
       d.dataset.treeClosed = localStorage.getItem("samuka-tree-closed") || "";   // collapsed sidebar folders
     } catch (e) {}
+    // calm mode: no motion, shakes or glitches. "on" / "off" in samuka-calm, otherwise it follows
+    // the system's reduced-motion setting. Scripts and CSS read <html data-calm>, so a change is live.
+    (function () {
+      var d = document.documentElement, mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+      function pref() { try { var v = localStorage.getItem("samuka-calm"); return v === "on" || v === "off" ? v : "auto"; } catch (e) { return "auto"; } }
+      function apply() {
+        var p = pref(), on = p === "on" || (p === "auto" && !!(mq && mq.matches));
+        if (on) d.setAttribute("data-calm", ""); else d.removeAttribute("data-calm");
+        return on;
+      }
+      apply();
+      if (mq && mq.addEventListener) mq.addEventListener("change", function () { if (pref() === "auto") { apply(); fire(); } });
+      function fire() { try { window.dispatchEvent(new CustomEvent("samuka:calm", { detail: { on: d.hasAttribute("data-calm"), pref: pref() } })); } catch (e) {} }
+      window.SamukaCalm = {
+        on: function () { return d.hasAttribute("data-calm"); },
+        pref: pref,
+        system: function () { return !!(mq && mq.matches); },
+        set: function (v) {
+          try { if (v === "on" || v === "off") localStorage.setItem("samuka-calm", v); else localStorage.removeItem("samuka-calm"); } catch (e) {}
+          apply(); fire();
+        }
+      };
+    })();
     document.documentElement.classList.add("js");
   </script>
   {% seo title=false %}
@@ -74,26 +97,36 @@
   <script src="{{ '/assets/js/gem.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/terminal.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/arcade.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
-  <script src="{{ '/assets/js/games/sidekiq-rush.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
-  <script src="{{ '/assets/js/games/gem-match.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
-  <script src="{{ '/assets/js/games/schema-stack.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
-  <script src="{{ '/assets/js/games/pit-wall.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  {%- comment -%} games load when one is opened (arcade.js), not on every page; the build hashes these URLs like any script tag {%- endcomment %}
+  <script>window.SamukaGameSrc = {
+    sidekiq: { src: "{{ '/assets/js/games/sidekiq-rush.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "sidekiq-rush.rb", blurb: "Route jobs to the right queue before Redis runs out of memory." },
+    gems: { src: "{{ '/assets/js/games/gem-match.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "gem-match.rb", blurb: "Match three gems from the Gemfile. Power-ups: Pipeline, Force push, Bundle." },
+    schema: { src: "{{ '/assets/js/games/schema-stack.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "schema-stack.rb", blurb: "Stack falling migrations; create tables before you change them." },
+    pitwall: { src: "{{ '/assets/js/games/pit-wall.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "pit-wall.rb", blurb: "Grand prix race strategy: quick race, grand prix or a 10-round championship." }
+  };</script>
   <script src="{{ '/assets/js/achievements.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/scores.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/nextsteps.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  <script src="{{ '/assets/js/challenge.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/race.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/presence.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/wall.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/board.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/admin.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/konami.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
-  <script src="{{ '/assets/js/lofi.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  {%- comment -%} the soundtrack (lofi.js) loads on demand: music.js shows the ♪ button and fetches it when needed {%- endcomment %}
+  <script>window.SamukaMusicSrc = "{{ '/assets/js/lofi.js' | relative_url }}?v={{ site.time | date: '%s' }}";</script>
+  <script src="{{ '/assets/js/music.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/patchbay.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/musicdock.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/projects.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/hub.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/home.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/collection.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  <script src="{{ '/assets/js/settings.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  <script src="{{ '/assets/js/streak.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  <script src="{{ '/assets/js/tour.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  <script src="{{ '/assets/js/feeds.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/player.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/me.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/palette.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>

@@ -1,6 +1,73 @@
 # What's new in the arcade, newest first. Shown on the lobby (latest three) and on /whats-new/.
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
+- date: 2026-11-12
+  tag: fix
+  title: Easier-to-read grey text
+  text: Labels, dates and captions were a little too faint, especially in light mode. They're now dark enough to read comfortably in every skin. With calm mode on, Sidekiq Rush's preview no longer hides its queue names and Pit Wall's cars stay on the track.
+
+- date: 2026-11-12
+  tag: fix
+  title: The music player loads when you want it
+  text: The soundtrack is the biggest part of the site; it now loads the first time you reach for ♪ (or open a page that shows the music), so every other page starts faster.
+
+- date: 2026-11-12
+  tag: feature
+  title: Link previews for cards and challenges
+  text: Paste a player card or a challenge into a chat app and it now shows a proper preview, with the card itself or the game you've been challenged at.
+
+- date: 2026-11-12
+  tag: feature
+  title: A tidier tab bar
+  text: On desktop, News, Trailers, What's new and the Blog now share one Feeds tab, so the top bar reads Home, Games, Today, Leaderboards, Feeds, About.
+
+- date: 2026-11-12
+  tag: feature
+  title: A quick tour for first visits
+  text: New here? Three small pointers show where to play, what's on today and where your bests and badges collect. Replay it from Settings any time.
+  link: /?tour=1
+
+- date: 2026-11-12
+  tag: feature
+  title: Streak reminder
+  text: "Signed in with a daily streak going? Home and Today now tell you how long you have left to keep it, and a dot appears on Today. Hide it for the day, or switch it off in Settings."
+  link: /events/
+
+- date: 2026-11-12
+  tag: feature
+  title: A page for recruiters
+  text: "Hiring? Start here: one page with Samuka's experience, stack, highlights and how to get in touch, plus the résumé PDF."
+  link: /hire/
+
+- date: 2026-11-12
+  tag: feature
+  title: Calm mode
+  text: One switch in Settings for no screen shake, glitches, spinning or sliding animations. By default it follows your device's reduced-motion setting.
+  link: /settings/
+
+- date: 2026-11-11
+  tag: feature
+  title: One Settings page
+  text: Light or dark, skin, music, live cursors and your account now live together on one page. Find it in the sidebar, under More on phones, or in your avatar menu.
+  link: /settings/
+
+- date: 2026-11-11
+  tag: fix
+  title: Lighter pages
+  text: A game's code now loads when you open it (or hover its play button), instead of all four on every page.
+
+- date: 2026-11-11
+  tag: feature
+  title: A simpler bottom bar on phones
+  text: Home, Games, Today, Me and More. Today gathers the daily puzzle, live races, the leaderboards and this week's challenge in one place.
+  link: /events/
+
+- date: 2026-11-11
+  tag: feature
+  title: Challenge a friend
+  text: Finished a run you're proud of? Send it as a link. Your friend plays the exact same board whenever they like, and you both see who won. Works without an account.
+  link: /games/
+
 - date: 2026-11-11
   tag: game
   title: What next, after every game
