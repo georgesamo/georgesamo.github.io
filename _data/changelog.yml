@@ -2,6 +2,12 @@
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
 - date: 2026-11-12
+  tag: feature
+  title: Play on the go, even offline
+  text: Add the arcade to your home screen and it opens like an app. The lobby, the games page, every game and the soundtrack are kept on your device, so Gem Match and friends still play with no signal (scores, leaderboards and live games still need a connection). A new version of the site is picked up straight away.
+  link: /games/
+
+- date: 2026-11-12
   tag: fix
   title: Easier-to-read grey text
   text: Labels, dates and captions were a little too faint, especially in light mode. They're now dark enough to read comfortably in every skin. With calm mode on, Sidekiq Rush's preview no longer hides its queue names and Pit Wall's cars stay on the track.

@@ -60,7 +60,11 @@
   <link rel="manifest" href="{{ '/assets/manifest.webmanifest' | relative_url }}">
   <link rel="apple-touch-icon" href="{{ '/assets/icons/apple-touch-icon.png' | relative_url }}">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Samuka">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  {%- comment -%} service worker kill switch: `service_worker: false` in _config.yml (install.js + sw.js read it) {%- endcomment %}
+  <meta name="samuka-sw" content="{% if site.service_worker == false %}off{% else %}on{% endif %}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
