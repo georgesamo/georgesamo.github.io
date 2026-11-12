@@ -16,6 +16,8 @@
 
   var ROLE_LABEL = { guest: "guest", user: "user", samuka: "samuka · owner", nino: "nino · PM" };
   var GAMES = { gems: "Gem Match", sidekiq: "Sidekiq Rush", schema: "Schema Stack", pitwall: "Pit Wall" };
+  // /games/<id>/about/ (_data/case_studies.yml): [id, search words]
+  var CASE_STUDIES = [["sidekiq", "queues workers retries redis concurrency"], ["gems", "match-3 grid seeded daily"], ["schema", "migrations dependencies rails"], ["pitwall", "simulation racing strategy"]];
   var RANKS_HREF = "/leaderboards/#me";
   var SETTINGS_HREF = "/settings/";
 
@@ -296,6 +298,8 @@
     ];
     // arcade titles are file names ("pit-wall.rb"); prefer the friendly name
     (c.games || []).forEach(function (g) { items.push({ label: "Play " + (GAMES[g.id] || g.title), hint: "game", act: "play:" + g.id, kw: "game play " + g.id + " " + g.title }); });
+    // case studies come after the "Play …" items, so typing a game's name still offers to play it first
+    CASE_STUDIES.forEach(function (s) { items.push({ label: "How " + GAMES[s[0]] + " works", hint: "case study", href: "/games/" + s[0] + "/about/", kw: "case study about built engineering recruiter " + s[0] + " " + s[1] }); });
     items.push({ label: "Daily Gem Match", hint: "one try a day", act: "daily", kw: "puzzle today streak" });
     items.push({ label: "1v1 race", hint: "live Sidekiq Rush", act: "race", kw: "versus multiplayer duel" });
     if (c.signedIn) {

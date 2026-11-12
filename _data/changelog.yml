@@ -3,6 +3,12 @@
 #   link  optional, a page on this site
 - date: 2026-11-12
   tag: feature
+  title: How the games are built
+  text: Each game now has a short case study for anyone who'd rather read than play, covering what it is, what it shows technically and the decisions behind it. Find them under "how it's built" on every game card, or on the Hiring page.
+  link: /games/sidekiq/about/
+
+- date: 2026-11-12
+  tag: feature
   title: Find out who beat your challenge
   text: Send a challenge while signed in and you'll hear back. When a friend beats your score, your next visit shows who won and by how much, with a link to win it back on the same board. Look for the dot on Games.
 

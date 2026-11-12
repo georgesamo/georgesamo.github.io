@@ -19,4 +19,8 @@
     {%- endfor %}
   </ol>
 </details>
+{%- assign cs = site.data.case_studies | where: "id", include.id | first -%}
+{%- if cs %}
+<a class="game-about" aria-label="How {{ g.name }} is built: a short case study" href="{{ '/games/' | append: g.id | append: '/about/' | relative_url }}">how it's built →</a>
+{%- endif %}
 {%- endif -%}
