@@ -294,6 +294,8 @@
 .acct__theme.is-on { border-color: var(--hl); background: var(--hl-soft); }
 .acct__theme.is-on small { color: var(--text-2); }   /* --muted on the tinted card was 3.7:1 */
 .acct__theme input { position: absolute; opacity: 0; pointer-events: none; }
+/* the radios themselves are invisible: show the keyboard focus ring on the card around them */
+.acct__mode:has(input:focus-visible), .acct__theme:has(input:focus-visible) { outline: 2px solid var(--hl); outline-offset: 2px; }
 .acct__theme b { display: block; font: 600 14px var(--sans); color: var(--text); }
 .acct__theme small { font: 11.5px var(--mono); color: var(--muted); }
 /* swatch: left half = dark version, right half = light version */

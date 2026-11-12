@@ -50,7 +50,7 @@
     if (term.hidden) return;
     term.hidden = true;
     document.documentElement.style.overflow = "";
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
+    if (window.SamukaA11y) window.SamukaA11y.restore(lastFocus); else if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   function greet() {
     print('<pre class="ascii">' + [

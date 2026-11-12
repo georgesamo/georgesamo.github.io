@@ -164,7 +164,7 @@
       (fixed ? '<p class="lb__fixed">' + GAMES[v.game] + "</p>" : '<div class="lb__tabs" role="tablist">' + Object.keys(GAMES).map(function (g) {
         return '<button type="button" role="tab" aria-selected="' + (g === v.game) + '" data-lb-game="' + g + '">' + GAMES[g] + "</button>";
       }).join("") + "</div>") +
-      '<div class="lb__tabs lb__tabs--sub">' + Object.keys(PERIODS).filter(function (p) { return p !== "daily" || DAILY[v.game]; }).map(function (p) {
+      '<div class="lb__tabs lb__tabs--sub" role="group" aria-label="' + GAMES[v.game] + ' period">' + Object.keys(PERIODS).filter(function (p) { return p !== "daily" || DAILY[v.game]; }).map(function (p) {
         return '<button type="button" aria-pressed="' + (p === v.period) + '" data-lb-period="' + p + '">' + PERIODS[p] + "</button>";
       }).join("") + "</div></div>" +
       '<div class="lb__body" data-lb-body><p class="muted">loading…</p></div>' +
