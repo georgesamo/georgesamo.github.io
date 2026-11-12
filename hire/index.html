@@ -68,5 +68,13 @@ icon: md
         <h2 class="hire__h">Side project</h2>
         <p class="hire__side">{{ h.side_project }} <a href="{{ '/' | relative_url }}">Try the arcade →</a></p>
 
+        <h2 class="hire__h">The games, if you'd rather read than play</h2>
+        <ul class="hire__cases">
+          {%- for cs in site.data.case_studies %}
+          {%- assign g = site.data.games | where: "id", cs.id | first %}
+          <li><a href="{{ '/games/' | append: cs.id | append: '/about/' | relative_url }}"><b><span aria-hidden="true">{{ g.icon }}</span> {{ g.name }}</b><span>{{ cs.pitch }}</span></a></li>
+          {%- endfor %}
+        </ul>
+
         <p class="home-foot">Want the long version? <a href="{{ '/samuka/' | relative_url }}">Full profile</a> · <a href="{{ '/samuka/#experience' | relative_url }}">experience</a> · <a href="{{ '/samuka/#projects' | relative_url }}">projects on GitHub</a> · <a href="{{ '/samuka/#kind-words' | relative_url }}">kind words</a></p>
       </section>

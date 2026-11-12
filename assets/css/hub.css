@@ -526,6 +526,34 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .hire__career span { grid-column: 1; font-size: 13.5px; color: var(--text-2); }
 .hire__career time { grid-column: 2; grid-row: 1 / span 2; align-self: center; font: 12.5px var(--mono); color: var(--muted); white-space: nowrap; }
 .hire__side { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--text-2); }
+.hire__cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+
+/* ---------- /games/<id>/about/: one case study per game (_layouts/case-study.html) ---------- */
+.cs__pitch { margin: 0 0 16px; font-size: 17px; line-height: 1.5; color: var(--text); }
+.cs__meta { margin: 14px 0 0; font: 12.5px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.cs__meta code { font: inherit; color: var(--text-2); }
+.cs__how { min-width: 0; font-size: 15px; line-height: 1.6; color: var(--text-2); }
+.cs__how p { margin: 0 0 12px; max-width: 68ch; }
+.cs__how code { padding: 1px 5px; border-radius: 5px; background: var(--bg-soft); color: var(--text); font: 0.9em var(--mono); overflow-wrap: anywhere; }
+.cs__code { margin: 16px 0; min-width: 0; }
+.cs__code figcaption { margin-bottom: 6px; font: 12px var(--mono); color: var(--muted); }
+.cs__code pre { margin: 0; max-width: 100%; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--code-bg); color: var(--text); overflow-x: auto; font: 12.5px/1.6 var(--mono); font-variant-ligatures: none; }
+.cs__code pre code { padding: 0; background: none; color: inherit; font: inherit; overflow-wrap: normal; }
+.cs__common, .cs__lesson { font-size: 14.5px; }
+.cs__lesson b { color: var(--text); }
+.cs__related, .hire__cases { margin: 0; padding: 0; list-style: none; }
+.cs__related { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.cs__related a, .hire__cases a { display: grid; gap: 4px; height: 100%; box-sizing: border-box; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-elev); color: inherit; text-decoration: none; }
+.cs__related a:hover, .cs__related a:focus-visible, .hire__cases a:hover, .hire__cases a:focus-visible { border-color: var(--accent); }
+.cs__related b, .hire__cases b { font-size: 15px; color: var(--text); }
+.cs__related span:not([aria-hidden]), .hire__cases span:not([aria-hidden]) { font-size: 14px; line-height: 1.5; color: var(--text-2); }
+.cs .home-foot { margin-top: 24px; }
+.game-about { display: inline-block; margin: 8px 0 0; font: 12px var(--mono); color: var(--accent); }
+@media (max-width: 560px) {
+  .hire__cases, .cs__related { grid-template-columns: minmax(0, 1fr); }
+  .cs__code pre { font-size: 11.5px; padding: 12px; }
+}
+
 @media (max-width: 560px) {
   .hire__card { padding: 16px; }
   .hire__hl { grid-template-columns: 1fr; }
