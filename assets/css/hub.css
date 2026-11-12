@@ -272,7 +272,8 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   .mnav {
     position: relative; z-index: 45; flex: none;
     display: grid; grid-template-columns: repeat(6, 1fr);
-    height: calc(var(--mnav-h) + var(--safe-b)); padding-bottom: var(--safe-b);
+    /* only part of the home-indicator inset goes under the icons: all of it left them riding high */
+    height: calc(var(--mnav-h) + var(--safe-b)); padding-bottom: calc(var(--safe-b) * 0.6);
     background: var(--chrome); border-top: 1px solid var(--line);
     touch-action: manipulation;
   }
@@ -286,6 +287,9 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   .msheet__card {
     position: absolute; left: 10px; right: 10px; bottom: calc(var(--mnav-h) + 10px + var(--safe-b));
     display: grid; gap: 2px; padding: 8px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--bg-elev); box-shadow: var(--shadow);
+    /* never taller than the space above the bar: the rest scrolls inside the card */
+    max-height: calc(100% - var(--mnav-h) - var(--safe-b) - var(--safe-t) - var(--tabs-h) - 20px);
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     animation: termIn 0.25s var(--ease) both;
   }
   .msheet__card a, .msheet__card button { display: flex; align-items: center; gap: 10px; padding: 12px; border: 0; border-radius: 10px; background: transparent; color: var(--text); font: 14px var(--mono); text-decoration: none; text-align: left; cursor: pointer; }
