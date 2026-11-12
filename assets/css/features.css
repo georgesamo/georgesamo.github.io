@@ -233,9 +233,9 @@
 .lb__row--gold .lb__rank { background: var(--gold); color: #1b1404; font-weight: 700; box-shadow: 0 0 16px -4px var(--gold); }
 .lb__row--steel .lb__rank { background: #aab3bd; color: #121417; font-weight: 700; }
 .lb__row--violet .lb__rank { background: #b98cff; color: #160b26; font-weight: 700; }
-.lb__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.lb__name { min-width: 0; padding: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }   /* padding: room for the role pill's border */
 .lb__score { color: var(--accent); font-variant-numeric: tabular-nums; }
-.lb__role, .lb__you { margin-left: 6px; padding: 1px 6px; border-radius: 999px; font-size: 10.5px; border: 1px solid var(--line-strong); color: var(--muted); }
+.lb__role, .lb__you { display: inline-block; vertical-align: middle; line-height: 1.4; margin-left: 6px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; border: 1px solid var(--line-strong); color: var(--muted); }
 .lb__role--samuka { border-color: #e5383b; color: #e5383b; }
 .lb__role--nino { border-color: #b98cff; color: #b98cff; }
 :root[data-theme="light"] .lb__row--gold .lb__rank { color: #fff; }   /* light --gold is dark: #1b1404 on it was 3.4:1 */
