@@ -76,7 +76,7 @@
         var b = th.songs.slice(6);
         expect(b.map(function (s) { return s.game; })).toEqual(["sidekiq", "gems", "schema", "pitwall", "bundle"]);
         expect(b[4].hint).toContain("bundle install");
-        b.forEach(function (s, i) { expect(s.bonus).toBe(true); expect(s.locked).toBe(true); expect(s.no).toBe(6 + i); expect(s.si).toBe(6 + i); expect(s.outro >= 2).toBe(true); });
+        b.forEach(function (s, i) { expect(s.bonus).toBe(true); expect(s.locked).toBe(true); expect(s.no).toBe(6); expect(s.si).toBe(6 + i); expect(s.outro >= 2).toBe(true); });
       });
     });
     it("knows where every file-backed track hands over, for the phone player's files", function () {
@@ -95,7 +95,7 @@
     });
     it("lists the suite last, after the bonus tracks", function () {
       L().catalog().forEach(function (th) {
-        var order = th.songs.slice().sort(function (a, b) { return a.no - b.no; }).map(function (s) { return s.si; });
+        var order = th.songs.slice().sort(function (a, b) { return a.ord - b.ord; }).map(function (s) { return s.si; });
         expect(order).toEqual([0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 5]);
       });
       expect(L().order.prev("phthalo", 5)).toBe(4);   // nothing unlocked: back to the last song

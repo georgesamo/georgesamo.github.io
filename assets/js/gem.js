@@ -5,7 +5,7 @@
   if (!canvas || !canvas.getContext || canvas.__gem) return;
   canvas.__gem = true;
   var ctx = canvas.getContext("2d");
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }   // calm mode (live)
 
   /* ---- geometry: a brilliant-cut gem, y up ---- */
   var N = 8, V = [], E = [], F = [];
@@ -50,7 +50,7 @@
 
   /* ---- state ---- */
   var W = 0, H = 0, DPR = 1, scale = 1;
-  var rotY = 0.4, rotX = -0.42, velY = reduced ? 0 : 0.28, dragging = false, lastX = 0, lastY = 0, moved = 0, pointerTilt = 0, pointerTiltT = 0;
+  var rotY = 0.4, rotX = -0.42, velY = reduced() ? 0 : 0.28, dragging = false, lastX = 0, lastY = 0, moved = 0, pointerTilt = 0, pointerTiltT = 0;
   var orbitAngle = 0;
   var shatter = { t: 1, dur: 1.7, dirs: [] }; // t: 0 → 1 (1 = at rest)
   var sparks = [];
@@ -222,17 +222,17 @@
     var dt = Math.min(0.05, last ? (ts - last) / 1000 : 0.016);
     last = ts;
     if (!dragging) {
-      var base = reduced ? 0 : 0.28;
+      var base = reduced() ? 0 : 0.28;
       velY += (base - velY) * Math.min(1, dt * 1.5);
     }
     rotY += velY * dt;
-    orbitAngle += dt * (reduced ? 0 : 0.22);
+    orbitAngle += dt * (reduced() ? 0 : 0.22);
     pointerTilt += (pointerTiltT - pointerTilt) * Math.min(1, dt * 4);
     if (shatter.t < 1) shatter.t = Math.min(1, shatter.t + dt / shatter.dur);
     // a slow spin reads as smooth at 30 fps: draw every other frame unless something is moving fast
-    var calm = !dragging && shatter.t >= 1 && !sparks.length && Math.abs(velY - (reduced ? 0 : 0.28)) < 0.02;
+    var calm = !dragging && shatter.t >= 1 && !sparks.length && Math.abs(velY - (reduced() ? 0 : 0.28)) < 0.02;
     if (!calm || ts - lastDraw >= calmMs) { draw(calm ? (ts - lastDraw) / 1000 : dt); lastDraw = ts; }
-    var idle = reduced && !dragging && shatter.t >= 1 && !sparks.length && Math.abs(velY) < 0.001;
+    var idle = reduced() && !dragging && shatter.t >= 1 && !sparks.length && Math.abs(velY) < 0.001;
     if (!visible || idle || !canvas.isConnected) { running = false; return; }   // stops when the page was switched away
     requestAnimationFrame(frame);
   }
@@ -241,6 +241,7 @@
     running = true; last = 0;
     requestAnimationFrame(frame);
   }
+  window.addEventListener("samuka:calm", function () { if (canvas.isConnected) wake(); });   // calm off: spin again
 
   /* ---- input ---- */
   canvas.addEventListener("pointerdown", function (e) {
@@ -289,7 +290,7 @@
   }, own);
 
   function intro() {
-    if (!reduced) triggerShatter(false); // assemble from fragments
+    if (!reduced()) triggerShatter(false); // assemble from fragments
     wake();
   }
   if (window.__samukaReady) intro(); else window.addEventListener("samuka:ready", intro, ac ? { once: true, signal: ac.signal } : { once: true });

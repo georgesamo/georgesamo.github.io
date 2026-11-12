@@ -576,7 +576,7 @@
         var res = cars.filter(function (c) { return !c.out; }).sort(function (a, b) { return a.finishT - b.finishT; }).concat(cars.filter(function (c) { return c.out; }));
         var p = res.indexOf(me);
         var score = me.out ? 0 : (POINTS[p] || 0) * 100 + Math.max(0, startPos - 1 - p) * 60 + (fastest.car === me ? 200 : 0);
-        var b = api.best(score, { position: p + 1, rain: wasWet });
+        var b = api.best(score, { position: p + 1, rain: wasWet, kind: season ? "champ" : session.kind, length: session.length });
         best = b.best;
         if (p === 0 && !me.out) api.emit("win");
         if (p < 3 && wasWet && !me.out) api.emit("rain_podium");
@@ -703,9 +703,9 @@
                   : '<button class="btn btn--primary" type="button" data-pw-start="S">softs</button><button class="btn" type="button" data-pw-start="M">mediums</button><button class="btn" type="button" data-pw-start="H">hards</button>') +
           "</div>");
       }
-      function quickRace() { session.kind = "quick"; season = null; setup(TRACKS[Math.floor(rng() * TRACKS.length)], { length: session.length }); brief(); }
-      function gpRace() { session.kind = "gp"; season = null; setup(TRACKS[session.pick], { length: session.length, wx: session.wx, qualify: true }); brief(); }
-      function champRace() { session.kind = "champ"; setup(TRACKS[SEASON[season.round]], { length: season.length, qualify: true, paces: season.paces }); brief(); }
+      function quickRace() { api.newRun(); session.kind = "quick"; season = null; setup(TRACKS[Math.floor(rng() * TRACKS.length)], { length: session.length }); brief(); }
+      function gpRace() { api.newRun(); session.kind = "gp"; season = null; setup(TRACKS[session.pick], { length: session.length, wx: session.wx, qualify: true }); brief(); }
+      function champRace() { api.newRun(); session.kind = "champ"; setup(TRACKS[SEASON[season.round]], { length: season.length, qualify: true, paces: season.paces }); brief(); }
       function again() { if (session.kind === "gp") gpRace(); else quickRace(); }
 
       function onClick(e) {
@@ -731,6 +731,8 @@
       }
       stage.addEventListener("click", onClick);
       if (race) { setup(TRACKS[Math.floor(rng() * TRACKS.length)], { length: "full" }); brief(); start(weather !== "dry" ? "I" : "M"); }
+      // a challenge replays the challenger's quick race: same seed, same length, no menu
+      else if (api.mode === "challenge") { session.length = api.opts.length === "sprint" ? "sprint" : "full"; quickRace(); }
       else menu();
       return {
         key: function (e) {

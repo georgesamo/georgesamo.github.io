@@ -14,6 +14,26 @@ person:
     I design and run the Rails backends that hospitals and clinics depend on:
     bookings, billing, insurance, medication catalogs and HL7 FHIR integrations.
 
+# /hire/: the one-page summary for recruiters (everything else on it comes from the sections below)
+hire:
+  intro: >-
+    Senior Ruby on Rails engineer with production experience since 2018, mostly on healthcare
+    systems. I build and run the backends behind bookings, billing, insurance and partner integrations.
+  highlights:
+    - title: Healthcare backends, end to end
+      text: Bookings, patient information, medication catalogs, pricing, insurance coverage and billing for hospitals and clinics.
+    - title: Integrations partners rely on
+      text: REST APIs and HL7 FHIR integrations for healthcare partners and external vendors.
+    - title: Faster systems on legacy data
+      text: Query optimization and indexing on PostgreSQL and SQL Server platforms, and Sidekiq workflows tuned for lower sync latency.
+    - title: A good teammate
+      text: Technical planning, code reviews, production investigations, and mentoring junior developers.
+  stack: [Ruby, Ruby on Rails, PostgreSQL, Microsoft SQL Server, Sidekiq, Redis, REST APIs, HL7 FHIR, RSpec, Docker]
+  side_project: >-
+    This site. Built solo with Jekyll and plain JavaScript: four browser games, live 1v1 races and
+    leaderboards on Supabase, a soundtrack synthesized in the browser, and CI that runs browser
+    and end-to-end tests before every deploy.
+
 experience:
   - id: vian
     company: VIAN

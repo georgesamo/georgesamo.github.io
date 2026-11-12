@@ -1,0 +1,31 @@
+<!doctype html>
+{%- comment -%}
+  /c/<game>/?c=<code>: the link a challenge is shared as. Chat apps read the preview tags here
+  (the game's challenge card, assets/og/challenge-<game>.jpg); people are sent straight on to
+  /games/?c=<code>, where challenge.js opens the invite. Front matter: game (an id in _data/games.yml).
+{%- endcomment -%}
+{%- assign g = site.data.games | where: "id", page.game | first -%}
+{%- capture title %}You've been challenged at {{ g.name }} · Samuka's Arcade{% endcapture -%}
+{%- capture desc %}{{ g.tagline }} Same board, one try to beat their score. Plays in your browser, no sign-up.{% endcapture -%}
+{%- capture img %}{{ site.url }}/assets/og/challenge-{{ g.id }}.jpg{% endcapture -%}
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }}</title>
+<meta name="description" content="{{ desc | escape }}">
+<link rel="canonical" href="{{ site.url }}/games/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Samuka's Arcade">
+<meta property="og:title" content="{{ title | escape }}">
+<meta property="og:description" content="{{ desc | escape }}">
+<meta property="og:url" content="{{ site.url }}/c/{{ g.id }}/">
+<meta property="og:image" content="{{ img }}">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A {{ g.name }} challenge from Samuka's Arcade">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ title | escape }}">
+<meta name="twitter:description" content="{{ desc | escape }}">
+<meta name="twitter:image" content="{{ img }}">
+<meta name="robots" content="noindex">
+<style>body{margin:0;display:grid;place-items:center;min-height:100vh;background:#07110c;color:#e4efe8;font:15px system-ui,sans-serif}a{color:#d9b45a}</style>
+<script>location.replace({{ '/games/' | relative_url | jsonify }} + location.search + location.hash);</script>
+</head><body><p>Opening the <a href="{{ '/games/' | relative_url }}">{{ g.name }} challenge</a>…</p></body></html>

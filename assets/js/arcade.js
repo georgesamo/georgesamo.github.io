@@ -1,7 +1,7 @@
 /* Samuka · arcade shell: one modal window that hosts any registered game */
 (function () {
   "use strict";
-  var games = {}, current = null, currentId = null, modal = null, lastFocus = null;
+  var games = {}, current = null, currentApi = null, currentId = null, modal = null, lastFocus = null;
   var store = {
     get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
@@ -76,21 +76,34 @@
 
   function api(id, stage, opts) {
     opts = opts || {};
+    /* Every run has a seed, so any run can be replayed as a challenge (challenge.js). Games keep the
+     * api.rng function they got at mount; newRun() swaps the generator behind it when a run starts:
+     * a fresh random seed in free play, the given one in daily / race / challenge (same board every try). */
+    var fixed = opts.seed != null, gen = null, runSeed = null;
+    function newRun() {
+      runSeed = fixed ? String(opts.seed) : id + "-" + Math.random().toString(36).slice(2, 10);
+      gen = seeded(runSeed);
+      return runSeed;
+    }
+    newRun();
     return {
       stage: stage,
       opts: opts,
       mode: opts.mode || "free",
-      rng: opts.seed != null ? seeded(opts.seed) : Math.random,
+      rng: function () { return gen(); },
+      newRun: newRun,
+      seed: function () { return runSeed; },
       emit: function (name, data) { emit(id, name, data, opts); },
-      reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      get reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : window.matchMedia("(prefers-reduced-motion: reduce)").matches; },   // calm mode, live
       // only touch the DOM when the text actually changed (games call these every frame)
       hud: function (html) { var el = modal.querySelector("[data-hud]"); if (el.__h !== html) { el.__h = html; el.innerHTML = html; } },
       foot: function (html) { var el = modal.querySelector("[data-foot]"); if (el.__h !== html) { el.__h = html; el.innerHTML = html; } },
       best: function (score, extra) {
-        var payload = { score: score }; if (extra) for (var k in extra) payload[k] = extra[k];
+        var payload = { score: score, seed: runSeed }; if (extra) for (var k in extra) payload[k] = extra[k];
         emit(id, "over", payload, opts);
+        // a challenge is a known board: it doesn't count as a best or go on the boards
+        if (opts.mode === "daily" || opts.mode === "race" || opts.mode === "challenge") return { best: score, isNew: false };
         guestNudge(stage, score);
-        if (opts.mode === "daily" || opts.mode === "race") return { best: score, isNew: false };
         var prev = getBest(id);
         if (score > prev) { setBest(id, score); return { best: score, isNew: true }; }
         return { best: prev, isNew: false };
@@ -116,37 +129,94 @@
     };
   }
 
+  /* ---------- games load on demand ----------
+   * Each game's code (20–60 KB) is fetched the first time it's opened, or a moment earlier when a
+   * play button is hovered, focused or pressed. window.SamukaGameSrc (default.html) maps id → src. */
+  function src() { return window.SamukaGameSrc || {}; }
+  var loading = {};
+  function load(id) {
+    if (games[id]) return Promise.resolve(games[id]);
+    if (loading[id]) return loading[id];
+    var s = src()[id];
+    if (!s) return Promise.reject(new Error("unknown game " + id));
+    loading[id] = new Promise(function (resolve, reject) {
+      var el = document.createElement("script");
+      el.src = s.src; el.async = true;
+      el.onload = function () { games[id] ? resolve(games[id]) : reject(new Error(id + " didn't register")); };
+      el.onerror = function () { delete loading[id]; el.remove(); reject(new Error("couldn't load " + id)); };
+      document.head.appendChild(el);
+    });
+    return loading[id];
+  }
+  function intent(e) {
+    var b = e.target.closest && e.target.closest("[data-play]");
+    if (b) load(b.getAttribute("data-play")).catch(function () {});
+  }
+  document.addEventListener("pointerover", intent, { passive: true });
+  document.addEventListener("pointerdown", intent, { passive: true });
+  document.addEventListener("focusin", intent);
+
+  var pending = null;   // the game whose code is on its way
   function open(id, opts) {
-    if (!games[id]) return false;
+    if (!games[id] && !src()[id]) return false;
     // guests can play; the daily puzzle and live races need an account (one try a day, a name to race)
     var A = window.SamukaAuth;
     if (A && A.enabled && !A.user() && opts && (opts.mode === "daily" || opts.mode === "race")) { A.open({ reason: "arcade" }); return false; }
     if (!modal) build();
-    if (current) teardown();
+    if (current || currentId) teardown();
     lastFocus = document.activeElement;
+    if (!games[id]) {
+      // show the window right away: a short "loading" state while the game's code arrives
+      showWindow(id, opts, src()[id].title);
+      var stage = modal.querySelector("[data-stage]");
+      stage.innerHTML = '<p class="arcade__loading" role="status">loading ' + src()[id].title + "…</p>";
+      currentId = id; pending = id;
+      load(id).then(function () {
+        if (pending !== id || modal.hidden) return;   // closed or switched meanwhile
+        pending = null;
+        mount(id, opts);
+      }, function () {
+        if (pending !== id) return;
+        pending = null; currentId = null;   // nothing started, so closing or retrying sends no "closed"
+        stage.innerHTML = '<div class="arcade__overlay"><div class="arcade__card"><h3>Couldn\'t load the game</h3><p>Check your connection and try again.</p>' +
+          '<button class="btn btn--primary" type="button" data-play="' + id + '">↻ try again</button></div></div>';
+      });
+      return true;
+    }
+    showWindow(id, opts, games[id].title);
+    mount(id, opts);
+    return true;
+  }
+  function showWindow(id, opts, title) {
     modal.hidden = false;
     document.documentElement.style.overflow = "hidden";
     // the window covers the viewport, so the page behind it is only burning frames: is-arcade
     // lets the CSS drop the card previews out of rendering while a game runs
     document.documentElement.classList.add("is-arcade");
     document.querySelectorAll(".arcade-card__preview").forEach(function (pv) { setPreview(pv, false); });
-    modal.querySelector("#arcade-title").textContent = games[id].title + (opts && opts.mode && opts.mode !== "free" ? " · " + opts.mode : "");
+    modal.querySelector("#arcade-title").textContent = title + (opts && opts.mode && opts.mode !== "free" ? " · " + opts.mode : "");
     modal.querySelector("[data-hud]").innerHTML = "";
     modal.querySelector("[data-foot]").innerHTML = "";
     modal.dataset.game = id;
     var stage = modal.querySelector("[data-stage]");
     stage.innerHTML = "";
     stage.className = "arcade__stage arcade__stage--" + id;
+  }
+  function mount(id, opts) {
+    var stage = modal.querySelector("[data-stage]");
+    stage.innerHTML = "";
     currentId = id;
-    current = games[id].mount(stage, api(id, stage, opts)) || {};
+    currentApi = api(id, stage, opts);
+    current = games[id].mount(stage, currentApi) || {};
     emit(id, "start", null, opts);
     stage.focus({ preventScroll: true });
     return true;
   }
   function teardown() {
     if (current && current.destroy) current.destroy();
-    if (currentId) window.dispatchEvent(new CustomEvent("samuka:game", { detail: { game: currentId, name: "closed" } }));
-    current = null; currentId = null;
+    // a game closed while its code was still loading never started: no "closed" for it
+    if (currentId && !pending) window.dispatchEvent(new CustomEvent("samuka:game", { detail: { game: currentId, name: "closed" } }));
+    current = null; currentId = null; pending = null;
   }
   function showBests() {
     document.querySelectorAll("[data-best]").forEach(function (el) {
@@ -202,10 +272,19 @@
   window.SamukaArcade = {
     register: function (id, def) { games[id] = def; },
     open: open, close: close,
-    list: function () { return Object.keys(games).map(function (k) { return { id: k, title: games[k].title, blurb: games[k].blurb }; }); },
+    // every game the site has, loaded or not (menus, the terminal and Ctrl+P list them before any code loads)
+    list: function () {
+      var all = {}, s = src();
+      Object.keys(s).forEach(function (k) { all[k] = { id: k, title: s[k].title, blurb: s[k].blurb }; });
+      Object.keys(games).forEach(function (k) { all[k] = { id: k, title: games[k].title, blurb: games[k].blurb }; });
+      return Object.keys(all).map(function (k) { return all[k]; });
+    },
+    load: load,
+    loaded: function (id) { return !!games[id]; },
     isOpen: function () { return !!(modal && !modal.hidden); },
     current: function () { return currentId; },
     seeded: seeded,
+    seed: function () { return currentApi && currentId ? currentApi.seed() : null; },   // the running game's seed
     best: getBest,
     // bests saved on the server (scores.js) never lower a local best
     mergeBests: function (map) { Object.keys(map || {}).forEach(function (g) { if ((map[g] | 0) > getBest(g)) setBest(g, map[g] | 0); }); showBests(); },

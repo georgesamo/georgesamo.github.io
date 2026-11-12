@@ -16,7 +16,7 @@
   --line-strong: #24452f;
   --text: #e4efe8;
   --text-2: #a5b9ad;
-  --muted: #6c857a;
+  --muted: #758c82;   /* 4.6:1 on --bg-soft */
   --accent: #3ad08f;          /* 9.6:1 on --bg */
   --accent-2: #8ff0c2;
   --accent-soft: rgba(58, 208, 143, 0.12);
@@ -55,7 +55,7 @@
   --line-strong: #bfcdbb;
   --text: #0f1f17;
   --text-2: #3b4f44;
-  --muted: #6b7f74;
+  --muted: #5c6d64;   /* 4.6:1 on --bg-soft (was #6b7f74, 3.6:1) */
   --accent: #123524;          /* 13:1 on --bg */
   --accent-2: #1d6a46;
   --accent-soft: rgba(18, 53, 36, 0.08);
@@ -63,13 +63,13 @@
   --gold-soft: rgba(176, 128, 0, 0.13);
   --blue: #1f5fa8;
   --blue-soft: rgba(31, 95, 168, 0.09);
-  --green: #3f7a14;
+  --green: #3d7613;
   --green-soft: rgba(63, 122, 20, 0.07);
   --amber: #995500;
   --violet: #6a45e0;
   --cyan: #0b6f78;
   --link: #1d6a46;
-  --ruby-red: #d61f4b;
+  --ruby-red: #cb1d47;
   --hl: #123524;
   --hl-soft: rgba(18, 53, 36, 0.08);
   --chrome: color-mix(in srgb, #ffffff 82%, transparent);
@@ -359,7 +359,7 @@ main { max-width: 980px; margin: 0 auto; padding: 0 40px 64px; }
 }
 button.commit__head:hover { background: var(--bg-hover); border-color: var(--line); }
 .commit.is-open > .commit__head { background: var(--bg-elev); border-color: var(--line); }
-.commit__head--static { cursor: default; font-size: 13px; opacity: 0.85; }
+.commit__head--static { cursor: default; font-size: 13px; }
 .commit__hash { color: var(--amber); }
 .commit__refs { color: var(--accent-2); font-size: 12.5px; }
 .commit__msg { flex: 1 1 300px; min-width: 0; }
@@ -593,12 +593,19 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
   .js .code[data-type] .ln { clip-path: none; }
   .spotlight { display: none; }
 }
+/* calm mode (data-calm on <html>, set in default.html) */
+:root[data-calm] { scroll-behavior: auto; }
+:root[data-calm] *, :root[data-calm] *::before, :root[data-calm] *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; transition-delay: 0s !important; }
+:root[data-calm].js .reveal { opacity: 1; transform: none; }
+:root[data-calm].js .code[data-type] .ln { clip-path: none; }
+:root[data-calm] .spotlight { display: none; }
 
 /* ---------- phones: every tap target at least 40px tall ----------
    Buttons grow; inline links get invisible padding (cancelled by a negative margin) so the
    layout doesn't move. Inputs at 16px also stop iOS zooming in on focus. :root because the page
-   stylesheets (blog, news, features) load after this one. Leaderboard names are left out: .lb__name
-   clips overflow for its "…", which would cut the extra tap area off anyway. */
+   stylesheets (blog, news, features) load after this one. Leaderboard names can't use that trick:
+   .lb__name clips overflow for its "…", which would cut the extra area off. So the name link is made
+   tall instead (line-height) and the row gives up its vertical padding: rows stay the same height. */
 @media (max-width: 760px) {
   :root .pr-filter__btn, :root .lb__tabs button, :root .code-card__run { min-height: 40px; height: auto; }
   :root .news__search { height: 40px; font-size: 16px; }
@@ -607,4 +614,7 @@ button.commit__head:hover { background: var(--bg-hover); border-color: var(--lin
   :root .news__sources li a { display: inline-block; padding-block: 11px; margin-block: -11px; }
   :root .news__sources summary, :root .news-row__title { padding-block: 10px; margin-block: -10px; }   /* display kept: the ▸ marker stays, titles still wrap */
   :root .news-row__save { width: 40px; height: 40px; }
+  :root .lb__row { padding-block: 3px; }
+  :root .lb-mini .lb__row { padding-block: 0; }
+  :root .lb__name a { display: inline-block; vertical-align: middle; max-width: 100%; line-height: 34px; overflow: hidden; text-overflow: ellipsis; }
 }

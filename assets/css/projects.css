@@ -54,3 +54,7 @@
   .repo__graph i { transition: none; }
   .repo__graph.is-pending i { animation: none; }
 }
+/* calm mode (data-calm on <html>, set in default.html) */
+:root[data-calm] .repo { opacity: 1; transform: none; }
+:root[data-calm] .repo__graph i { transition: none; }
+:root[data-calm] .repo__graph.is-pending i { animation: none; }

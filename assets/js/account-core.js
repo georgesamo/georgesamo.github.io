@@ -17,6 +17,7 @@
   var ROLE_LABEL = { guest: "guest", user: "user", samuka: "samuka · owner", nino: "nino · PM" };
   var GAMES = { gems: "Gem Match", sidekiq: "Sidekiq Rush", schema: "Schema Stack", pitwall: "Pit Wall" };
   var RANKS_HREF = "/leaderboards/#me";
+  var SETTINGS_HREF = "/settings/";
 
   /* tabs of the account window; core tabs always show, the rest only when a module fills them */
   var TABS = [
@@ -190,7 +191,7 @@
         '<span class="acct__swatch" aria-hidden="true"><i></i><i></i></span><span><b>' + esc(SKIN_NAMES[t] || t) + "</b><small>" + esc(SKIN_NOTES[t] || "") + "</small></span></label>";
     }).join("");
     return '<fieldset class="acct__themes"><legend>mode <small class="muted">· this device</small></legend>' + modes + "</fieldset>" +
-      '<fieldset class="acct__themes"><legend>skin <small class="muted">· saved to your account</small></legend>' + skins + "</fieldset>" +
+      '<fieldset class="acct__themes"><legend>skin <small class="muted">· ' + (c.local ? "this device" : "saved to your account") + '</small></legend>' + skins + "</fieldset>" +
       (c.secretLeft ? '<p class="acct__hint">🕹 One more skin is hidden somewhere on this site. Old gamers know the way.</p>' : "");
   }
   function settingsHtml(c) {
@@ -278,12 +279,16 @@
       { label: "Lobby", hint: "home", href: "/", kw: "arcade home start" },
       { label: "Games", hint: "page", href: "/games/", kw: "arcade play" },
       { label: "Leaderboards", hint: "page", href: "/leaderboards/", kw: "scores top ranking" },
-      { label: "Events", hint: "weekly challenge", href: "/events/", kw: "week challenge" },
+      { label: "Today", hint: "daily, live, weekly", href: "/events/", kw: "events week challenge daily puzzle live 1v1" },
       { label: "Your collection", hint: "bests, badges, music", href: "/me/", kw: "me collection unlocks secrets bonus tracks" },
+      { label: "Settings", hint: "look, sound, account", href: SETTINGS_HREF, kw: "preferences options theme skin dark light mode music volume sound shuffle cursors glitches" },
+      { label: "Calm mode", hint: "settings", href: SETTINGS_HREF + "#set-comfort", kw: "reduce reduced motion animation shake glitch accessibility comfort still" },
+      { label: "Take the tour", hint: "3 quick pointers", href: "/?tour=1", kw: "help tour guide intro start new how" },
       { label: "What's new", hint: "site updates", href: "/whats-new/", kw: "changelog updates new release notes" },
       { label: "Guestbook", hint: "visitors wall", href: "/#wall", kw: "guestbook wall commit visitors" },
       { label: "Find a player", hint: "player cards", href: "/u/", kw: "card search user" },
-      { label: "Samuka", hint: "the creator · hire me", href: "/samuka/", kw: "about profile resume cv experience hire" },
+      { label: "Samuka", hint: "the creator", href: "/samuka/", kw: "about profile resume cv experience" },
+      { label: "Hiring? Start here", hint: "one-page summary", href: "/hire/", kw: "hire hiring recruiter job cv resume contact email summary" },
       { label: "News", hint: "tech & gaming", href: "/news/", kw: "news headlines feed rss tech gaming rails ruby newsletter" },
       { label: "Trailers & reviews", hint: "watch", href: "/watch/", kw: "watch video youtube trailer review games gameplay" },
       { label: "Pull requests", hint: "blog", href: "/blog/", kw: "blog posts articles" },
@@ -336,8 +341,8 @@
       { key: "card", icon: "🪪", label: "My player card", hint: "scores & badges", href: cardHref(c.name) },
       { key: "ranks", icon: "🏆", label: "My ranks", hint: "leaderboards", href: RANKS_HREF },
       { key: "badges", icon: "🎖", label: "Achievements", hint: (c.ach ? c.ach.n + "/" + c.ach.total : ""), act: "badges" },
-      { key: "appearance", icon: "🎨", label: "Appearance", hint: "mode & skin", act: "appearance" },
-      { key: "profile", icon: "⚙", label: "Account & settings", hint: "nickname, toggles", act: "profile" }
+      { key: "settings", icon: "⚙", label: "Settings", hint: "look, sound, account", href: SETTINGS_HREF },
+      { key: "profile", icon: "👤", label: "Account", hint: "nickname, your data", act: "profile" }
     ];
     if (isTeam(c.role)) items.push({ key: "board", icon: "📋", label: "Our board", hint: "team", act: "board", group: "team" });
     if (c.role === "samuka") items.push({ key: "admin", icon: "🛠", label: "Admin", hint: "owner", act: "admin", group: "team" });
@@ -391,12 +396,12 @@
         '<a href="' + esc(cardHref(c.name)) + '">🪪<span>my card</span></a>' +
         '<a href="' + RANKS_HREF + '">🏆<span>ranks</span></a>' +
         '<button type="button" data-me-act="badges">🎖<span>badges</span></button>' +
-        '<button type="button" data-me-act="profile">⚙<span>settings</span></button>' +
+        '<a href="' + SETTINGS_HREF + '">⚙<span>settings</span></a>' +
       "</div>";
   }
 
   return {
-    esc: esc, fmt: fmt, ROLE_LABEL: ROLE_LABEL, GAMES: GAMES, TABS: TABS, RANKS_HREF: RANKS_HREF,
+    esc: esc, fmt: fmt, ROLE_LABEL: ROLE_LABEL, GAMES: GAMES, TABS: TABS, RANKS_HREF: RANKS_HREF, SETTINGS_HREF: SETTINGS_HREF,
     isTeam: isTeam, roleLabel: roleLabel, initial: initial, cardHref: cardHref, isMyCard: isMyCard,
     cleanNickname: cleanNickname, achCount: achCount, bestGame: bestGame, nextIndex: nextIndex, toggleFolder: toggleFolder,
     tabOf: tabOf, collectExtras: collectExtras, visibleTabs: visibleTabs, pickTab: pickTab, tabsHtml: tabsHtml,

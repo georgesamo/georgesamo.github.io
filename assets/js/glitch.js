@@ -9,7 +9,7 @@
  */
 (function () {
   "use strict";
-  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function reduced() { return window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }   // calm mode (live)
   var role = "guest", on = false, timer = 0, flyTimer = 0, busy = false;
   var rand = function (a, b) { return a + Math.random() * (b - a); };
   var pick = function (a) { return a[(Math.random() * a.length) | 0]; };
@@ -98,7 +98,7 @@
 
   function fire(force) {
     if (!force && (!on || blocked())) return;
-    if (reduced || (role !== "samuka" && role !== "nino")) return;
+    if (reduced() || (role !== "samuka" && role !== "nino")) return;
     if (busy) return;
     busy = true;
     var kind = role === "samuka" ? "knight" : "golden";
@@ -129,7 +129,7 @@
   }
 
   function flyby() {
-    if (!on || blocked() || reduced) return;
+    if (!on || blocked() || reduced()) return;
     var el = document.createElement("span");
     el.className = "glx-fly glx-fly--" + (role === "samuka" ? "bat" : "bunny");
     el.setAttribute("aria-hidden", "true");

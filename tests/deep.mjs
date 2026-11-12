@@ -9,9 +9,9 @@
 // command palette, phone "more" sheet, mock roles (?as=, works because CI serves 127.0.0.1),
 // and the music dock.
 //
-// Errors fail the job. Warnings (visual, a11y, touch-target size) are reported in the job
-// summary and the deep-report artifact but only fail with --strict / DEEP_STRICT=1, because CI
-// fonts aren't the fonts on a real phone.
+// Errors always fail the job. Warnings (visual, a11y, touch-target size) fail it only with
+// --strict / DEEP_STRICT=1. The CI deploy runs strict; locally it's off by default, because a
+// dev machine's fonts differ from CI's and from a real phone's.
 import { chromium, devices } from "playwright";
 import { readFileSync, mkdirSync, writeFileSync, appendFileSync } from "node:fs";
 
@@ -24,7 +24,7 @@ const PAGE_PROBE = readFileSync(new URL("./probes/page.js", import.meta.url), "u
 const VISUAL_PROBE = readFileSync(new URL("./probes/visual.js", import.meta.url), "utf8");
 
 // pages on the shell layout get the module check; the rest only the generic ones
-const SHELL_PAGES = ["/", "/games/", "/leaderboards/", "/events/", "/news/", "/watch/", "/samuka/", "/blog/", "/u/", "/nino/", "/soundtrack/", "/offline/"];
+const SHELL_PAGES = ["/", "/games/", "/leaderboards/", "/events/", "/news/", "/watch/", "/samuka/", "/blog/", "/settings/", "/hire/", "/u/", "/nino/", "/soundtrack/", "/offline/"];
 const OTHER_PAGES = ["/404.html"];
 const VIEWPORTS = [
   { name: "desktop", opts: { viewport: { width: 1280, height: 800 } } },
