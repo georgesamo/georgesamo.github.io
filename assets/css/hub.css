@@ -154,7 +154,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 /* ---------- seamless page switch: thin progress line under the tabs ---------- */
 .nav-bar { position: fixed; left: 0; top: 0; z-index: 500; height: 2px; width: 0; background: linear-gradient(90deg, var(--accent), var(--hl)); box-shadow: 0 0 10px var(--accent); opacity: 0; transition: width 0.35s ease, opacity 0.3s; pointer-events: none; }
 .nav-bar.is-on { width: 70%; opacity: 1; transition: width 2.5s cubic-bezier(.1,.7,.2,1), opacity 0.1s; }
-#main h1:focus, #main h2:focus { outline: none; }
+#main:focus, #main h1:focus, #main h2:focus { outline: none; }
 
 /* ---------- testimonials ---------- */
 .tm__list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
@@ -278,6 +278,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
     touch-action: manipulation;
   }
   .mnav__item { display: grid; place-items: center; align-content: center; gap: 3px; border: 0; background: transparent; color: var(--muted); font: 10.5px var(--mono); text-decoration: none; cursor: pointer; position: relative; }
+  .mnav__item:focus-visible { outline-offset: -3px; border-radius: 10px; }   /* the bar sits on the screen edge: keep the ring inside it */
   .mnav__item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .mnav__item.is-here { color: var(--text); }
   .mnav__item.is-here svg { stroke: var(--accent); filter: drop-shadow(0 0 6px var(--accent-soft)); }

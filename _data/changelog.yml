@@ -8,6 +8,11 @@
 
 - date: 2026-11-12
   tag: fix
+  title: Better with a keyboard and screen reader
+  text: The game window, the phone "more" sheet and the first-visit tour now keep Tab inside them and hand focus back when they close. Switching pages announces the new page, the sidebar marks where you are, and the look and calm-mode choices in Settings show a focus ring.
+
+- date: 2026-11-12
+  tag: fix
   title: Easier-to-read grey text
   text: Labels, dates and captions were a little too faint, especially in light mode. They're now dark enough to read comfortably in every skin. With calm mode on, Sidekiq Rush's preview no longer hides its queue names and Pit Wall's cars stay on the track.
 
