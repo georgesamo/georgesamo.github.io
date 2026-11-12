@@ -1037,8 +1037,8 @@
   ]);
   var SONG_RING = {
     mood: "the theme · the hook, passed from the piano to the fuzz bass, the leads and the strings", bpm: 110, bars: R1.bars, v2: true, duckDepth: 0.42, sec: R1,
-    trim: { "phthalo": 5.9, "knight": 4.9, "golden": 3.6 },
-    lift_golden: { "boot": 0.0, "pulse": -2.3, "theme": -1.5, "break": -1.8, "drive": 0.0, "decay": 3.1 },
+    trim: { "phthalo": 5.9, "knight": 4.9, "golden": 4.2 },
+    lift_golden: { "boot": 0.0, "pulse": -2.6, "theme": -1.8, "break": -2.3, "drive": 0.0, "decay": 2.6 },
     lift_knight: { "boot": 0.0, "pulse": -4.5, "theme": -1.6, "break": -1.4, "drive": 0.0, "decay": 0.6 },
     lift_phthalo: { "boot": 0.0, "pulse": -5.8, "theme": -1.9, "break": -2.8, "drive": 0.0, "decay": 1.0 },
     arpDirect: true, tone: { sub: -2.5, punch: 2, pres: 2 },
@@ -1087,8 +1087,8 @@
   ]);
   var SONG_DARK = {
     mood: "the horror scene · a music box in the dark, and what hears it", bpm: 120, bars: D2.bars, v2: true, duckDepth: 0.4, sec: D2,
-    trim: { "phthalo": 6.2, "knight": 4.9, "golden": 3.8 },
-    lift_golden: { "dark room": -3.7, "something moves": -6.2, "it hunts": -2.1, "hide": -2.8, "found": 0.0, "black": 1.7 },
+    trim: { "phthalo": 6.2, "knight": 4.9, "golden": 4.4 },
+    lift_golden: { "dark room": -3.7, "something moves": -6.3, "it hunts": -2.2, "hide": -2.9, "found": 0.0, "black": 1.7 },
     lift_knight: { "dark room": -3.6, "something moves": -10.4, "it hunts": -6.2, "hide": -3.1, "found": 0.0, "black": 1.4 },
     lift_phthalo: { "dark room": -5.7, "something moves": -9.6, "it hunts": -4.9, "hide": -5.2, "found": 0.0, "black": -0.1 },
     tone: { sub: -3, punch: 2, pres: 2 },
@@ -1140,8 +1140,8 @@
   ]);
   var SONG_CHAR = {
     mood: "the character study · one melody, from a piano at 3 AM to the drop and back", bpm: 132, bars: S3.bars, v2: true, duckDepth: 0.3, sec: S3,
-    trim: { "phthalo": 5.9, "knight": 5.0, "golden": 3.7 },
-    lift_golden: { "3 AM": 5.0, "memory": -0.9, "the climb": 2.1, "release": -1.8, "the truth": 5.2, "becoming": 0.0, "after": 4.5 },
+    trim: { "phthalo": 5.9, "knight": 5.0, "golden": 4.5 },
+    lift_golden: { "3 AM": 5.9, "memory": -1.5, "the climb": 1.3, "release": -1.4, "the truth": 4.5, "becoming": 0.0, "after": 4.6 },
     lift_knight: { "3 AM": 4.5, "memory": -1.0, "the climb": 3.0, "release": -1.7, "the truth": 4.7, "becoming": 0.0, "after": 4.5 },
     lift_phthalo: { "3 AM": 3.2, "memory": -1.9, "the climb": -0.2, "release": -2.1, "the truth": 3.5, "becoming": 0.0, "after": 3.3 },
     ramp: 2, tone: { sub: -2, punch: 1.5, pres: 1.5 },
@@ -1190,8 +1190,8 @@
   var SONG_DUEL = {
     mood: "the battle of wits · drum & bass, two hackers trading one phrase", bpm: 172, bars: W4.bars, v2: true, duckDepth: 0.36, sec: W4,
     kitLift: { industrial: 4 },   // drum & bass at 172: here the kit should drive, even in the quiet industrial mix
-    trim: { "phthalo": -1.6, "knight": 0.5, "golden": 0.8 },
-    lift_golden: { "login": 3.0, "handshake": 1.8, "exploit": 0.0, "stalemate": -1.3, "root": -0.4, "logout": 2.5 },
+    trim: { "phthalo": -1.6, "knight": 0.5, "golden": 1.0 },
+    lift_golden: { "login": 2.8, "handshake": 1.7, "exploit": 0.0, "stalemate": -1.4, "root": -0.4, "logout": 2.5 },
     lift_knight: { "login": 6.4, "handshake": 4.2, "exploit": 0.0, "stalemate": -1.4, "root": -0.4, "logout": 2.7 },
     lift_phthalo: { "login": 7.0, "handshake": 5.1, "exploit": 0.0, "stalemate": -1.5, "root": -0.2, "logout": 2.6 },
     init: function (o, t) { o.sub = makeSub(o, t); o.reese = makeReese(o, t); o.la = makeLead2(o, t, o.P.lead, -0.7); o.lb = makeLead2(o, t, o.P.lead2, 0.7); },
@@ -1271,7 +1271,7 @@
   var SONG_EPI = {
     mood: "the epilogue · one melody, many voices, 432 Hz, home to G", bpm: 60, bars: P5.bars, ref: 432, v2: true, duckDepth: 0.6, sec: P5,
     trim: { "phthalo": 8.4, "knight": 8.2, "golden": 7.3 },
-    lift_golden: { "remember": 0.9, "what remains": -1.7, "the weight lifts": 0.1, "grief": 2.4, "last light": 0.0 },
+    lift_golden: { "remember": 1.2, "what remains": -1.4, "the weight lifts": 0.4, "grief": 2.4, "last light": 0.0 },
     lift_knight: { "remember": 1.1, "what remains": -2.3, "the weight lifts": 0.4, "grief": 2.1, "last light": 0.0 },
     lift_phthalo: { "remember": 0.4, "what remains": -2.2, "the weight lifts": 0.2, "grief": 1.8, "last light": 0.0 },
     ramp: 1, tone: { sub: -1.5, punch: 1, pres: 3 },
