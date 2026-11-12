@@ -3,6 +3,12 @@
 #   link  optional, a page on this site
 - date: 2026-11-12
   tag: feature
+  title: Your week, on the Today page
+  text: A new card sums up your week since Monday. It shows your best score in each game you played, with an arrow when you beat last week, plus your streak, how many games you played, and any badges or director's cuts you unlocked. Nothing played yet? It points you to today's daily.
+  link: /events/
+
+- date: 2026-11-12
+  tag: feature
   title: Play on the go, even offline
   text: Add the arcade to your home screen and it opens like an app. The lobby, the games page, every game and the soundtrack are kept on your device, so Gem Match and friends still play with no signal (scores, leaderboards and live games still need a connection). A new version of the site is picked up straight away.
   link: /games/
