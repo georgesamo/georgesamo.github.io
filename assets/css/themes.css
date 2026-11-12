@@ -10,12 +10,13 @@
   --bg: #060506; --bg-elev: #0d0b0c; --bg-soft: #141112; --bg-hover: #1b1617;
   --line: #201a1b; --line-strong: #33282a;
   --text: #ece6e4; --text-2: #b3a9a7; --muted: #867c7a;
-  --accent: #e5383b; --accent-2: #ff6b6b; --accent-soft: rgba(229, 56, 59, 0.13);
+  /* #e94245 (was #e5383b): ≥ 4.5:1 on every knight dark background, hover rows included */
+  --accent: #e94245; --accent-2: #ff6b6b; --accent-soft: rgba(229, 56, 59, 0.13);
   --gold: #9aa3ad; --gold-soft: rgba(154, 163, 173, 0.14);
   --blue: #9aa3ad; --blue-soft: rgba(154, 163, 173, 0.12);
   --green: #d6c9c4; --green-soft: rgba(214, 201, 196, 0.05);
   --amber: #c9a27a; --violet: #b7a9b8; --cyan: #a8b7bd; --link: #ff6b6b; --ruby-red: #ff4b4b;
-  --hl: #e5383b; --hl-soft: rgba(229, 56, 59, 0.16);
+  --hl: #e94245; --hl-soft: rgba(229, 56, 59, 0.16);
   --chrome: #000000; --code-bg: #030202; --status-ink: #ff4b4b;
   --dot: rgba(229, 56, 59, 0.05);
   --shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9);

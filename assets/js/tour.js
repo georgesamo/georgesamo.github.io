@@ -77,8 +77,10 @@
     lastFocus = document.activeElement;
     document.body.appendChild(box);
     show(0);
+    window.SamukaTrack && window.SamukaTrack("tour:start");
   }
-  function end() {
+  function end(how) {
+    if (box) window.SamukaTrack && window.SamukaTrack("tour:" + (how || "closed"));
     set("done");
     document.querySelectorAll(".tour-target").forEach(function (e) { e.classList.remove("tour-target"); });
     if (box) {
@@ -107,16 +109,16 @@
 
   document.addEventListener("click", function (e) {
     if (!box || !e.target.closest) return;
-    if (e.target.closest("[data-tour-next]")) { if (at >= STEPS.length - 1) end(); else show(at + 1); return; }
-    if (e.target.closest("[data-tour-skip]")) { end(); return; }
+    if (e.target.closest("[data-tour-next]")) { if (at >= STEPS.length - 1) end("done"); else show(at + 1); return; }
+    if (e.target.closest("[data-tour-skip]")) { end("skip"); return; }
     // following what a step points at ends the tour (they're exploring)
-    if (anchor && anchor.contains(e.target)) end();
+    if (anchor && anchor.contains(e.target)) end("explore");
   });
-  document.addEventListener("keydown", function (e) { if (box && e.key === "Escape") { e.preventDefault(); end(); } });
+  document.addEventListener("keydown", function (e) { if (box && e.key === "Escape") { e.preventDefault(); end("skip"); } });
   window.addEventListener("resize", place);
   window.addEventListener("scroll", place, { passive: true, capture: true });
-  window.addEventListener("samuka:page", function () { if (box) end(); setTimeout(maybeStart, 1200); });
-  window.addEventListener("samuka:game", function (e) { if (box && e.detail && e.detail.name === "start") end(); });
+  window.addEventListener("samuka:page", function () { if (box) end("left"); setTimeout(maybeStart, 1200); });
+  window.addEventListener("samuka:game", function (e) { if (box && e.detail && e.detail.name === "start") end("game"); });
   function boot() { setTimeout(maybeStart, 1500); }
   if (document.readyState === "complete") boot(); else window.addEventListener("load", boot);
 

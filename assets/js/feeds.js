@@ -21,6 +21,7 @@
     m.hidden = false;
     b.setAttribute("aria-expanded", "true");
     place();
+    window.SamukaTrack && window.SamukaTrack("feeds:open");
     if (focusFirst) { var here = m.querySelector(".is-here") || items()[0]; if (here) here.focus(); }
   }
   function close(refocus) {
