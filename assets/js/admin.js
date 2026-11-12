@@ -101,14 +101,15 @@
   }
   async function paintAnalytics() {
     var c = db(), d;
-    if (!c) d = { totals: { views: 12, visitors: 5 }, days: [{ day: "2026-11-07", views: 4, visitors: 2 }, { day: "2026-11-08", views: 8, visitors: 3 }], pages: [{ path: "/", views: 7 }, { path: "/samuka/", views: 5 }], sections: [{ name: "experience", reads: 3 }], referrers: [{ host: "linkedin.com", visitors: 2 }], plays: [{ game: "gems", plays: 4 }] };
+    if (!c) d = { totals: { views: 12, visitors: 5 }, days: [{ day: "2026-11-07", views: 4, visitors: 2 }, { day: "2026-11-08", views: 8, visitors: 3 }], pages: [{ path: "/", views: 7 }, { path: "/samuka/", views: 5 }], sections: [{ name: "experience", reads: 3 }], referrers: [{ host: "linkedin.com", visitors: 2 }], plays: [{ game: "gems", plays: 4 }], uses: [{ name: "tour:done", uses: 3 }, { name: "feeds:open", uses: 2 }] };
     else { var r = await c.rpc("analytics_summary", { p_days: anDays }); if (r.error) throw r.error; d = r.data; }
     body('<div class="adm__stats">' + [7, 30, 90].map(function (n) { return '<button class="wall__mod" type="button" data-an-days="' + n + '"' + (n === anDays ? ' style="color:var(--hl)"' : "") + ">" + n + " days</button>"; }).join("") + '<span class="muted">no cookies · no IPs · per-tab ids only</span></div>' +
       '<div class="an-tiles"><div><b>' + d.totals.views + "</b><span>page views</span></div><div><b>" + d.totals.visitors + "</b><span>visits</span></div><div><b>" +
       (d.plays || []).reduce(function (n, p) { return n + p.plays; }, 0) + "</b><span>games started</span></div></div>" +
       chart(d.days || []) +
       '<div class="an-lists">' + listBox("pages", d.pages || [], "path", "views") + listBox("profile sections read", d.sections || [], "name", "reads") +
-      listBox("came from", d.referrers || [], "host", "visitors") + listBox("games", d.plays || [], "game", "plays") + "</div>");
+      listBox("came from", d.referrers || [], "host", "visitors") + listBox("games", d.plays || [], "game", "plays") +
+      listBox("features used", d.uses || [], "name", "uses") + "</div>");
   }
   /* ---------- JavaScript errors from players' browsers (errors.js → supabase/errors.sql) ---------- */
   var errDays = 7;

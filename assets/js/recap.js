@@ -130,6 +130,7 @@
       var m = build({ now: now, scores: r[0].scores, badges: badgeInfo(r[0].achs), tracks: trackInfo(r[0].achs), streak: r[1], names: names });
       el.classList.toggle("is-empty", m.empty);
       body.innerHTML = html(m);
+      window.SamukaTrack && window.SamukaTrack("recap:" + (m.empty ? "empty" : "shown"), true);
     });
   }
   function fresh() { server = null; render(); }

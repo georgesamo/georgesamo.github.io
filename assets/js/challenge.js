@@ -156,12 +156,14 @@
       "</div>";
     document.body.appendChild(d);
     d.__c = c;
+    window.SamukaTrack && window.SamukaTrack("challenge:open:" + c.game);
     var b = d.querySelector("[data-chal-accept]"); if (b) setTimeout(function () { b.focus(); }, 30);
   }
   function accept(c) {
     closeInvite();
     var Ar = window.SamukaArcade; if (!Ar) return;
     active = c;
+    window.SamukaTrack && window.SamukaTrack("challenge:accept:" + c.game);
     Ar.open(c.game, { mode: "challenge", seed: c.seed, length: c.length, challenge: c });
   }
   function fromUrl() {
@@ -182,7 +184,7 @@
     if (t.hasAttribute("data-chal-send")) {
       var c = decode(t.getAttribute("data-chal-send"));
       if (c && c.id) backend().register(c);   // in the background: the share sheet needs this click
-      if (c) share(c, t);
+      if (c) { share(c, t); window.SamukaTrack && window.SamukaTrack("challenge:send:" + c.game); }
     }
   });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && document.querySelector(".chal")) closeInvite(); });
@@ -257,6 +259,7 @@
       if (html && !document.hidden && visible(el)) onScreen = true;
     });
     if (onScreen && news.length) {
+      window.SamukaTrack && window.SamukaTrack("challenge:beaten-seen");
       backend().seen(news[0].at);
       shown = rows; news = [];
     }
@@ -281,6 +284,7 @@
   }
   document.addEventListener("click", function (e) {
     if (e.target.closest && e.target.closest("[data-chal-news-hide]")) { shown = []; paintNews(); }
+    if (e.target.closest && e.target.closest("[data-chal-rematch]")) window.SamukaTrack && window.SamukaTrack("challenge:rematch");
   });
   window.addEventListener("samuka:auth", function () { loadNews(); });
   window.addEventListener("samuka:page", function () { loadNews(); });
