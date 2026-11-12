@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>errors.js fixture</title></head>
+<body>
+  <script>
+    // rows the reporter would send land in __rows; with ?via=fetch they go through a stubbed fetch instead
+    window.__rows = []; window.__fetches = []; window.__errorEvents = 0;
+    if (/via=fetch/.test(location.search)) {
+      window.SITE = { supabase: { url: "https://example.supabase.co/", anon_key: "sb_publishable_test" }, build: "1762900000" };
+      window.fetch = function (url, opts) { window.__fetches.push({ url: url, opts: opts }); return Promise.resolve({ ok: true }); };
+    } else {
+      window.__samukaErrorSink = function (row) { window.__rows.push(row); };
+    }
+  </script>
+  <script src="../../assets/js/errors.js"></script>
+  <script src="thrower.js"></script>
+  <script>window.addEventListener("error", function () { window.__errorEvents++; });</script>
+</body></html>
