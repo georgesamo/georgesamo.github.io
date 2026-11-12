@@ -313,6 +313,8 @@
   .acct { padding: 0; }
   .acct__win { width: 100%; height: 100%; max-height: none; border-radius: 0; }
   .acct-btn .acct__role { display: none; }
+  /* signed in, only the avatar is left: a box the size of the icon buttons beside it, the avatar in its centre */
+  .acct-btn.is-in { justify-content: center; min-width: 34px; padding: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   :root[data-skin="golden"] .ide::after { animation: none; opacity: 0.7; }

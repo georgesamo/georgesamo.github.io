@@ -271,7 +271,7 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
   }
   .mnav {
     position: relative; z-index: 45; flex: none;
-    display: grid; grid-template-columns: repeat(6, 1fr);
+    display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);   /* one equal column per item, however many there are */
     /* only part of the home-indicator inset goes under the icons: all of it left them riding high */
     height: calc(var(--mnav-h) + var(--safe-b)); padding-bottom: calc(var(--safe-b) * 0.6);
     background: var(--chrome); border-top: 1px solid var(--line);
