@@ -23,7 +23,9 @@ var PAGES = "samuka-pages-" + BUILD;      // per build: dropped on activate, nev
 var ASSETS = "samuka-assets-v1";          // kept across deploys; hashed entries the new build no longer links are pruned
 var MAX_ASSETS = 200, MAX_PAGES = 60;
 var SHELL = ["/", "/games/", "/offline/"];   // "/" carries the whole layout + every game's script URL
-var STATIC = ["/assets/manifest.webmanifest", "/assets/favicon.svg", "/assets/icons/icon-192.png", "/assets/samuka-resume.pdf"];
+var STATIC = ["/assets/manifest.webmanifest", "/assets/favicon.svg", "/assets/icons/icon-192.png", "/assets/samuka-resume.pdf",
+  // the self-hosted fonts every page uses (assets/css/fonts.css), so the offline shell draws in the real fonts
+  "/assets/fonts/inter-latin.woff2", "/assets/fonts/jetbrains-mono-latin.woff2", "/assets/fonts/jetbrains-mono-italic-latin.woff2"];
 
 var HASHED = /^\?v=[0-9a-f]{10}$/;
 var ASSET_LINK = /\/assets\/[^"'?\s>]+\.(?:js|css)\?v=[0-9a-f]{10}(?=["'\s>])/g;
