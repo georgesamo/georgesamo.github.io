@@ -68,21 +68,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  {%- if site.supabase.url != "" %}
+  {%- comment -%} the leaderboard / player card / sign-in calls go here right after the scripts run: open the connection while the page loads {%- endcomment %}
+  <link rel="preconnect" href="{{ site.supabase.url }}" crossorigin>
+  {%- endif %}
   {%- comment -%} fonts load without blocking the first paint (display=swap shows system fonts until they arrive) {%- endcomment %}
   {%- assign fonts = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Noto+Sans+Georgian:wght@500&display=swap" %}
   <link rel="preload" as="style" href="{{ fonts }}">
   <link rel="stylesheet" href="{{ fonts }}" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="{{ fonts }}"></noscript>
-  <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/arcade.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/themes.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/projects.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/blog.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/lofi.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/features.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/hub.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/games.css' | relative_url }}?v={{ site.time | date: '%s' }}">
-  <link rel="stylesheet" href="{{ '/assets/css/news.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+  {%- comment -%} all styles in one render-blocking file: site.css inlines main, arcade, themes, projects, blog, lofi, features, hub, games and news (in that order) {%- endcomment %}
+  <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}?v={{ site.time | date: '%s' }}">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
