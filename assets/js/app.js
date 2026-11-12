@@ -401,8 +401,14 @@
     }
     bundleOut.innerHTML += '<span class="ok">Bundle complete! ' + gems.length + " Gemfile dependencies, " + gems.length + " gems now installed.</span>\nUse `bundle info [gemname]` to see where a bundled gem is installed.";
     // a hidden gem: the first bundle install unlocks The Monologue (bonus track 11) in every theme
-    var Lo = window.SamukaLofi;
-    if (Lo && Lo.bonus && Lo.bonus.unlock("bundle")) bundleOut.innerHTML += '\n<span class="ok">♪ Installing monologue 1.0.0 (a hidden gem) · it\'s in the ♪ player now</span>';
+    // The soundtrack (lofi.js) may not be loaded yet: SamukaMusic loads it on demand, then the unlock runs
+    var gem = function (Lo) {
+      if (!Lo || !Lo.bonus || !Lo.bonus.unlock("bundle")) return;
+      bundleOut.innerHTML += '\n<span class="ok">♪ Installing monologue 1.0.0 (a hidden gem) · it\'s in the ♪ player now</span>';
+      bundleOut.scrollTop = bundleOut.scrollHeight;
+    };
+    if (window.SamukaLofi) gem(window.SamukaLofi);
+    else if (window.SamukaMusic && window.SamukaMusic.ready) window.SamukaMusic.ready(gem);
     bundleOut.scrollTop = bundleOut.scrollHeight;
     setTimeout(function () { gems.forEach(function (g) { g.classList.remove("is-installed"); }); bundleBtn.disabled = false; }, 800);
   });
