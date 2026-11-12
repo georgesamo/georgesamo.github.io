@@ -1,11 +1,16 @@
 /* A stand-in for assets/js/lofi.js in tests/music.test.js: exposes SamukaLofi and mounts a ♪ button
- * the way the real one does (skipped if a .lofi-btn is already there). */
+ * the way the real one does (skipped if a .lofi-btn is already there). Like the real one, bonus.unlock
+ * returns true only the first time a track is opened. window.__lofiLoads counts how often it ran. */
 (function () {
-  var calls = window.__lofiCalls = [];
+  window.__lofiLoads = (window.__lofiLoads || 0) + 1;
+  var calls = window.__lofiCalls = [], open = {};
   window.SamukaLofi = {
     start: function () { calls.push("start"); },
     stop: function () { calls.push("stop"); },
-    bonus: { unlock: function (g) { calls.push("unlock:" + g); return true; } }
+    bonus: {
+      unlock: function (g) { calls.push("unlock:" + g); if (open[g]) return false; open[g] = 1; return true; },
+      open: function (g) { return !!open[g]; }
+    }
   };
   var bar = document.querySelector(".tabs__actions");
   if (!bar || bar.querySelector(".lofi-btn")) return;
