@@ -2291,10 +2291,12 @@
     if (o.pick == null) { var r = rotation(o.theme).filter(function (x) { return x !== o.si; }); o.pick = r[Math.floor(Math.random() * r.length)]; }
     return o.pick;
   }
-  // how the tracks are listed and numbered: the five songs, the bonus tracks, and the suite last
+  // how the tracks are listed: the five songs, the bonus tracks, and the suite last. They're numbered by what's
+  // open in that theme, so the numbers run 1, 2, 3... with no gaps or repeats whatever has been unlocked
+  // (a locked track gets the number it would take if it opened now)
   var LIST = [0, 1, 2, 3, 4, 6, 7, 8, 9, 5];
-  function posOf(si) { return LIST.indexOf(si) + 1; }
-  function lastPos(th) { var n = 5; LIST.forEach(function (si, i) { if (siOpen(th, si)) n = Math.max(n, i + 1); }); return n; }
+  function posOf(si, th) { var n = 1, at = LIST.indexOf(si); for (var i = 0; i < at; i++) if (siOpen(th, LIST[i])) n++; return n; }
+  function lastPos(th) { return LIST.filter(function (si) { return siOpen(th, si); }).length; }
 
   /* ---------- pre-rendered tracks ----------
    * Live synthesis depends on the listener's machine: when the audio thread misses a deadline, short drum
@@ -2637,7 +2639,7 @@
     if (!cur) return null;
     if (cur.media) mSync();
     var tm = times();
-    var base = { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: posOf(cur.si), si: cur.si, of: Math.max(lastPos(cur.theme), posOf(cur.si)), bonus: cur.si >= 6, bpm: Math.round(15 / cur.six), loop: cur.loop, paused: paused, pos: tm.pos, dur: tm.dur };
+    var base = { name: cur.P.titles[cur.si], theme: cur.theme, themeName: cur.P.name, no: posOf(cur.si, cur.theme), si: cur.si, of: Math.max(lastPos(cur.theme), posOf(cur.si, cur.theme)), bonus: cur.si >= 6, bpm: Math.round(15 / cur.six), loop: cur.loop, paused: paused, pos: tm.pos, dur: tm.dur };
     var outro = cur.s >= cur.song.bars * 16 && cur.tgt ? " · outro → " + cur.P.titles[cur.tgt.si] : "";
     base.bar = Math.min(cur.song.bars - 1, Math.floor(cur.s / 16)); base.bars = cur.song.bars; base.outro = !!outro;
     base.style = (cur.song.chapter ? "the director's cut · " + cur.song.chapter(base.bar, cur.theme) : cur.song.mood) + outro;
@@ -2821,11 +2823,11 @@
     catalog: function () {
       return Object.keys(THEMES).map(function (k) {
         var P = THEMES[k];
-        var songs = SONGS.map(function (s, i) { return { si: i, no: posOf(i), title: P.titles[i], mood: s.mood, bpm: Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round((s.bars + s.outroBars) * 4 * 60 / (s.bpm * P.bpm)) }; });
-        songs.push({ si: 5, no: posOf(5), title: P.titles[5], mood: CUT_MOOD, bpm: bpmRange(P), bars: SONG_CUT.bars, outro: SONG_CUT.outroBars, secs: Math.round(trackSecs(k, 5)), suite: true, locked: !suiteOpen(k), heard: heardCount(k) });
+        var songs = SONGS.map(function (s, i) { return { si: i, no: posOf(i, k), ord: LIST.indexOf(i),title: P.titles[i], mood: s.mood, bpm: Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round((s.bars + s.outroBars) * 4 * 60 / (s.bpm * P.bpm)) }; });
+        songs.push({ si: 5, no: posOf(5, k), ord: LIST.indexOf(5),title: P.titles[5], mood: CUT_MOOD, bpm: bpmRange(P), bars: SONG_CUT.bars, outro: SONG_CUT.outroBars, secs: Math.round(trackSecs(k, 5)), suite: true, locked: !suiteOpen(k), heard: heardCount(k) });
         BONUS.forEach(function (b) {
           var s = b.song;
-          songs.push({ si: b.si, no: posOf(b.si), title: P.titles[b.si], mood: s.mood, bpm: s.range ? Math.round(s.range[0] * P.bpm) + "–" + Math.round(s.range[1] * P.bpm) : Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round(trackSecs(k, b.si)), bonus: true, game: b.game, gameName: b.name, locked: !bonusOpen(b.game) });
+          songs.push({ si: b.si, no: posOf(b.si, k), ord: LIST.indexOf(b.si),title: P.titles[b.si], mood: s.mood, bpm: s.range ? Math.round(s.range[0] * P.bpm) + "–" + Math.round(s.range[1] * P.bpm) : Math.round(s.bpm * P.bpm), bars: s.bars, outro: s.outroBars, secs: Math.round(trackSecs(k, b.si)), bonus: true, game: b.game, gameName: b.name, locked: !bonusOpen(b.game) });
         });
         return { theme: k, name: P.name, songs: songs };
       });
