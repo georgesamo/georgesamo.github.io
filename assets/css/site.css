@@ -4,6 +4,7 @@
 # most on a phone's first visit. Edit the individual files; the build inlines them here, and
 # scripts/optimize.mjs minifies and content-hashes the result like any other asset.
 ---
+{% include_relative fonts.css %}
 {% include_relative main.css %}
 {% include_relative arcade.css %}
 {% include_relative themes.css %}

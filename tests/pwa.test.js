@@ -151,6 +151,21 @@
       expect(r("GET", ORIGIN + "/assets/js/gem.js", "no-cors")).toBe("asset");        // unhashed: never cache-first
       expect(r("GET", ORIGIN + "/assets/js/app.js?v=2", "no-cors")).toBe("asset");
       expect(r("GET", ORIGIN + "/assets/icons/icon-192.png", "no-cors")).toBe("asset");
+      expect(r("GET", ORIGIN + "/assets/fonts/inter-latin.woff2", "cors")).toBe("asset");  // self-hosted fonts: network first
+    });
+    it("precaches the fonts the layout preloads, and every precached font file exists", async function () {
+      var sw = await text("../sw.js"), html = await text("../_layouts/default.html"), css = await text("../assets/css/fonts.css");
+      var preloaded = (html.match(/\/assets\/fonts\/[\w-]+\.woff2/g) || []);
+      expect(preloaded.length).toBe(2);
+      preloaded.forEach(function (f) { expect(sw).toContain('"' + f + '"'); });
+      var precached = sw.match(/"\/assets\/fonts\/[\w-]+\.woff2"/g) || [];
+      expect(precached.length).toBe(3);
+      for (var i = 0; i < precached.length; i++) {
+        var f = precached[i].slice(1, -1);
+        expect(css).toContain("url(../fonts/" + f.split("/").pop() + ")");
+        var res = await fetch(".." + f, { method: "HEAD", cache: "no-store" });
+        expect(res.ok).toBe(true);
+      }
     });
     it("leaves backend, auth, cross-origin, audio, the worker itself and writes to the network", async function () {
       var w = await worker(), r = w.api.route;

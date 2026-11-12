@@ -65,19 +65,16 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   {%- comment -%} service worker kill switch: `service_worker: false` in _config.yml (install.js + sw.js read it) {%- endcomment %}
   <meta name="samuka-sw" content="{% if site.service_worker == false %}off{% else %}on{% endif %}">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   {%- if site.supabase.url != "" %}
   {%- comment -%} the leaderboard / player card / sign-in calls go here right after the scripts run: open the connection while the page loads {%- endcomment %}
   <link rel="preconnect" href="{{ site.supabase.url }}" crossorigin>
   {%- endif %}
-  {%- comment -%} fonts load without blocking the first paint (display=swap shows system fonts until they arrive) {%- endcomment %}
-  {%- assign fonts = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Noto+Sans+Georgian:wght@500&display=swap" %}
-  <link rel="preload" as="style" href="{{ fonts }}">
-  <link rel="stylesheet" href="{{ fonts }}" media="print" onload="this.media='all'">
-  <noscript><link rel="stylesheet" href="{{ fonts }}"></noscript>
-  {%- comment -%} all styles in one render-blocking file: site.css inlines main, arcade, themes, projects, blog, lofi, features, hub, games and news (in that order) {%- endcomment %}
+  {%- comment -%} self-hosted fonts (@font-face in assets/css/fonts.css, display=swap shows system fonts until they arrive).
+       Every page uses the latin Inter and JetBrains Mono files, so start them now instead of after site.css is parsed. {%- endcomment %}
+  <link rel="preload" as="font" type="font/woff2" href="{{ '/assets/fonts/inter-latin.woff2' | relative_url }}" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="{{ '/assets/fonts/jetbrains-mono-latin.woff2' | relative_url }}" crossorigin>
+  {%- comment -%} all styles in one render-blocking file: site.css inlines fonts, main, arcade, themes, projects, blog, lofi, features, hub, games and news (in that order) {%- endcomment %}
   <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}?v={{ site.time | date: '%s' }}">
 </head>
 <body>
