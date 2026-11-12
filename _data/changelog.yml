@@ -8,6 +8,27 @@
   link: /games/
 
 - date: 2026-11-12
+  tag: feature
+  title: How the games are built
+  text: Each game now has a short case study for anyone who'd rather read than play, covering what it is, what it shows technically and the decisions behind it. Find them under "how it's built" on every game card, or on the Hiring page.
+  link: /games/sidekiq/about/
+
+- date: 2026-11-12
+  tag: feature
+  title: Find out who beat your challenge
+  text: Send a challenge while signed in and you'll hear back. When a friend beats your score, your next visit shows who won and by how much, with a link to win it back on the same board. Look for the dot on Games.
+
+- date: 2026-11-12
+  tag: fix
+  title: Better with a keyboard and screen reader
+  text: The game window, the phone "more" sheet and the first-visit tour now keep Tab inside them and hand focus back when they close. Switching pages announces the new page, the sidebar marks where you are, and the look and calm-mode choices in Settings show a focus ring.
+
+- date: 2026-11-12
+  tag: fix
+  title: Broken things get noticed
+  text: If a page or game hits a JavaScript error on your device, the site now sends a short, anonymous note (what broke, on which page, and the browser, e.g. "Safari 17 on iOS") so it can be fixed without you having to report it. No account, nickname, email or IP is attached.
+
+- date: 2026-11-12
   tag: fix
   title: Easier-to-read grey text
   text: Labels, dates and captions were a little too faint, especially in light mode. They're now dark enough to read comfortably in every skin. With calm mode on, Sidekiq Rush's preview no longer hides its queue names and Pit Wall's cars stay on the track.
