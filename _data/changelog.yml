@@ -2,6 +2,11 @@
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
 - date: 2026-11-12
+  tag: feature
+  title: Find out who beat your challenge
+  text: Send a challenge while signed in and you'll hear back. When a friend beats your score, your next visit shows who won and by how much, with a link to win it back on the same board. Look for the dot on Games.
+
+- date: 2026-11-12
   tag: fix
   title: Easier-to-read grey text
   text: Labels, dates and captions were a little too faint, especially in light mode. They're now dark enough to read comfortably in every skin. With calm mode on, Sidekiq Rush's preview no longer hides its queue names and Pit Wall's cars stay on the track.
