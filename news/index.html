@@ -69,7 +69,7 @@ icon: rss
     {%- endfor %}
   </ol>
 
-  {%- comment -%} markets tab: scripts/fetch_markets.rb → _data/markets.json (Claude-analyzed catalysts + tracked calls) {%- endcomment -%}
+  {%- comment -%} markets tab: scripts/fetch_markets.rb → _data/markets.json (catalysts read by the free rules in scripts/markets_rules.rb + tracked calls) {%- endcomment -%}
   <div class="mk" data-news-markets hidden>
     {%- if mk.generated_at %}
     {%- assign mood = mk.mood.score | default: 0 | plus: 100 | divided_by: 2.0 -%}
@@ -169,7 +169,7 @@ icon: rss
       </section>
     </div>
     {%- endif %}
-    <p class="news__fine muted">Market stories come from Finnhub; Claude reads each one and says which stocks it may move, which way and why. Calls are scored against the real price after 3 days. Research for fun, not financial advice.</p>
+    <p class="news__fine muted">Market stories come from Finnhub. Built-in finance rules (no AI) read each one: which stocks it may move, which way, and the phrases behind it. Calls are scored against the real price after 3 days. Research for fun, not financial advice.</p>
   </div>
 
   <p class="news__none muted" data-news-none hidden># no stories match</p>
