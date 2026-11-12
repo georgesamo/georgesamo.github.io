@@ -18,6 +18,64 @@
 .news__dot--tech { background: var(--blue); }
 .news__dot--gaming { background: var(--violet); }
 .news__dot--dev { background: var(--accent); }
+.news__dot--markets { background: var(--mk-up); box-shadow: 3px 0 0 -1px var(--mk-down); }
+
+/* ---------- markets tab (scripts/fetch_markets.rb → _data/markets.json) ----------
+   Up/down keep their market meaning in every skin, so they get their own tokens instead of
+   the skin's accent (which is red in "knight"). Arrows carry the meaning too, not just colour. */
+.news { --mk-up: #4fd98a; --mk-down: #ff7a7a; --mk-up-soft: rgba(79, 217, 138, 0.13); --mk-down-soft: rgba(255, 122, 122, 0.13); }
+:root[data-theme="light"] .news { --mk-up: #136c35; --mk-down: #b4231b; --mk-up-soft: rgba(19, 108, 53, 0.09); --mk-down-soft: rgba(180, 35, 27, 0.08); }
+.mk[hidden] { display: none; }
+.mk__strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-top: 0; }
+.mk__cell { min-width: 0; padding: 12px 14px; border-left: 1px solid var(--line); }
+.mk__cell:first-child { border-left: 0; }
+.mk__cell p { margin: 0; }
+.mk__label { font: 11px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mk__value { margin-top: 3px !important; font: 600 19px/1.25 var(--mono); color: var(--text); }
+.mk__value--up { color: var(--mk-up); }
+.mk__value--down { color: var(--mk-down); }
+.mk__sub { margin-top: 3px !important; font: 11.5px var(--mono); }
+.mk__chg--up { color: var(--mk-up); }
+.mk__chg--down { color: var(--mk-down); }
+.mk__gauge { position: relative; height: 6px; margin: 9px 0 4px !important; border-radius: 99px; background: linear-gradient(90deg, var(--mk-down), var(--line-strong) 50%, var(--mk-up)); }
+.mk__gauge i { position: absolute; top: -4px; width: 3px; height: 14px; margin-left: -1.5px; border-radius: 2px; background: var(--text); }
+
+.mk__sectors { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 10px 12px; list-style: none; border: 1px solid var(--line); border-top: 0; }
+.mk__sector { padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; font: 11.5px var(--mono); color: var(--text-2); }
+.mk__sector b { font-weight: 600; }
+.mk__sector--up { border-color: var(--mk-up); background: var(--mk-up-soft); }
+.mk__sector--up b { color: var(--mk-up); }
+.mk__sector--down { border-color: var(--mk-down); background: var(--mk-down-soft); }
+.mk__sector--down b { color: var(--mk-down); }
+
+.mk-dir { font-weight: 600; }
+.mk-dir--bullish { color: var(--mk-up); }
+.mk-dir--bearish { color: var(--mk-down); }
+.mk-dir--neutral { color: var(--text-2); }
+.mk-impact { display: inline-flex; gap: 2px; margin-right: 2px; }
+.mk-impact i { width: 4px; height: 10px; border-radius: 1px; background: var(--line-strong); }
+.mk-impact i.on { background: var(--hl); }
+.mk-tickers { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px !important; }
+.mk-t { display: inline-block; padding: 1px 7px; border: 1px solid var(--line); border-radius: 6px; font: 600 11.5px/1.6 var(--mono); color: var(--text-2); white-space: nowrap; }
+.mk-t--bullish { color: var(--mk-up); border-color: var(--mk-up); background: var(--mk-up-soft); }
+.mk-t--bearish { color: var(--mk-down); border-color: var(--mk-down); background: var(--mk-down-soft); }
+.mk-wrong { margin-top: 6px !important; font: 11.5px/1.5 var(--mono); }
+
+.mk__cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; margin-top: 14px; }
+.mk__box { min-width: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-elev); }
+.mk__h { margin: 0 0 6px; font: 600 12px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-2); }
+.mk__h small { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.mk__h--sub { margin-top: 14px; }
+.mk__rows { margin: 0; padding: 0; list-style: none; }
+.mk__rows li { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); }
+.mk__rows li:first-child { border-top: 0; }
+.mk__rows .mk-t { flex: none; min-width: 64px; text-align: center; }
+.mk__row-txt { min-width: 0; font-size: 13.5px; line-height: 1.45; color: var(--text); overflow-wrap: anywhere; }
+.mk__row-txt a { color: var(--text); }
+.mk__row-txt a:hover { color: var(--accent-2); }
+.mk__row-txt small { display: block; font: 11.5px var(--mono); }
+.mk__date { flex: none; min-width: 52px; font: 600 12px var(--mono); color: var(--hl); }
+.mk__none { margin: 4px 0; font: 12.5px var(--mono); }
 
 .news__list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-top: 0; }
 .news__list[hidden] { display: none; }
@@ -46,7 +104,7 @@
 .news-row__save:hover { color: var(--text); background: var(--bg-elev); border-color: var(--line); }
 .news-row__save.is-on { color: var(--hl); }
 .news__none, .news__empty { margin: 0; padding: 18px 16px; border: 1px solid var(--line); border-top: 0; font: 13px var(--mono); }
-.news__none[hidden] { display: none; }
+.news__none[hidden], .news__meta[hidden], .news__empty[hidden] { display: none; }
 .news__fine { margin: 14px 2px 0; font: 11.5px var(--mono); }
 
 /* lobby card: the latest headlines */
@@ -62,6 +120,11 @@
   .news__search { flex: 1 1 100%; }
   .news-row { padding: 12px; gap: 8px; }
   .news-row__title { font-size: 15px; }
+  .mk__strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mk__cell:nth-child(3) { border-left: 0; }
+  .mk__cell:nth-child(n + 3) { border-top: 1px solid var(--line); }
+  .mk__value { font-size: 17px; }
+  .mk__cols { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* ---------- /watch/: trailers + reviews (assets/js/watch.js) ---------- */

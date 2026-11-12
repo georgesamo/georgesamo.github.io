@@ -14,3 +14,11 @@ platforms :windows do
 end
 
 gem "webrick", "~> 1.8"
+
+# Claude API client for scripts/fetch_markets.rb (the /news/ markets tab); not used by Jekyll
+gem "anthropic", "~> 2.8", require: false
+
+# logic tests for scripts/fetch_markets.rb (bundle exec ruby tests/fetch_markets_test.rb)
+group :test do
+  gem "minitest", "~> 5.25"
+end
