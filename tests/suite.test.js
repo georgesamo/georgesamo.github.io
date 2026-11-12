@@ -20,30 +20,42 @@
   describe("suite · catalog", function () {
     it("lists a locked sixth track in every theme", function () {
       L().catalog().forEach(function (th) {
-        expect(th.songs).toHaveLength(10);
+        expect(th.songs).toHaveLength(11);
         var s = th.songs[5];
-        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(326);
+        expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(270);
       });
     });
-    it("is a full-length piece: about as long as all five songs together", function () {
-      var s = L().catalog()[0].songs, five = s.slice(0, 5).reduce(function (a, x) { return a + x.secs; }, 0);
-      expect(Math.abs(s[5].secs - five) < 60).toBe(true);
-      expect(s[5].secs).toBeGreaterThan(Math.max.apply(null, s.slice(0, 5).map(function (x) { return x.secs; })));
-      expect(s[5].bpm).toBe("60–172");
+    it("is a full-length piece in balanced chapters: each a minute to a minute and three quarters", function () {
+      ["phthalo", "knight", "golden"].forEach(function (th) {
+        var c = L().catalog().filter(function (x) { return x.theme === th; })[0].songs, s = c[5], m = L().suite.marks(th);
+        expect(s.secs > 540 && s.secs < 720).toBe(true);
+        expect(s.secs).toBeGreaterThan(Math.max.apply(null, c.slice(0, 5).map(function (x) { return x.secs; })));
+        m.forEach(function (x, i) { var len = (i + 1 < m.length ? m[i + 1].at : s.secs) - x.at; expect(len > 55 && len < 115).toBe(true); });
+      });
+      expect(L().catalog()[0].songs[5].bpm).toBe("60–172");
+    });
+    it("makes every song about half a minute longer with a section of its own", function () {
+      var want = [["rise", "soar"], ["the chase", "cornered"], ["skyline", "open sky"], ["liquid", "rush"], ["letters"]];
+      want.forEach(function (ids, si) { var got = L().layout("phthalo", si).bars.map(function (b) { return b.id; }); ids.forEach(function (id) { expect(got.indexOf(id) >= 0).toBe(true); }); });
+      var secs = L().catalog()[0].songs.slice(0, 5).map(function (x) { return x.secs; });
+      expect(secs.every(function (x) { return x >= 155; })).toBe(true);
+    });
+    it("plays Golden 10% slower than before (0.99x), so Ring Zero runs at 109", function () {
+      expect(L().catalog()[2].songs[0].bpm).toBe(109);
     });
     it("gives every song an outro that counts towards its length", function () {
       L().catalog().forEach(function (th) { th.songs.slice(0, 5).forEach(function (s) { expect(s.outro >= 2).toBe(true); }); });
     });
     it("marks where each chapter of the director's cut starts, in order", function () {
       var m = L().suite.marks("golden");
-      expect(m).toHaveLength(10);
+      expect(m).toHaveLength(8);
       expect(m[0].at).toBe(0);
       expect(m.every(function (x, i) { return !i || x.at > m[i - 1].at; })).toBe(true);
-      expect(m[0].name).toBe("cold open"); expect(m[9].name).toBe("dawn");
+      expect(m[0].name).toBe("cold open"); expect(m[7].name).toBe("dawn");
     });
     it("gives each palette's cut a chapter of its own", function () {
-      expect(["phthalo", "knight", "golden"].map(function (th) { return L().suite.marks(th)[4].name; })).toEqual(["the monologue", "the warehouse", "the dance break"]);
-      expect(L().suite.marks("phthalo")[3].name).toBe(L().suite.marks("knight")[3].name);
+      expect(["phthalo", "knight", "golden"].map(function (th) { return L().suite.marks(th)[3].name; })).toEqual(["the monologue", "the warehouse", "the dance break"]);
+      expect(L().suite.marks("phthalo")[2].name).toBe(L().suite.marks("knight")[2].name);
     });
     it("exposes player controls", function () {
       ["pause", "resume", "prev", "next", "seekTime", "skip", "setLoop", "volume"].forEach(function (k) { expect(typeof L()[k]).toBe("function"); });
@@ -59,20 +71,21 @@
 
   describe("bonus tracks", function () {
     function secs(si) { return L().catalog()[0].songs[si].secs; }
-    it("adds four locked bonus tracks, one per arcade game, in every theme", function () {
+    it("adds five locked bonus tracks, one per arcade game and the monologue, in every theme", function () {
       L().catalog().forEach(function (th) {
         var b = th.songs.slice(6);
-        expect(b.map(function (s) { return s.game; })).toEqual(["sidekiq", "gems", "schema", "pitwall"]);
+        expect(b.map(function (s) { return s.game; })).toEqual(["sidekiq", "gems", "schema", "pitwall", "bundle"]);
+        expect(b[4].hint).toContain("bundle install");
         b.forEach(function (s, i) { expect(s.bonus).toBe(true); expect(s.locked).toBe(true); expect(s.no).toBe(6); expect(s.si).toBe(6 + i); expect(s.outro >= 2).toBe(true); });
       });
     });
     it("knows where every file-backed track hands over, for the phone player's files", function () {
       var h = L().handoffs();
-      expect(Object.keys(h).length).toBe(30);
-      // an outro keeps its song's tempo: Ring Zero hands over after 64 + 4 bars at 110 bpm (the file starts at 0.05 s)
-      expect(Math.abs(h["phthalo-1"] - (0.05 + 68 * 4 * 60 / 110)) < 0.01).toBe(true);
-      expect(Math.abs(h["golden-4"] - (0.05 + 100 * 4 * 60 / (172 * 1.1))) < 0.01).toBe(true);
-      expect(h["knight-6"] > 600).toBe(true);
+      expect(Object.keys(h).length).toBe(33);
+      // an outro keeps its song's tempo: Ring Zero hands over after 80 + 4 bars at 110 bpm (the file starts at 0.05 s)
+      expect(Math.abs(h["phthalo-1"] - (0.05 + 84 * 4 * 60 / 110)) < 0.01).toBe(true);
+      expect(Math.abs(h["golden-4"] - (0.05 + 124 * 4 * 60 / (172 * 0.99))) < 0.01).toBe(true);
+      expect(h["knight-6"] > 500).toBe(true);
     });
     it("starts with shuffle off and remembers the choice", function () {
       var was = L().shuffle();
@@ -83,23 +96,32 @@
     it("lists the suite last, after the bonus tracks", function () {
       L().catalog().forEach(function (th) {
         var order = th.songs.slice().sort(function (a, b) { return a.ord - b.ord; }).map(function (s) { return s.si; });
-        expect(order).toEqual([0, 1, 2, 3, 4, 6, 7, 8, 9, 5]);
+        expect(order).toEqual([0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 5]);
       });
       expect(L().order.prev("phthalo", 5)).toBe(4);   // nothing unlocked: back to the last song
     });
-    it("runs to the asked lengths: techno 3-4 min, the crescendo about 3, the dark loop about 3, the race 4", function () {
-      expect(secs(6) >= 180 && secs(6) <= 240).toBe(true);
-      expect(secs(7) >= 165 && secs(7) <= 185).toBe(true);
-      expect(secs(8) >= 175 && secs(8) <= 200).toBe(true);
-      expect(L().catalog()[0].songs[8].bpm).toBe(123);
-      expect(Math.abs(secs(9) - 240) <= 6).toBe(true);
+    it("runs to the asked lengths: about three minutes each, the race faster (116 bpm), the monologue short", function () {
+      expect(secs(6) >= 180 && secs(6) <= 210).toBe(true);
+      expect(L().catalog()[0].songs[6].bpm).toBe("124–146");
+      expect(secs(7) >= 160 && secs(7) <= 185).toBe(true);
+      expect(secs(8) >= 150 && secs(8) <= 180).toBe(true);
+      expect(L().catalog()[0].songs[8].bpm).toBe("136–160");
+      expect(Math.abs(secs(9) - 223) <= 6).toBe(true);
+      expect(L().catalog()[0].songs[9].bpm).toBe(116);
+      expect(secs(10) >= 90 && secs(10) <= 110).toBe(true);
     });
-    it("runs the race backwards for 15-20 seconds, about halfway through, in every palette", function () {
+    it("follows each game: three queues and a Redis flush, matches and power-ups, levels and a rollback", function () {
+      var ids = function (si) { return L().layout("phthalo", si).bars.map(function (b) { return b.id; }); };
+      ["workers", "backlog", "autoscale", "rate limit", "redis flush", "batch ×2", "drained"].forEach(function (id) { expect(ids(6).indexOf(id) >= 0).toBe(true); });
+      ["new board", "matching", "cascade", "power-ups", "bundle", "last moves", "board clear"].forEach(function (id) { expect(ids(7).indexOf(id) >= 0).toBe(true); });
+      ["level 1", "level up", "level 2", "db:rollback", "level 3", "four rows", "deployed"].forEach(function (id) { expect(ids(8).indexOf(id) >= 0).toBe(true); });
+    });
+    it("runs the race's replay for half a minute (backwards, scrubbing, fast-forwarding), about halfway through, in every palette", function () {
       ["phthalo", "knight", "golden"].forEach(function (th) {
         var lay = L().layout(th, 9), rep = lay.bars.filter(function (b) { return b.id === "the replay"; });
-        expect(rep).toHaveLength(7);
-        var a = rep[0].t, b = lay.bars[lay.bars.indexOf(rep[6]) + 1].t, mid = (a + b) / 2 / lay.end;
-        expect(b - a >= 15 && b - a <= 20).toBe(true);
+        expect(rep).toHaveLength(15);
+        var a = rep[0].t, b = lay.bars[lay.bars.indexOf(rep[14]) + 1].t, mid = (a + b) / 2 / lay.end;
+        expect(b - a >= 28 && b - a <= 36).toBe(true);
         expect(mid > 0.4 && mid < 0.6).toBe(true);
       });
     });
@@ -121,15 +143,23 @@
       expect([0, 1, 2, 3, 4].map(function (si) { return O.next("phthalo", si); })).toEqual([1, 2, 3, 4, 0]);
       expect(O.prev("phthalo", 0)).toBe(4);
     });
-    it("adds unlocked bonus tracks to the rotation after the five songs, never the director's cut", function () {
-      set({ open: { knight: 1 }, bonus: { sidekiq: 1, schema: 1 } });
+    it("adds unlocked bonus tracks and then the director's cut to the rotation, in the listed order", function () {
+      set({ open: { knight: 1 }, bonus: { sidekiq: 1, schema: 1, bundle: 1 } });
       var O = L().order;
-      expect([0, 1, 2, 3, 4, 6, 8].map(function (si) { return O.next("knight", si); })).toEqual([1, 2, 3, 4, 6, 8, 0]);
-      expect(O.prev("knight", 0)).toBe(8);
+      expect([0, 1, 2, 3, 4, 6, 8, 10, 5].map(function (si) { return O.next("knight", si); })).toEqual([1, 2, 3, 4, 6, 8, 10, 5, 0]);
+      expect(O.prev("knight", 0)).toBe(5);    // round the back: the suite is listed last
+      expect(O.prev("knight", 5)).toBe(10);
       expect(O.prev("knight", 8)).toBe(6);
       expect(O.prev("knight", 6)).toBe(4);
-      expect(O.next("knight", 5)).toBe(0);
-      expect(O.prev("knight", 5)).toBe(8);   // the suite is listed last: ⏮ goes back to the last open bonus track
+      expect(O.next("phthalo", 4)).toBe(6);   // phthalo's cut is still locked: it stays out
+      expect(O.next("phthalo", 10)).toBe(0);
+    });
+    it("unlocks the monologue in every theme with bundle install", function () {
+      expect(L().bonus.open("bundle")).toBe(false);
+      expect(L().bonus.unlock("bundle")).toBe(true);
+      L().catalog().forEach(function (th) { expect(th.songs[10].locked).toBe(false); expect(th.songs[10].si).toBe(10); });
+      expect(L().catalog().map(function (th) { return th.songs[10].title; })).toEqual(["The Monologue", "Monologue in the Dark", "Golden Monologue"]);
+      document.querySelectorAll(".ach-toast").forEach(function (el) { el.remove(); });
     });
   });
 
