@@ -74,7 +74,7 @@ class MarketsTest < Minitest::Test
   def test_without_keys_nothing_changes
     saved = ENV.to_h.slice("FINNHUB_API_KEY", "ANTHROPIC_API_KEY")
     ENV.delete("FINNHUB_API_KEY"); ENV.delete("ANTHROPIC_API_KEY")
-    assert_equal Markets.load_previous, Markets.run
+    assert_nil Markets.run, "no keys: nothing to write"
   ensure
     saved.each { |k, v| ENV[k] = v }
   end

@@ -338,11 +338,12 @@ module Markets
 
   # ---------------------------------------------------------------- run
 
+  # The new markets.json contents, or nil when the API keys are missing (keep the last file).
   def run(now: Time.now.utc)
     prev = load_previous
     unless ENV["FINNHUB_API_KEY"].to_s != "" && ENV["ANTHROPIC_API_KEY"].to_s != ""
       warn "markets: FINNHUB_API_KEY / ANTHROPIC_API_KEY not set, keeping the last _data/markets.json"
-      return prev
+      return nil
     end
 
     items = Array(prev["items"])
@@ -395,11 +396,11 @@ module Markets
 end
 
 if $PROGRAM_NAME == __FILE__
-  out = Markets.run
+  out = Markets.run or exit # no keys: the last file stays as it is
   json = JSON.pretty_generate(out) + "\n"
   if ARGV.include?("--dry-run")
     puts json
-  elsif out.any?
+  else
     File.write(Markets::OUT, json)
     s = out["status"] || {}
     warn "wrote #{Array(out['items']).size} catalysts, #{Array(out['calls']).count { |c| c['evaluated_at'].nil? }} open calls " \
