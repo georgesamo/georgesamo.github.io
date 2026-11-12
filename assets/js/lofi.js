@@ -468,19 +468,21 @@
   // e.g. moves: { "it hunts": { land: 0.4, grow: 2, drums: 2 } } - the hunt starts under its full height and
   // reaches it two bars in, the way a band builds rather than a switch flipping.
   function movesOf(song, theme) { return song["moves_" + theme] || song.moves || {}; }
+  // a bar's section id: song.sec(bar).id for the songs and the cut, song.part(bar) for the bonus tracks
+  function secId(song, bar) { return song.sec ? song.sec(bar).id : song.part ? song.part(bar) : null; }
   function secStart(song, bar) {
     var st = song.secStarts || (song.secStarts = []);
-    if (st[bar] == null) { var id = song.sec(bar).id, b = bar; while (b > 0 && song.sec(b - 1).id === id) b--; st[bar] = b; }
+    if (st[bar] == null) { var id = secId(song, bar), b = bar; while (b > 0 && secId(song, b - 1) === id) b--; st[bar] = b; }
     return st[bar];
   }
   function dynFromSections(song, theme) {
     var lift = song["lift_" + theme] || {}, ramp = song.ramp || 0.25, mv = movesOf(song, theme), pts = [], prev = null;
     for (var b = 0; b < song.bars; b++) {
-      var id = song.sec(b).id, v = lift[id] || 0;
+      var id = secId(song, b), v = lift[id] || 0;
       if (prev === null) { pts.push([0, v]); prev = v; continue; }
       if (v === prev) continue;
       var m = mv[id] || {}, end = b + 1, last = pts[pts.length - 1][0];
-      while (end < song.bars && song.sec(end).id === id) end++;
+      while (end < song.bars && secId(song, end) === id) end++;
       var land = m.land != null ? m.land : 1, grow = Math.max(0, Math.min(m.grow || 0, end - b - 0.25)), at = prev + (v - prev) * land;
       // going down, the level eases off over the last beat(s) of the louder section; going up, it waits for the new
       // section's downbeat and moves in a few tens of milliseconds there, where the entrance covers it. Ramping up
@@ -534,8 +536,9 @@
   }
   function scheduleDyn(o, t) {
     var song = o.song;
-    if (!o.dyn || !song.sec) return;
-    var cache = song.dynBy || (song.dynBy = {}), pts = cache[o.theme] || (cache[o.theme] = dynFromSections(song, o.theme)), g = o.dyn.gain, barLen = o.six * 16, base = Math.pow(10, (o.trim || 0) / 20), bar0 = o.s / 16;
+    if (!o.dyn || !(song.sec || song.part)) return;
+    var trim = o.trim != null ? o.trim : (song.level && song.level[o.theme]) || 0;   // a bonus track's makeSky level
+    var cache = song.dynBy || (song.dynBy = {}), pts = cache[o.theme] || (cache[o.theme] = dynFromSections(song, o.theme)), g = o.dyn.gain, barLen = o.six * 16, base = Math.pow(10, trim / 20), bar0 = o.s / 16;
     var lvl = function (d) { return base * Math.pow(10, d / 20); };
     // seconds from bar0 to a (fractional) bar: a tempo-mapped track (the director's cut) reads its own step times
     var tm = song.tempo ? stepTimes(o.theme, o.si) : null, last = tm ? tm.length - 1 : 0;
@@ -732,11 +735,11 @@
           [64, 76, 6], [70, 79, 2], [72, 83, 8], [80, 81, 4], [84, 79, 4], [88, 76, 8],
           [96, 75, 6], [102, 78, 2], [104, 83, 8], [112, 81, 4], [116, 78, 4], [120, 75, 8]],
     sec: function (bar) {
-      if (bar < 8) return { id: "boot", arp: 1, arpCut: 480 + bar * 150, pulse: bar >= 4, mix: { arp: 1.3 } };
-      if (bar < 16) return { id: "pulse", arp: 1, arpCut: 1600, bass: 1, fuzz: 520 + (bar - 8) * 70, drums: bar >= 12 ? 1 : 0, kv: 0.35 + (bar - 12) * 0.12, fill: bar === 15, drop: bar === 15, mix: { arp: 1.3, fuzz: Math.min(0.8, 0.3 + (bar - 8) * 0.17) } };
+      if (bar < 8) return { id: "boot", arp: 1, arpCut: 900 + bar * 100, pulse: bar >= 4, mix: { arp: 2.6 } };
+      if (bar < 16) return { id: "pulse", arp: 1, arpCut: 1700, bass: 1, fuzz: 900, drums: bar >= 12 ? 1 : 0, kv: 0.7, fill: bar === 15, drop: bar === 15, mix: { arp: 2.2, fuzz: 1.2 } };
       if (bar < 32) return { id: "theme", arp: 1, arpCut: 2100, bass: 1, fuzz: 1400, drums: bar < 24 ? 1 : 2, stab: 1, lead: bar >= 24, crash: bar === 16 || bar === 24, fill: bar === 23 || bar === 31, mix: { arp: 1.3 } };
       // rise: the new melody alone over a lighter groove and a string bed; soar: both leads, the full kit, the stabs
-      if (bar < 40) return { id: "rise", up: 1, arp: 0.85, arpCut: 1700 + (bar - 32) * 90, bass: 1, fuzz: 1300, drums: 2, lead: 1, pad: 1, crash: bar === 32, fill: bar === 39, mix: { arp: 1.3, fuzz: 0.8 } };
+      if (bar < 40) return { id: "rise", up: 1, arp: 0.85, arpCut: 2000, bass: 1, fuzz: 1300, drums: 2, lead: 1, pad: 1, crash: bar === 32, fill: bar === 39, mix: { arp: 1.3, fuzz: 0.8 } };
       if (bar < 48) return { id: "soar", up: 1, arp: 1, arpCut: 2600, bass: 2, fuzz: 2000, drums: 3, stab: 2, lead: 1, both: 1, crash: bar === 40 || bar === 44, fill: bar === 47, mix: { arp: 1.3 } };
       if (bar < 56) return { id: "break", arp: 0.6, arpCut: 900, pad: 1, lead: 1, sub: 1, riser: bar === 52, roll: bar >= 54, drop: bar === 55, mix: { arp: 1.3 } };
       if (bar < 72) return { id: "drive", arp: 1, arpCut: 2700, bass: 2, fuzz: 2100, drums: 3, stab: 2, lead: 1, pad: bar >= 64, crash: bar === 56 || bar === 64, fill: bar === 63 || bar === 71, mix: { arp: 1.3 } };
@@ -744,33 +747,36 @@
     }
   };
   var SONG_RING = {
+    flat_golden: [12.0, 12.0, 12.0, 12.0, 10.8, 10.5, 10.4, 10.2, 6.3, 6.5, 7.6, 7.5, 6.6, 6.6, 6.4, 6.1, 3.8, 5.1, 5.4, 6.0, 7.0, 6.5, 5.8, 6.1, -1.9, -0.0, -1.2, 0.3, -0.7, -0.5, -0.8, -0.6, -1.9, -1.6, -2.3, -2.1, -2.3, -2.3, -1.7, -1.9, -2.4, -1.9, -2.3, -2.3, -2.5, -2.5, -2.0, -2.3, 1.5, 0.5, 0.9, 0.8, 1.2, 1.6, 0.0, -1.2, -2.3, -2.0, -1.6, -1.4, -1.6, -1.2, -1.5, -1.3, -2.3, -1.2, -1.9, -0.9, -1.6, -1.4, -2.0, -1.7, 2.0, 1.8, 2.3, 2.7, 3.3, 3.6, 3.3, 3.2],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [12.0, 12.0, 11.8, 11.2, 9.8, 8.6, 8.7, 8.2, 4.6, 4.9, 5.5, 5.7, 5.8, 6.1, 5.1, 3.5, 2.8, 4.8, 6.2, 5.3, 6.6, 6.4, 6.1, 6.0, -1.9, -0.6, -1.3, 0.3, -0.7, -0.5, -0.9, -0.3, -2.2, -1.9, -2.7, -2.5, -2.5, -2.4, -1.8, -2.0, -3.2, -2.5, -2.8, -2.7, -3.2, -2.9, -2.3, -2.5, 2.2, 1.1, 2.5, 2.3, 3.1, 3.1, 1.4, -0.3, -3.1, -2.2, -2.3, -1.9, -2.0, -1.2, -2.3, -1.6, -4.0, -3.2, -3.4, -2.8, -2.9, -3.0, -3.1, -2.7, 0.5, 0.5, 1.5, 1.7, 2.5, 2.7, 2.6, 2.5],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [12.0, 12.0, 12.0, 12.0, 11.0, 10.6, 9.9, 9.7, 7.6, 7.0, 9.2, 9.1, 7.1, 7.5, 7.8, 5.9, 2.0, 5.9, 6.4, 6.8, 8.0, 8.0, 7.2, 7.0, -3.0, 0.1, -1.8, 0.4, -1.1, -1.1, -1.6, -0.4, -3.4, -2.6, -3.4, -3.1, -3.5, -3.6, -2.7, -2.3, -4.0, -2.7, -3.2, -3.3, -3.7, -3.2, -2.6, -2.5, 0.9, -0.1, 0.6, 0.6, 0.8, 1.4, 0.2, -1.0, -4.1, -2.6, -2.3, -2.2, -2.1, -1.6, -2.3, -1.7, -4.2, -3.0, -3.5, -2.4, -3.5, -3.0, -3.6, -3.1, 1.0, 0.9, 1.2, 1.3, 2.1, 2.5, 2.4, 2.2],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "the theme · a fuzz-bass stomp over a pulse that never stops", bpm: 110, bars: 80, v2: true, duckDepth: 0.42, sec: T1.sec,
     trim: { "phthalo": 7.3, "knight": 5.0, "golden": 4.0 },
-    lift_golden: { "boot": 0.0, "pulse": -0.8, "theme": -1.2, "rise": -1.5, "soar": 0.0, "break": -2.1, "drive": 0.0, "decay": 0.2 },
-    lift_knight: { "boot": 0.0, "pulse": -0.3, "theme": -0.6, "rise": -1.2, "soar": 0.0, "break": -0.7, "drive": 0.0, "decay": -1.2 },
-    lift_phthalo: { "boot": 0.0, "pulse": -4.6, "theme": -2.1, "rise": -2.0, "soar": 0.0, "break": -4.8, "drive": 0.0, "decay": -2.9 },
+    lift_golden: { "boot": 0.0, "pulse": 0.0, "theme": 0.0, "rise": 0.0, "soar": 0.0, "break": 0.0, "drive": 0.0, "decay": 0.0 },
+    lift_knight: { "boot": 0.0, "pulse": 0.0, "theme": 0.0, "rise": 0.0, "soar": 0.0, "break": 0.0, "drive": 0.0, "decay": 0.0 },
+    lift_phthalo: { "boot": 0.0, "pulse": 0.0, "theme": 0.0, "rise": 0.0, "soar": 0.0, "break": 0.0, "drive": 0.0, "decay": 0.0 },
     arpDirect: true, tone: { sub: -2.5, punch: 2, pres: 2 },
     init: function (o, t) { o.sub = makeSub(o, t); o.lead = makeLead2(o, t, o.P.lead, -0.35); o.lb = makeLead2(o, t, o.P.lead2, 0.45); },
     play: function (o, t, st, bar) {
       var sec = T1.sec(bar), c = (sec.up ? T1.up : T1.ch)[Math.floor(bar / 2) % 4], six = o.six, fill = sec.fill && st >= 12;
       if (st === 0) {
-        mixTo(o, t, sec.mix, six * 8);
+        mixTo(o, t, sec.mix, 0.05);
         sweep(o, "arpF", sec.arpCut, t, 0.6);
         if (sec.fuzz) sweep(o, "fuzzF", sec.fuzz, t, 0.4);
-        o.sub.set(t, c.r - 12, sec.bass || sec.sub ? 0.13 : sec.pulse ? 0.03 + (bar - 4) * 0.008 : 0.0001);
+        o.sub.set(t, c.r - 12, sec.bass || sec.sub ? 0.13 : sec.pulse ? 0.05 : 0.0001);
         sweep(o, "padF", sec.id === "break" ? 1500 : 2300, t, 1);
         if (sec.pad && bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[0] + 12]), six * 32, 0.05, { a: six * 6, r: 1.6 });
-        if (sec.riser) riser(o, t, six * 64, 0.08);
-        if (sec.crash) crash(o, t, 1);
+        if (sec.riser) riser(o, t, six * 64, 0.05);
+        if (sec.crash) crash(o, t, 0.5);
       }
-      if (sec.drop && st === 8) subDrop(o, t, six * 8, 0.5);
+      if (sec.drop && st === 8) subDrop(o, t, six * 8, 0.25);
       if (sec.arp) parp(o, t, [c.tri[0] + 12, c.tri[1] + 12, c.tri[2] + 12, c.tri[0] + 24][T1.arp[st]], (st % 4 === 0 ? 1 : 0.72) * sec.arp, six * 0.8, st % 2 ? 0.45 : -0.45);
       if (sec.bass) {
         var rf = sec.bass === 2 ? T1.riffB : T1.riff, n = rf[st];
         if (n !== null) fz(o, t, c.r + n, sec.bass === 2 ? (st % 4 === 0 ? 1 : 0.8) : (T1.acc[st] || 0.7), six * (rf[(st + 1) % 16] === null ? 1.6 : 0.85));
       }
       kit(o, t, st, bar, sec.drums, { four: true, back: sec.drums >= 2, fill: sec.fill, v: sec.kv });
-      if (sec.roll && (st % 2 === 0 || bar === 55)) rollHit(o, t, 0.3 + (bar - 54) * 0.25 + st * 0.02);
+      if (sec.roll && (st % 2 === 0 || bar === 55)) rollHit(o, t, 0.4);
       if (sec.stab && !fill && (sec.stab === 2 ? T1.stabB : T1.stabA).indexOf(st) >= 0) stb(o, t, c.tri, st % 4 === 0 ? 1 : 0.8, six * 0.9, st % 2 ? 0.55 : -0.55);
       if (sec.stab) chop(o, t, st, c.tri);
       if (bar === 55 && st >= 12) { stb(o, t, c.tri, 0.5, six * 0.3, st % 2 ? 0.7 : -0.7); stb(o, t + six * 0.5, c.tri, 0.4, six * 0.3, st % 2 ? -0.7 : 0.7); }
@@ -909,10 +915,12 @@
            [4, 0, 78, 6], [4, 6, 79, 2], [4, 8, 81, 8], [5, 0, 83, 4], [5, 4, 81, 4], [5, 8, 78, 8],
            [6, 0, 79, 6], [6, 6, 78, 2], [6, 8, 76, 8], [7, 0, 71, 4], [7, 4, 74, 4], [7, 8, 76, 8]],
     sec: function (bar) {
-      // the opening grows in: the strings fade up under the piano, then the pulse, then the bass, then the kick
-      if (bar < 8) return { id: "3 AM", piano: 1, pad: bar >= 4 ? 0.035 : 0, walk: bar === 7, mix: { pad: bar >= 5 ? 0.25 + (bar - 5) * 0.25 : 0.0001, arp: 0.0001 } };
-      if (bar < 16) return { id: "memory", piano: 1, pad: 0.035, arp: 0.45 + (bar - 8) * 0.05, arpCut: 520 + (bar - 8) * 30, sub: 0.06, walk: bar === 15, mix: { arp: 0.3 + (bar - 8) * 0.09 } };
-      if (bar < 32) return { id: "the climb", piano: 0.85, pad: 0.04, arp: 0.85, arpCut: 760 + (bar - 16) * 150, drums: bar >= 26 ? 1 : 0, kv: Math.min(0.8, 0.35 + (bar - 26) * 0.09), bass: bar >= 22 ? 1 : 0, roll: bar >= 28, riser: bar === 28, sub: 0.09, drop: bar === 31, mix: { fuzz: Math.min(1, 0.4 + (bar - 22) * 0.1) } };
+      // the opening adds a part at a time - the strings under the piano, then the pulse, then the bass, then the kick -
+      // each one at its own full level from its first note (the user: a part that starts low and rises reads as the
+      // whole song getting louder); flat_<theme> holds the volume while they arrive
+      if (bar < 8) return { id: "3 AM", piano: bar < 4 ? 2.5 : 2, pad: bar >= 4 ? 0.035 : 0, walk: bar === 7, mix: { pad: bar >= 4 ? 0.75 : 0.0001, arp: 0.0001 } };
+      if (bar < 16) return { id: "memory", piano: 1.6, pad: 0.035, arp: 0.6, arpCut: 640, sub: 0.06, walk: bar === 15, mix: { arp: 0.6 } };
+      if (bar < 32) return { id: "the climb", piano: 0.85, pad: 0.04, arp: 0.85, arpCut: 1700, drums: bar >= 26 ? 1 : 0, kv: 0.7, bass: bar >= 22 ? 1 : 0, roll: bar >= 28, riser: bar === 28, sub: 0.09, drop: bar === 31, mix: { fuzz: 0.8 } };
       if (bar < 48) return { id: "release", piano: 0.55, pad: 0.05, arp: 1, arpCut: 3400, drums: bar < 40 ? 2 : 3, bass: 1, lead: 1, sub: 0.12, crash: bar === 32 || bar === 40 };
       // the skyline: half the kit, the new melody on one lead with the piano answering; open sky: everything, both leads
       if (bar < 56) return { id: "skyline", sky: 1, pad: 0.045, arp: 0.8, arpCut: 2200, drums: 2, bass: 1, sub: 0.1, crash: bar === 48 };
@@ -923,27 +931,30 @@
     }
   };
   var SONG_CHAR = {
+    flat_golden: [12.0, 12.0, 12.0, 12.0, 11.3, 10.1, 10.5, 10.1, 7.8, 7.4, 8.3, 8.0, 7.6, 7.4, 8.2, 7.6, 7.2, 6.9, 7.3, 7.2, 6.4, 6.4, 6.4, 6.2, 6.0, 5.8, 4.1, 4.8, 2.9, 3.5, 3.0, 1.3, -1.7, -1.1, -1.1, -0.5, -1.7, -1.3, -1.3, -0.8, -0.7, -0.2, -0.1, 0.2, -0.5, -0.3, -0.3, 0.1, -0.5, 0.4, -0.8, -0.5, -0.4, 0.2, -0.7, -0.3, -1.2, -0.7, -1.8, -1.6, -1.5, -1.1, -1.4, -1.3, 6.7, 7.6, 7.9, 7.4, 7.6, 7.7, 5.4, 2.5, -2.1, -1.5, -1.3, -1.0, -1.8, -1.6, -1.6, -1.3, -2.1, -1.4, -1.3, -0.9, -1.7, -1.6, -1.7, -1.1, -2.0, -1.4, -1.4, -0.8, 6.5, 8.4, 8.7, 8.5],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [12.0, 12.0, 12.0, 12.0, 11.7, 9.6, 10.1, 10.1, 8.0, 7.8, 9.4, 9.4, 8.3, 7.7, 8.4, 8.4, 7.9, 7.4, 8.4, 8.3, 7.5, 6.9, 7.1, 7.5, 6.5, 6.2, 4.4, 5.4, 2.7, 3.7, 3.0, 1.4, -1.3, -0.4, -0.3, 0.1, -1.3, -0.9, -0.6, -0.3, -1.6, -0.8, -0.6, -0.2, -1.4, -1.1, -1.0, -0.6, -0.1, 0.6, -0.6, 0.1, -0.2, 0.1, -0.6, -0.2, -1.9, -1.3, -2.3, -1.8, -2.3, -1.6, -2.0, -1.8, 8.3, 8.5, 10.1, 9.8, 9.1, 8.5, 6.2, 2.8, -2.9, -2.2, -2.1, -1.5, -2.5, -2.4, -2.4, -2.1, -3.0, -2.3, -2.3, -1.6, -2.7, -2.3, -2.4, -1.8, -2.7, -2.2, -1.9, -1.5, 7.6, 8.8, 9.4, 9.4],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [12.0, 12.0, 12.0, 12.0, 10.2, 8.5, 9.1, 8.7, 7.0, 6.5, 7.7, 8.6, 6.8, 7.0, 7.6, 7.3, 7.2, 6.9, 7.9, 8.0, 6.5, 5.8, 6.2, 6.6, 5.9, 5.7, 3.6, 5.2, 2.8, 3.6, 3.1, 3.1, -2.6, -0.9, -0.7, -0.0, -1.8, -1.6, -1.8, -0.6, -2.2, -0.9, -0.9, 0.0, -1.5, -1.2, -1.7, -0.8, -1.2, 0.1, -0.7, -0.3, -0.1, 0.1, -0.4, 0.1, -2.8, -1.4, -3.0, -2.8, -3.2, -1.8, -2.5, -2.0, 7.4, 8.0, 9.0, 8.7, 8.2, 7.6, 7.3, 5.2, -3.9, -2.7, -2.4, -1.6, -3.3, -2.7, -2.7, -2.2, -3.6, -2.4, -2.3, -1.6, -3.3, -3.0, -3.4, -2.9, -3.9, -2.6, -2.5, -1.3, 6.8, 7.9, 8.3, 8.3],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "the character study · emotional trance, a piano that learns to fly", bpm: 132, bars: 96, v2: true, duckDepth: 0.3, sec: C3.sec,
     trim: { "phthalo": 5.7, "knight": 4.5, "golden": 3.2 },
-    lift_golden: { "3 AM": 7.9, "memory": 3.3, "the climb": 3.1, "release": -1.6, "skyline": 0.5, "open sky": -0.5, "the truth": 5.0, "becoming": 0.0, "after": 4.5 },
-    lift_knight: { "3 AM": 7.9, "memory": 3.7, "the climb": 3.5, "release": -1.7, "skyline": 0.5, "open sky": -0.5, "the truth": 4.7, "becoming": 0.0, "after": 4.7 },
-    lift_phthalo: { "3 AM": 6.1, "memory": 1.2, "the climb": 0.4, "release": -1.5, "skyline": -0.5, "open sky": -0.5, "the truth": 1.9, "becoming": 0.0, "after": 2.6 },
+    lift_golden: { "3 AM": 0.0, "memory": 0.0, "the climb": 0.0, "release": 0.0, "skyline": 0.0, "open sky": 0.0, "the truth": 0.0, "becoming": 0.0, "after": 0.0 },
+    lift_knight: { "3 AM": 0.0, "memory": 0.0, "the climb": 0.0, "release": 0.0, "skyline": 0.0, "open sky": 0.0, "the truth": 0.0, "becoming": 0.0, "after": 0.0 },
+    lift_phthalo: { "3 AM": 0.0, "memory": 0.0, "the climb": 0.0, "release": 0.0, "skyline": 0.0, "open sky": 0.0, "the truth": 0.0, "becoming": 0.0, "after": 0.0 },
     ramp: 2, tone: { sub: -2, punch: 1.5, pres: 1.5 },
     init: function (o, t) { o.sub = makeSub(o, t); o.la = makeLead2(o, t, o.P.lead, -0.5); o.lb = makeLead2(o, t, o.P.lead2, 0.5); },
     play: function (o, t, st, bar) {
       var sec = C3.sec(bar), c = (sec.sky ? C3.sky : C3.ch)[Math.floor(bar / 2) % 4], six = o.six, mb = bar % 8;
       if (st === 0) {
-        mixTo(o, t, sec.mix, six * 16);   // a bar-long glide: the opening's parts fade in rather than switch on
-        if (sec.arp) sweep(o, "arpF", sec.arpCut, t, 1.2);
-        sweep(o, "padF", sec.drums ? 2800 : 1700, t, 1.6);
+        mixTo(o, t, sec.mix, 0.05);   // faders and filters move at the downbeat, not glide in over seconds
+        if (sec.arp) sweep(o, "arpF", sec.arpCut, t, 0.15);
+        sweep(o, "padF", sec.drums ? 2800 : 1700, t, 0.2);
         sweep(o, "fuzzF", sec.bass === 2 ? 1500 : 1100, t, 0.5);
         o.sub.set(t, c.r - 12, sec.sub || 0.0001);
         if (sec.pad && bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[1] + 12]), six * 32, sec.pad, { a: sec.drums ? six * 2 : six * 10, r: 1.8 });
-        if (sec.riser) riser(o, t, six * 64, 0.07);
-        if (sec.crash) crash(o, t, 1);
+        if (sec.riser) riser(o, t, six * 64, 0.045);
+        if (sec.crash) crash(o, t, 0.5);
         if (sec.piano) keys(o, t, c.r, 0.55 * sec.piano, 3.2);
       }
-      if (sec.drop && st === 8) subDrop(o, t, six * 8, 0.4);
+      if (sec.drop && st === 8) subDrop(o, t, six * 8, 0.22);
       if (sec.piano && st === 8 && !sec.walk) keys(o, t, c.tri[1], 0.3 * sec.piano, 2.2);
       if (sec.walk) C3.walkup.forEach(function (n) { if (n[0] === st) keys(o, t, n[1], 0.32 + (st - 8) * 0.02, 1.6); });
       // the melody: on the piano, then on the leads an octave up; in "the truth" at half speed, alone
@@ -964,7 +975,7 @@
       if (sec.bass === 1 && st % 4 === 2) fz(o, t, c.r, 0.9, six * 1.6);
       if (sec.bass === 2 && C3.roll.indexOf(st) >= 0) fz(o, t, c.r + (st % 4 === 3 ? 12 : 0), st % 4 === 2 ? 0.9 : 0.65, six * 0.8);
       if (sec.lead || sec.sky === 2) chop(o, t, st, c.tri);
-      if (sec.roll) { var lb = bar === 31 || bar === 71 ? 1 : bar === 30 || bar === 70 ? 2 : 4; if (st % lb === 0) rollHit(o, t, 0.25 + (st / 16) * 0.5); }
+      if (sec.roll) { var lb = bar === 31 || bar === 71 ? 1 : bar === 30 || bar === 70 ? 2 : 4; if (st % lb === 0) rollHit(o, t, 0.4); }
     }
   };
 
@@ -1002,12 +1013,15 @@
     }
   };
   var SONG_DUEL = {
+    flat_golden: [12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 6.5, 9.0, 8.0, 10.3, 7.6, 9.6, 7.7, 9.2, -3.8, -0.0, -2.3, 0.0, -2.2, 1.9, -2.2, -0.2, -3.2, 0.4, -1.8, 0.4, -1.5, 1.3, -1.6, -0.0, -2.8, -0.8, -1.9, -0.7, -1.6, 1.1, -1.7, -0.9, -2.7, -0.1, -1.3, -0.2, -1.1, 0.8, -0.9, -0.9, 1.8, 2.1, 1.4, 1.7, 1.2, 1.3, 1.7, 2.0, 0.9, 1.2, 0.5, 1.0, 0.6, 0.4, 0.9, 1.1, -1.0, -0.9, -1.0, -1.3, -1.4, -1.6, -0.7, -1.2, 1.0, 1.7, 1.4, 2.6, 1.4, 1.5, 1.1, 1.7, -2.6, -0.1, -1.4, -1.6, -1.2, 0.7, -1.3, -2.0, -2.3, 0.9, -1.1, -1.4, -1.7, 1.2, -1.3, -1.4, -3.1, 0.3, -1.4, -0.8, -1.7, 0.4, -1.2, -1.1, -2.2, -0.8, -1.1, -0.7, -1.4, -0.4, -1.8, -0.8, 5.6, 7.1, 6.0, 7.8, 12.0, 12.0, 12.0, 12.0],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 7.7, 9.4, 9.5, 11.0, 9.6, 11.5, 9.8, 10.0, -3.8, -2.1, -1.4, -2.9, -1.6, -0.1, -2.1, -2.1, -3.2, -0.8, -2.9, -0.9, -3.1, 1.7, -3.0, -0.8, -4.7, 0.3, -3.4, -1.2, -3.0, 1.7, -2.6, -1.8, -3.1, -0.5, -1.7, -2.8, -1.4, -0.2, -1.5, -2.8, 1.5, 1.7, 0.9, 1.7, 1.0, 1.0, 1.6, 2.0, 1.0, 1.6, 0.4, 1.5, 0.1, 1.5, 0.6, 2.5, -3.0, 0.5, -2.9, 0.2, -3.3, 0.2, -1.9, 0.2, 0.6, 2.7, 1.1, 3.0, 1.7, 2.4, 1.6, 2.0, -3.6, 0.1, -2.3, -2.1, -2.5, 0.1, -2.4, -1.9, -2.8, -1.5, -2.6, -2.5, -2.2, 0.4, -2.3, -2.5, -3.8, -0.3, -2.6, -2.0, -2.3, -0.6, -2.6, -2.4, -3.2, 0.2, -2.4, -2.3, -2.7, 0.2, -2.2, -2.3, 2.9, 5.6, 4.1, 5.8, 12.0, 12.0, 12.0, 12.0],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 8.6, 10.5, 9.4, 11.7, 10.0, 12.0, 9.6, 10.0, -3.4, -0.2, -1.7, -0.4, -1.1, 1.1, -1.1, -0.9, -1.4, -0.2, -0.9, -0.8, -0.4, 0.9, -0.5, -1.0, -1.5, -0.6, -0.2, -1.8, 0.1, 0.6, -0.4, -1.6, -0.6, -0.4, -0.5, -1.4, 0.2, 0.7, -0.3, -1.5, 1.9, 2.4, 1.7, 1.9, 1.7, 1.8, 2.2, 2.5, 1.4, 1.7, 0.7, 1.4, 0.9, 1.3, 1.2, 1.8, -1.1, 0.5, -1.1, 0.3, -2.0, 0.4, -1.0, 1.0, 1.8, 4.2, 1.8, 4.7, 2.3, 4.7, 2.0, 4.1, -2.6, -0.5, -1.2, -0.7, -0.8, -0.1, -1.0, -0.9, -1.2, -0.8, -1.5, -0.9, -0.8, -0.2, -1.3, -0.9, -1.9, -0.4, -1.5, -1.0, -0.5, -0.1, -1.4, -1.5, -1.5, 0.2, -1.3, -1.4, -0.7, 0.7, -1.1, -1.7, 6.9, 6.3, 7.1, 6.8, 12.0, 12.0, 12.0, 12.0],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "the battle of wits · drum & bass, two hackers trading the theme", bpm: 172, bars: 120, v2: true, duckDepth: 0.36, sec: B4.sec,
     kitLift: { industrial: 4 },   // drum & bass at 172: here the kit should drive, even in the quiet industrial mix
     trim: { "phthalo": -1.7, "knight": 0.3, "golden": 0.6 },
-    lift_golden: { "login": 3.2, "handshake": 1.7, "exploit": 0.0, "liquid": 0.5, "rush": 0.0, "stalemate": -1.5, "root": -0.2, "logout": 1.6 },
-    lift_knight: { "login": 6.9, "handshake": 4.3, "exploit": 0.0, "liquid": 1.0, "rush": 0.0, "stalemate": -1.5, "root": -0.1, "logout": 1.3 },
-    lift_phthalo: { "login": 7.2, "handshake": 4.9, "exploit": 0.0, "liquid": 0.5, "rush": 0.0, "stalemate": -1.5, "root": -0.1, "logout": 0.9 },
+    lift_golden: { "login": 0.0, "handshake": 0.0, "exploit": 0.0, "liquid": 0.0, "rush": 0.0, "stalemate": 0.0, "root": 0.0, "logout": 0.0 },
+    lift_knight: { "login": 0.0, "handshake": 0.0, "exploit": 0.0, "liquid": 0.0, "rush": 0.0, "stalemate": 0.0, "root": 0.0, "logout": 0.0 },
+    lift_phthalo: { "login": 0.0, "handshake": 0.0, "exploit": 0.0, "liquid": 0.0, "rush": 0.0, "stalemate": 0.0, "root": 0.0, "logout": 0.0 },
     init: function (o, t) { o.sub = makeSub(o, t); o.reese = makeReese(o, t); o.la = makeLead2(o, t, o.P.lead, -0.7); o.lb = makeLead2(o, t, o.P.lead2, 0.7); },
     play: function (o, t, st, bar) {
       var sec = B4.sec(bar), c = (sec.lq ? B4.lq : B4.ch)[Math.floor(bar / 2) % 4], six = o.six;
@@ -1017,12 +1031,12 @@
         o.padF.frequency.setTargetAtTime(sec.id === "stalemate" ? 2200 : 1300, t, 1);
         if (sec.pad && bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[0] + 12]), six * 32, sec.pad, { a: six * 8, r: 1.4 });
         if (sec.reese && bar % 2 === 0) { o.reese.rate(t, sec.id === "root" ? 0.55 : 0.35); o.reese.play(t, c.r, six * 30, 0.19 * sec.reese); }
-        if (sec.riser) riser(o, t, six * 64, 0.07);
-        if (sec.crash) crash(o, t, 0.9);
+        if (sec.riser) riser(o, t, six * 64, 0.045);
+        if (sec.crash) crash(o, t, 0.5);
         if (sec.stab) stb(o, t, c.tri, 1, six * 2, bar % 8 < 4 ? -0.5 : 0.5);
       }
       if (sec.reese === 1 && bar % 4 === 3 && st === 12) o.reese.play(t, c.r + 12, six * 4, 0.17);
-      if (sec.drop && st === 8) subDrop(o, t, six * 8, 0.45);
+      if (sec.drop && st === 8) subDrop(o, t, six * 8, 0.25);
       // the duel: a phrase every two bars, then every bar; in the stalemate they play together
       // (at half speed a phrase spans two bars, so its positions double along with its lengths)
       var local = (bar % 2) * 16 + st;
@@ -1103,7 +1117,7 @@
     lmel: [[0, 0, 76, 4], [0, 4, 79, 4], [0, 8, 84, 8], [1, 0, 81, 6], [1, 6, 78, 2], [1, 8, 74, 8], [2, 0, 78, 4], [2, 4, 79, 4], [2, 8, 83, 8], [3, 0, 79, 8], [3, 8, 76, 8],
            [4, 0, 76, 4], [4, 4, 81, 4], [4, 8, 84, 8], [5, 0, 83, 6], [5, 6, 81, 2], [5, 8, 78, 8], [6, 0, 79, 4], [6, 4, 83, 4], [6, 8, 86, 8], [7, 0, 83, 16]],
     sec: function (bar) {
-      if (bar < 8) return { id: "ashes", ch: "sorrow", hook: 0.38, bin: 0.02, bed: 0.022, lh: 0.22, padCut: 900 };
+      if (bar < 8) return { id: "ashes", ch: "sorrow", hook: 0.9, bin: 0.03, bed: 0.045, lh: 0.45, padCut: 1100 };   // louder than it was: a lone piano held the song's level only with a 12 dB boost
       if (bar < 16) return { id: "what remains", ch: "ec", arpeggio: 0.3, cello: 0.045, str: 0.03, sub: 0.04, bin: 0.02, padCut: 1200 };
       if (bar < 24) return { id: "remember", ch: "ec", mel: 0, mv: 0.05, arpeggio: 0.25, cello: 0.05, str: 0.035, pulse: 0.45, pulseCut: 750, sub: 0.06, padCut: 1600 };
       if (bar < 32) return { id: "grief", ch: "grief", sigh: 1, arpeggio: 0.25, cello: 0.05, str: 0.04, pulse: 0.35, pulseCut: 650, sub: 0.06, padCut: 1400 };
@@ -1114,11 +1128,14 @@
     }
   };
   var SONG_EPI = {
+    flat_golden: [11.8, 11.8, 12.0, 12.0, 12.0, 11.9, 12.0, 12.0, 4.2, 4.1, 5.0, 6.5, 4.6, 4.3, 5.5, 6.0, -0.1, -0.6, -0.0, -0.0, -1.5, -0.9, 0.0, -0.0, -1.8, -1.6, -1.1, -0.6, -1.1, -1.7, -2.4, -2.3, 4.7, 5.9, 4.5, 3.2, -0.8, 0.3, -1.5, -1.2, -3.5, -3.7, -3.0, -1.6, -4.0, -4.2, -2.0, -2.7, -4.3, -3.9, 1.7, 2.7, 1.9, 1.8, 2.4, 2.9],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [12.0, 12.0, 12.0, 12.0, 12.0, 11.8, 12.0, 12.0, 6.7, 6.0, 5.9, 7.1, 5.5, 5.0, 7.3, 6.3, -1.1, -1.3, -0.5, 0.4, -0.9, -1.8, -0.6, -0.7, -1.6, -1.0, -0.3, -0.4, -0.7, -1.4, -0.9, -1.4, 5.2, 6.3, 4.9, 3.3, -0.9, 0.3, -2.2, -1.3, -3.7, -4.2, -3.5, -2.9, -4.8, -4.3, -2.0, -2.1, -4.8, -4.6, 2.0, 3.2, 3.3, 2.5, 3.5, 3.3],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 6.3, 5.0, 6.0, 5.4, 4.6, 4.5, 7.0, 6.3, 0.0, -0.9, -0.3, -0.8, -1.3, -0.8, 0.3, -0.0, -1.4, -1.0, -0.9, -1.6, -1.5, -2.0, -1.4, -1.3, 4.6, 6.0, 4.7, 1.7, -0.9, -0.1, -1.7, -1.5, -3.4, -3.9, -2.8, -3.1, -4.3, -4.5, -1.6, -2.3, -3.9, -4.0, 1.8, 1.8, 2.5, 2.2, 3.3, 3.2],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "the epilogue · sadness with hope in it, 432 Hz, strings and a last look back", bpm: 60, bars: 56, ref: 432, v2: true, duckDepth: 0.6, sec: E5.sec,
     trim: { "phthalo": 10.2, "knight": 10.7, "golden": 8.9 },
-    lift_golden: { "ashes": 1.7, "what remains": -1.5, "remember": -2.8, "grief": -2.0, "letters": -1.5, "the weight lifts": 0.0, "last light": -0.1 },
-    lift_knight: { "ashes": -0.4, "what remains": -2.6, "remember": -3.9, "grief": -2.5, "letters": -2.0, "the weight lifts": 0.0, "last light": -1.3 },
-    lift_phthalo: { "ashes": 0.9, "what remains": -2.3, "remember": -3.2, "grief": -2.2, "letters": -1.5, "the weight lifts": 0.0, "last light": -0.7 },
+    lift_golden: { "ashes": 0.0, "what remains": 0.0, "remember": 0.0, "grief": 0.0, "letters": 0.0, "the weight lifts": 0.0, "last light": 0.0 },
+    lift_knight: { "ashes": 0.0, "what remains": 0.0, "remember": 0.0, "grief": 0.0, "letters": 0.0, "the weight lifts": 0.0, "last light": 0.0 },
+    lift_phthalo: { "ashes": 0.0, "what remains": 0.0, "remember": 0.0, "grief": 0.0, "letters": 0.0, "the weight lifts": 0.0, "last light": 0.0 },
     ramp: 1, tone: { sub: -1.5, punch: 1, pres: 3 },
     init: function (o, t) { o.sub = makeSub(o, t); o.bin = makeBinaural(o, t, 108, 2.5, 0.02); },
     play: function (o, t, st, bar) {
@@ -1132,8 +1149,8 @@
       if (st === 0) {
         o.bin.level(t, sec.bin || 0.0001);
         o.sub.set(t, bass - 12, sec.sub || 0.0001);
-        sweep(o, "padF", sec.padCut, t, 2);
-        if (sec.pulse) sweep(o, "arpF", sec.pulseCut, t, 1.5);
+        sweep(o, "padF", sec.padCut, t, 0.2);
+        if (sec.pulse) sweep(o, "arpF", sec.pulseCut, t, 0.2);
         if (sec.str) sm(o, t, tri.concat([r + 24]), six * 16 * (sec.last ? 4 : 1), sec.str, { a: 1.6, r: sec.last ? 6 : 2.2 });
         if (sec.bed && bar % 2 === 0) sm(o, t, tri, six * 32, sec.bed, { a: bar ? six * 8 : six * 3, r: 2.5, w: 0.4, wave: "triangle" });
         if (sec.cello) sm(o, t, [bass], six * 16 * (sec.last ? 4 : 1), sec.cello, { a: 1.2, r: sec.last ? 5 : 1.5, w: 0 });
@@ -1307,14 +1324,14 @@
       sweep(o, "padF", 1300 + bar * 40, t, 1);
       o.sub.set(t, c.r - 12, bar < 8 ? 0.03 : 0.06);
       if (bar % 8 === 0) wind(o, t, six * 64, 0.8);
-      if (bar >= 8 && bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[0] + 12]), six * 32, 0.035, { a: six * 8, r: 2 });
+      if (bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[0] + 12]), six * 32, 0.035, { a: six * 8, r: 2 });
       if (bar === 12) riser(o, t, six * 64, 0.05);
       if (style === "industrial" && bar % 4 === 0) sm(o, t, [40, 47], six * 64, 0.03, { a: six * 16, r: 3, w: 0.8, wave: "triangle" });   // a drone under the floor
       if (style === "industrial" && bar % 4 === 2) clank(o, t, 0.22);   // metal, somewhere below
       if (style === "kpop" && bar % 4 === 0) glass(o, t, [83, 88], six * 48, 0.012);
     }
     if (bar < 8 && (st === 0 || st === 8)) heart(o, t, 0.4);
-    if (bar < 8) hookAt(pos).forEach(function (n) { keys(o, t, n[1], 0.7, n[2] * six * 1.4); });   // the hook, stated once
+    if (bar < 8) hookAt(pos).forEach(function (n) { keys(o, t, n[1], 1.3, n[2] * six * 1.4); });   // the hook, stated once
     else E5.hook.forEach(function (n) {   // then the house answers with the epilogue's first line (G B E, a sigh down to B), not the hook again
       if (n[0] !== (bar - 8) % 4 || n[1] !== st) return;
       keys(o, t, n[2], 0.8, n[3] * six * 1.4); keys(o, t, n[2] - 12, 0.3, n[3] * six);
@@ -1322,37 +1339,37 @@
     });
     if (bar >= 8) H2.far.forEach(function (n) { if (n[0] === bar % 8 && n[1] === st) keys(o, t, n[2], 0.18, 5); });   // a piano in another room
     if (style === "mrrobot" && bar % 2 === 1 && [0, 3, 5, 6, 9].indexOf(st) >= 0) blip(o, t, 0.32, -0.6, 3600);   // someone typing, late
-    if (bar >= 14 && B4.typeA.indexOf(st) >= 0) blip(o, t, 0.2 + (bar - 14) * 0.15, 0.5, 4300);
+    if (bar >= 14 && B4.typeA.indexOf(st) >= 0) blip(o, t, 0.4, 0.5, 4300);
   }
   function cutBoot(o, t, st, bar) {   // 16–28 · 76 → 110 · the pulse wakes and opens, then the machine starts
     var k = bar - 16, c = T1.ch[Math.floor(bar / 2) % 4], six = o.six;
     if (st === 0) {
       sweep(o, "arpF", 480 + k * 140, t, 0.8);
       sweep(o, "fuzzF", 450 + Math.max(0, k - 8) * 120, t, 0.5);
-      o.sub.set(t, c.r - 12, 0.03 + k * 0.008);
-      if (k === 8) mixTo(o, t, { arp: 1.3, fuzz: 0.5 }, six * 8);
-      if (k === 6) riser(o, t, six * 96, 0.06);
+      o.sub.set(t, c.r - 12, 0.06);
+      if (k === 8) mixTo(o, t, { arp: 1.3, fuzz: 0.5 }, 0.05);
+      if (k === 6) riser(o, t, six * 96, 0.045);
     }
-    parp(o, t, pulseOf(c, st), (st % 4 === 0 ? 1 : 0.72) * Math.min(1, 0.4 + k * 0.08), six * 0.8, st % 2 ? 0.45 : -0.45);
+    parp(o, t, pulseOf(c, st), (st % 4 === 0 ? 1 : 0.72), six * 0.8, st % 2 ? 0.45 : -0.45);
     if (k < 8 && k % 2 === 0 && B4.typeA.indexOf(st) >= 0) blip(o, t, 0.4, -0.7, 3600);
-    if (k >= 9) kit(o, t, st, bar, 1, { four: true, v: 0.4 + (k - 9) * 0.15, fill: k === 11 });
+    if (k >= 9) kit(o, t, st, bar, 1, { four: true, v: 0.7, fill: k === 11 });
     if (k >= 8) { var n = T1.riff[st]; if (n !== null) fz(o, t, c.r + n, (T1.acc[st] || 0.7) * 0.8, six * (T1.riff[(st + 1) % 16] === null ? 1.6 : 0.85)); }
-    if (k === 11 && st === 8) subDrop(o, t, six * 8, 0.45);
+    if (k === 11 && st === 8) subDrop(o, t, six * 8, 0.25);
   }
   function cutTheme(o, t, st, bar) {   // 28–68 · 110 · Ring Zero told again; in the drive the hook moves to Em G D B
     var k = bar - 28, sec = k < 8 ? "pulse" : k < 24 ? "theme" : k < 32 ? "break" : "drive", six = o.six;
     var c = sec === "drive" ? CUT.prog[Math.floor(bar / 2) % 4] : T1.ch[Math.floor(bar / 2) % 4], pos = (bar % 8) * 16 + st;
     var fillBar = bar === 35 || bar === 51 || bar === 67, fill = fillBar && st >= 12;
     if (st === 0) {
-      if (k === 0) mixTo(o, t, { arp: 1.3, fuzz: 0.8 }, six * 4);
-      if (k === 8) mixTo(o, t, { arp: 1.3 }, six * 4);
+      if (k === 0) mixTo(o, t, { arp: 1.3, fuzz: 0.8 }, 0.05);
+      if (k === 8) mixTo(o, t, { arp: 1.3 }, 0.05);
       sweep(o, "arpF", sec === "break" ? 900 : sec === "drive" ? 2700 : 2000, t, 0.6);
       sweep(o, "fuzzF", sec === "drive" ? 2100 : 1400, t, 0.4);
       sweep(o, "padF", sec === "break" ? 1500 : 2300, t, 1);
       o.sub.set(t, c.r - 12, 0.13);
       if ((sec === "break" || (sec === "drive" && k >= 36)) && bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[0] + 12]), six * 32, 0.05, { a: six * 6, r: 1.6 });
-      if (bar === 36 || bar === 60) crash(o, t, 1);
-      if (bar === 56) riser(o, t, six * 64, 0.08);
+      if (bar === 36 || bar === 60) crash(o, t, 0.5);
+      if (bar === 56) riser(o, t, six * 64, 0.045);
       if (sec === "drive" && bar % 2 === 0) o.lb.play(t, c.tri[1] + 12, six * 28, 0.035);   // a held counter-line on the chord's third, new in this telling
     }
     if (sec !== "break") {
@@ -1361,8 +1378,8 @@
     }
     parp(o, t, pulseOf(c, st), (st % 4 === 0 ? 1 : 0.72) * (sec === "break" ? 0.6 : 1), six * 0.8, st % 2 ? 0.45 : -0.45);
     kit(o, t, st, bar, sec === "pulse" ? (k < 4 ? 0 : 1) : sec === "theme" ? (k < 16 ? 1 : 2) : sec === "drive" ? 3 : 0, { four: true, back: sec !== "pulse", fill: fillBar });
-    if (sec === "break" && bar >= 58 && (st % 2 === 0 || bar === 59)) rollHit(o, t, 0.3 + (bar - 58) * 0.25 + st * 0.02);
-    if (bar === 59 && st === 8) subDrop(o, t, six * 8, 0.5);
+    if (sec === "break" && bar >= 58 && (st % 2 === 0 || bar === 59)) rollHit(o, t, 0.4);
+    if (bar === 59 && st === 8) subDrop(o, t, six * 8, 0.25);
     var stabs = sec === "drive" ? T1.stabB : sec === "theme" ? T1.stabA : null;
     if (stabs && !fill && stabs.indexOf(st) >= 0) stb(o, t, c.tri, st % 4 === 0 ? 1 : 0.8, six * 0.9, st % 2 ? 0.55 : -0.55);
     if (stabs) chop(o, t, st, c.tri);
@@ -1373,26 +1390,26 @@
   function cutDark(o, t, st, bar) {   // 68–100 · 120 · something in the house: a heartbeat, clusters, the hook on a broken music box
     var k = bar - 68, sec = k < 8 ? "room" : k < 16 ? "moves" : k < 24 ? "hide" : "found", cl = H2.cl[(bar >> 1) % 4], six = o.six;
     if (st === 0) {
-      if (k === 0) mixTo(o, t, {}, six * 8);
+      if (k === 0) mixTo(o, t, {}, 0.05);
       tremTo(o, t, sec === "hide" ? 0 : sec === "found" ? 0.45 : 0.25 + k * 0.01, 8 + (bar % 3));
       sweep(o, "padF", sec === "found" ? 2600 : 1600, t, 0.8);
       sweep(o, "fuzzF", sec === "found" ? 950 : 420, t, 0.5);
       o.sub.set(t, 28, sec === "found" ? 0.14 : sec === "hide" ? 0.07 : 0.1);
-      if (sec !== "hide" && (sec === "room" ? bar % 4 === 0 : bar % 2 === 0)) sm(o, t, cl, six * 32, sec === "room" ? 0.035 : 0.045, { a: six * 8, r: 2 });
-      if (sec !== "found" && bar % 4 === 0) sm(o, t, [40, 47], six * 64, 0.028, { a: six * 20, r: 3, w: 0.8, wave: "triangle" });
-      if ((sec === "moves" || sec === "hide") && bar % 4 === 2) glass(o, t, bar % 8 < 4 ? [83, 88] : [84, 89], six * 48, 0.012);
+      if (sec !== "hide" && (sec === "room" ? bar % 4 === 0 : bar % 2 === 0)) sm(o, t, cl, six * 32, sec === "room" ? 0.06 : 0.045, { a: six * 8, r: 2 });
+      if (sec !== "found" && bar % 4 === 0) sm(o, t, sec === "moves" ? [40, 47] : [40, 47, 52], six * 64, sec === "moves" ? 0.028 : 0.06, { a: six * 20, r: 3, w: 0.8, wave: "triangle" });
+      if ((sec === "moves" || sec === "hide") && bar % 4 === 2) glass(o, t, bar % 8 < 4 ? [83, 88] : [84, 89], six * 48, sec === "hide" ? 0.02 : 0.012);
       if (sec === "found" && bar % 4 === 0) scr(o, t, 76 + (bar % 3), six * 10, 0.04, bar % 8 < 4 ? -0.7 : 0.7);
-      if (bar === 80 || bar === 88) riser(o, t, six * 64, 0.06);
-      if (bar === 92 || bar === 96) crash(o, t, 0.9);
+      if (bar === 80 || bar === 88) riser(o, t, six * 64, 0.045);
+      if (bar === 92 || bar === 96) crash(o, t, 0.5);
     }
-    if (sec === "room") H2.far.forEach(function (n) { if (n[0] === bar % 8 && n[1] === st) keys(o, t, n[2], 0.22, 5); });
+    if (sec === "room" || sec === "hide") H2.far.forEach(function (n) { if (n[0] === bar % 8 && n[1] === st) keys(o, t, n[2], 0.45, 5); });
     if (sec === "room" && (st === 0 || st === 8)) heart(o, t, 0.6);
     if (sec === "moves" && st % 4 === 0) heart(o, t, 0.55);
     if (sec === "hide" && (st === 0 || st === 8)) heart(o, t, 0.85);
     if (sec === "moves" && st === 0) fz(o, t, H2.walk[bar % 8], 1, six * 15, true);
     if (sec === "found" && H2.found[st] !== null) fz(o, t, 40 + H2.found[st], st % 4 === 2 ? 1 : 0.7, six * 0.9);
     if (sec === "hide") H2.box.forEach(function (n) { if (n[0] === (bar - 84) % 2 && n[1] === st) box(o, t, n[2], 0.9, n[3] * six * 1.6, 38); });   // the lullaby, out of tune
-    if (bar === 91 && st === 8) subDrop(o, t, six * 8, 0.45);
+    if (bar === 91 && st === 8) subDrop(o, t, six * 8, 0.25);
     kit(o, t, st, bar, sec === "found" ? 3 : 0, { four: true, back: true, fill: bar === 99 });
     if (sec === "found" && bar % 2 === 0 && (st === 0 || st === 7)) stb(o, t, cl, st ? 0.75 : 1, six * 1.2, st ? 0.6 : -0.6);
     if (sec === "found") chop(o, t, st, cl);
@@ -1428,15 +1445,15 @@
     var k = bar - 100, c = SIG.line[Math.floor(bar / 2) % 4], six = o.six;
     var sec = k < 8 ? "alone" : k < 16 ? "voice" : k < 24 ? "argue" : k < 32 ? "doubt" : k < 40 ? "build" : "speech";
     var lv = sec === "argue" ? (k >= 20 ? 1 : 0) : sec === "build" ? (k < 36 ? 1 : 2) : sec === "speech" ? 3 : 0;
-    if (k === 39 && st >= 8) { if (st === 8) subDrop(o, t, six * 8, 0.45); return; }   // the floor falls away before the speech
+    if (k === 39 && st >= 8) { if (st === 8) subDrop(o, t, six * 8, 0.25); return; }   // the floor falls away before the speech
     if (bar === SIG_END - 1) {   // the last bar: one chord, held, and the room ringing
       if (st === 0) { o.sub.set(t, 28, 0.06); sm(o, t, [40, 52, 55, 59, 64], six * 16, 0.05, { a: 0.03, r: 3, w: 0.6 }); keys(o, t, 64, 0.6, 4); keys(o, t, 40, 0.5, 4); }
       return;
     }
     if (st === 0) {
-      if (k === 0) mixTo(o, t, { arp: 1.2, fuzz: 0.7 }, six * 8);
-      if (k === 24) mixTo(o, t, { arp: 0.5, fuzz: 0.4 }, six * 6);
-      if (k === 32) mixTo(o, t, { arp: 1.2, fuzz: 0.7 }, six * 16);
+      if (k === 0) mixTo(o, t, { arp: 1.2, fuzz: 0.7 }, 0.05);
+      if (k === 24) mixTo(o, t, { arp: 0.5, fuzz: 0.4 }, 0.05);
+      if (k === 32) mixTo(o, t, { arp: 1.2, fuzz: 0.7 }, 0.05);
       sweep(o, "arpF", sec === "doubt" ? 520 : sec === "build" ? 900 + (k - 32) * 260 : sec === "speech" ? 3000 : 600 + k * 70, t, 0.8);
       sweep(o, "padF", sec === "doubt" ? 1500 : 1200 + Math.min(k, 31) * 40, t, 1);
       sweep(o, "fuzzF", sec === "doubt" ? 420 : 700 + (sec === "speech" ? 500 : 0), t, 0.5);
@@ -1445,14 +1462,14 @@
       if (sec !== "alone" && sec !== "doubt" && bar % 2 === 0) fz(o, t, c.r, 0.8, six * 30, true);   // the bass steps down, one held note at a time
       if ((sec === "argue" || sec === "speech") && bar % 2 === 0) sm(o, t, [c.tri[1] + 12, c.tri[2] + 12], six * 32, 0.03, { a: six * 6, r: 2, w: 0.9 });   // strings, higher
       if (sec === "doubt" && bar % 4 === 0) glass(o, t, [c.tri[2] + 24, c.r + 36], six * 48, 0.012);
-      if (k === 28 || k === 36) riser(o, t, six * 64, 0.06);
-      if (k === 32 || k === 40) crash(o, t, k === 40 ? 0.7 : 0.45);
+      if (k === 28 || k === 36) riser(o, t, six * 64, 0.04);
+      if (k === 32 || k === 40) crash(o, t, k === 40 ? 0.5 : 0.35);
     }
     var step = (bar * 16 + st) % 3;   // threes against fours: the pulse comes round to the downbeat every three bars
     if (sec !== "doubt") parp(o, t, c.tri[0] + 12 + SIG.three[step], st % 4 === 0 ? 0.9 : 0.6, six * 0.7, step === 0 ? -0.5 : step === 1 ? 0 : 0.5);
     if (sec === "alone" && SIG.type.indexOf(st) >= 0 && bar % 2 === 0) blip(o, t, 0.16, st % 2 ? 0.7 : -0.7, 3600);   // someone typing, far off
     if (lv) kit(o, t, st, bar, lv, { back: lv >= 3, fill: bar === 123 || bar === 131 || bar === 143 });
-    if (sec === "build" && k >= 38 && st % (k === 38 ? 2 : 1) === 0) rollHit(o, t, 0.25 + (st / 16) * 0.4);
+    if (sec === "build" && k >= 38 && st % (k === 38 ? 2 : 1) === 0) rollHit(o, t, 0.4);
     var ph = (k % 4) * 16 + st;
     if (sec === "voice" || sec === "argue" || sec === "build" || sec === "speech") {   // call and response: the hook upside down on the lead, then right way up, low on the piano
       if (ph < 32) SIG.inv.forEach(function (n) { if (n[0] === ph) o.lead.play(t, n[1], n[2] * six, sec === "voice" ? 0.065 : 0.075); });
@@ -1474,7 +1491,7 @@
     var hot = sec === "chase" || sec === "fight" || sec === "escape", tri = r === 41 ? [53, 56, 60] : [52, 55, 59];   // Em, and a Phrygian F leaning on it
     if (bar === SIG_END - 1 && st >= 4) { if (st === 4) { o.sub.set(t, 28, 0.0001); boom(o, t, 0.8); flyby(o, t, six * 10, 0.45); } return; }   // the lights go out
     if (st === 0) {
-      if (k === 0) mixTo(o, t, { fuzz: 0.9, stab: 1.1 }, six * 4);
+      if (k === 0) mixTo(o, t, { fuzz: 0.9, stab: 1.1 }, 0.05);
       sweep(o, "fuzzF", sec === "dark" ? 500 : sec === "standoff" || sec === "drop" ? 700 : 1300 + (k % 8) * 90, t, 0.5);
       sweep(o, "padF", hot ? 1300 : 1800, t, 1);
       o.sub.set(t, r - 12, hot ? 0.12 : 0.08);
@@ -1484,16 +1501,16 @@
       if ((sec === "standoff" || sec === "drop") && bar % 2 === 0 && o.P.choir) choir(o, t, tri, six * 32, 0.045, { a: six * 6, r: 2 });
       if (sec === "standoff") horns(o, t, [SIG.call[k - 16], SIG.call[k - 16] + 12], six * 14, 0.07, { a: six * 3, pan: k % 2 ? 0.25 : -0.25 });   // the call, low
       if (hot && bar % 2 === 0) sm(o, t, tri.concat([tri[0] + 12]), six * 32, 0.03, { a: six * 2, r: 1.2 });
-      if (k === 6 || k === 18 || k === 34) riser(o, t, six * 32, 0.08);
-      if (k === 8 || k === 20 || k === 28 || k === 36 || k === 40 || k === 44) crash(o, t, 0.8);
+      if (k === 6 || k === 18 || k === 34) riser(o, t, six * 32, 0.045);
+      if (k === 8 || k === 20 || k === 28 || k === 36 || k === 40 || k === 44) crash(o, t, 0.5);
       if (k === 8 || k === 20 || k === 34 || k === 36) boom(o, t, 0.7);
     }
     // the drums: only where it runs
     if (hot) kit(o, t, st, bar, 3, { four: true, back: true, fill: bar === 115 || bar === 131 || bar === 135 || bar === 143 });
-    if (sec === "engines" && st % 4 === 0) taiko(o, t, 0.45 + (k - 4) * 0.1, st % 8 ? 0.35 : -0.35, 85);
+    if (sec === "engines" && st % 4 === 0) taiko(o, t, 0.7, st % 8 ? 0.35 : -0.35, 85);
     if (sec === "standoff" && st % 4 === 2) rumble(o, t, 0.7);   // the kick goes; the rumble stays
-    if (sec === "standoff" && k === 19 && st % (st >= 8 ? 1 : 2) === 0) rollHit(o, t, 0.3 + st * 0.04);
-    if (sec === "standoff" && k === 19 && st === 8) subDrop(o, t, six * 8, 0.5);
+    if (sec === "standoff" && k === 19 && st % (st >= 8 ? 1 : 2) === 0) rollHit(o, t, 0.4);
+    if (sec === "standoff" && k === 19 && st === 8) subDrop(o, t, six * 8, 0.25);
     if (sec === "drop" && (st === 0 || st === 6 || st === 10)) taiko(o, t, st ? 0.55 : 0.85, st === 6 ? -0.5 : st === 10 ? 0.5 : 0, st ? 120 : 80);
     if ((sec === "fight" || sec === "escape") && bar % 4 === 3 && st >= 8) taiko(o, t, 0.4 + (st - 8) * 0.06, (st - 11.5) * 0.15, 140 - (st - 8) * 6);   // 16ths into the turn
     // the adrenaline: strings in 16ths, every step, the minor sixth leaning in
@@ -1534,13 +1551,13 @@
     var up = sec === "lift" && !home ? 2 : 0, c0 = home ? T1.ch[0] : sung ? DB.road[(k >> 1) % 4] : sec === "pre" ? DB.pre[(k >> 1) % 4] : T1.ch[Math.floor(bar / 2) % 4];
     var c = { r: c0.r + up, tri: c0.tri.map(function (m) { return m + up; }) }, pos = (k % 8) * 16 + st;
     if (st === 0) {
-      if (k === 0) mixTo(o, t, { stab: 1.1, keys: 1.1 }, six * 4);
+      if (k === 0) mixTo(o, t, { stab: 1.1, keys: 1.1 }, 0.05);
       sweep(o, "arpF", sec === "pre" ? 900 + (k - 16) * 250 : 2600, t, 0.6);
       sweep(o, "fuzzF", 1300, t, 0.4);
       o.sub.set(t, c.r - 12, sec === "rap" || sec === "trap" ? 0.08 : 0.12);
       if ((sec === "pre" || sung) && bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[0] + 12]), six * 32, sung ? 0.035 : 0.045, { a: six * (sung ? 2 : 4), r: 1.4 });
-      if (k === 20 || k === 36) riser(o, t, six * 64, 0.07);
-      if (k === 24 || k === 32 || k === 40) crash(o, t, 1);
+      if (k === 20 || k === 36) riser(o, t, six * 64, 0.045);
+      if (k === 24 || k === 32 || k === 40) crash(o, t, 0.5);
       if (bar % 4 === 0) glass(o, t, [c.tri[2] + 24, c.tri[0] + 36], six * 48, 0.01);
       if (home && bar === SIG_END - 1) { sm(o, t, [52, 55, 59, 64], six * 16, 0.05, { a: 0.05, r: 2.5 }); box(o, t, 88, 0.6, 3, 0); }
     }
@@ -1556,8 +1573,8 @@
     if (sec === "pre") {
       parp(o, t, pulseOf(c, st, C3.arp), st % 4 === 0 ? 0.9 : 0.6, six * 0.7, st % 2 ? 0.4 : -0.4);
       lineAt(DB.preLine, ((k - 16) % 4) * 16 + st).forEach(function (n) { o.lb.play(t, n[1], n[2] * six, 0.06); });
-      if (k >= 22 && st % (k === 23 ? 1 : 2) === 0) rollHit(o, t, 0.3 + (k - 22) * 0.25 + st * 0.02);
-      if (k === 23 && st === 8) subDrop(o, t, six * 8, 0.45);
+      if (k >= 22 && st % (k === 23 ? 1 : 2) === 0) rollHit(o, t, 0.4);
+      if (k === 23 && st === 8) subDrop(o, t, six * 8, 0.25);
     }
     if (sung && !home) {
       if (C3.roll.indexOf(st) >= 0) fz(o, t, c.r + (st % 4 === 3 ? 12 : 0), st % 4 === 2 ? 0.9 : 0.65, six * 0.8);
@@ -1603,7 +1620,7 @@
       if (bar % 2 === 1 && st >= 13) hh(o, t + six / 2, 0.4, false, 0.2);
     }
     if (k % 2 === 1 && (st === 4 || st === 12)) stb(o, t, [c.tri[0] + 24, c.tri[2] + 24], 0.55, six * 0.3, st === 4 ? -0.6 : 0.6);   // "hey!"
-    if (k === 39 && st >= 8) rollHit(o, t, 0.4 + (st - 8) * 0.07);
+    if (k === 39 && st >= 8) rollHit(o, t, 0.4);
   }
 
   // The joins between chapters: nothing just stops. A chapter going somewhere quieter drains away into it, and
@@ -1641,22 +1658,22 @@
     var sec = k < 4 ? "run" : k < 12 ? "handshake" : k < 32 ? "exploit" : k < 40 ? "stalemate" : k < 60 ? "root" : "commit";
     if (bar === 195 && st >= 8) return;   // a breath before the fall
     if (st === 0) {
-      if (k === 0) { mixTo(o, t, {}, six * 4); tremTo(o, t, 0); }
+      if (k === 0) { mixTo(o, t, {}, 0.05); tremTo(o, t, 0); }
       o.sub.set(t, c.r - 12, sec === "run" || sec === "handshake" || sec === "stalemate" ? 0.1 : 0.18);
       sweep(o, "padF", sec === "stalemate" ? 2200 : 1300, t, 1);
       if ((sec === "handshake" || sec === "stalemate" || sec === "commit") && bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[0] + 12]), six * 32, 0.035, { a: six * 8, r: 1.4 });
       var rz = sec === "exploit" || sec === "root" || sec === "commit" ? 1 : sec === "stalemate" ? 0.6 : sec === "handshake" && k >= 8 ? 0.5 : 0;
       if (rz && bar % 2 === 0) { o.reese.rate(t, sec === "root" || sec === "commit" ? 0.55 : 0.35); o.reese.play(t, c.r, six * 30, 0.19 * rz); }
-      if (bar === 140 || bar === 168 || bar === 188) riser(o, t, six * 64, 0.07);
-      if (bar === 144 || bar === 160 || bar === 172 || bar === 192) crash(o, t, 0.9);
+      if (bar === 140 || bar === 168 || bar === 188) riser(o, t, six * 64, 0.045);
+      if (bar === 144 || bar === 160 || bar === 172 || bar === 192) crash(o, t, 0.5);
       if ((sec === "exploit" && bar % 8 === 0) || (sec === "root" && bar % 4 === 0)) stb(o, t, c.tri, 1, six * 2, bar % 8 < 4 ? -0.5 : 0.5);
     }
-    if ((bar === 143 || bar === 171) && st === 8) subDrop(o, t, six * 8, 0.45);
+    if ((bar === 143 || bar === 171) && st === 8) subDrop(o, t, six * 8, 0.25);
     if (sec === "exploit" && bar % 4 === 3 && st === 12) o.reese.play(t, c.r + 12, six * 4, 0.17);
     if (sec === "run" || sec === "handshake") {   // two people typing; in the run-up a roll that speeds up with the tempo
       if (B4.typeA.indexOf(st) >= 0) blip(o, t, 0.45, -0.75, 3600);
       if (B4.typeB.indexOf(st) >= 0) blip(o, t, 0.4, 0.75, 4300);
-      if (sec === "run") { if (st % (k < 2 ? 2 : 1) === 0) rollHit(o, t, 0.25 + 0.5 * (k * 16 + st) / 64); if (st === 0) kick(o, t, 0.8); return; }
+      if (sec === "run") { if (st % (k < 2 ? 2 : 1) === 0) rollHit(o, t, 0.4); if (st === 0) kick(o, t, 0.8); return; }
     }
     var local = (bar % 2) * 16 + st;
     if (sec === "handshake" || sec === "exploit") {   // the duel as written: a phrase every two bars, tentative at first
@@ -1682,52 +1699,53 @@
     if (st === 0) {
       o.sub.set(t, 28, Math.max(0.03, 0.16 - k * 0.025));
       if (k === 0) {
-        kick(o, t, 1.1); tom(o, t, 62, 1); crash(o, t, 0.8); stb(o, t, [52, 55, 59], 1.2, six * 2, 0);
+        kick(o, t, 1.1); tom(o, t, 62, 1); crash(o, t, 0.5); stb(o, t, [52, 55, 59], 1.2, six * 2, 0);
         o.reese.rate(t, 0.2); o.reese.play(t, 40, six * 24, 0.2);
         sm(o, t, [28, 40, 47], six * 48, 0.05, { a: 0.02, r: 4, w: 0.3 });
       }
-      if (k === 2) sm(o, t, [52, 53, 59], six * 48, 0.03, { a: six * 8, r: 3 });
+      if (k === 2) sm(o, t, [52, 53, 59], six * 48, 0.045, { a: six * 8, r: 3 });
+      if (k === 4) sm(o, t, [40, 47, 52], six * 32, 0.05, { a: six * 4, r: 3, w: 0.6, wave: "triangle" });
       if (k === 4) { keys(o, t, 28, 0.8, 6); keys(o, t, 29, 0.5, 6); }
     }
     if (k === 0 && st === 4) o.reese.bend(t, 16, six * 6);
-    if (k >= 1 && (st === 0 || (k < 3 && st === 8))) heart(o, t, 0.75 - k * 0.1);
+    if (k >= 1 && (st === 0 || (k < 3 && st === 8))) heart(o, t, 0.7);
   }
   function cutThreeAm(o, t, st, bar) {   // 202–230 · 66 · the character alone at 3 AM: the piano's melody, the strings coming up under it
     var k = bar - 202, c = C3.ch[Math.floor(bar / 2) % 4], mb = k % 8, six = o.six, sec = k < 8 ? "piano" : k < 16 ? "memory" : k < 24 ? "truth" : "climb", style = o.P.style;
     if (st === 0) {
-      if (k === 0) mixTo(o, t, { arp: 0.45 }, six * 4);
-      if (k === 16) mixTo(o, t, { arp: 0.8 }, six * 16);
+      if (k === 0) mixTo(o, t, { arp: 0.45 }, 0.05);
+      if (k === 16) mixTo(o, t, { arp: 0.8 }, 0.05);
       sweep(o, "padF", sec === "climb" ? 2600 : 1700, t, 1.6);
       sweep(o, "arpF", 520 + k * 60, t, 1.2);
       o.sub.set(t, c.r - 12, sec === "piano" ? 0.02 : sec === "climb" ? 0.09 : 0.05);
-      if (sec !== "piano" && bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[1] + 12]), six * 32, sec === "climb" ? 0.05 : 0.035, { a: six * 10, r: 1.8 });
+      if (bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[1] + 12]), six * 32, sec === "climb" ? 0.05 : 0.035, { a: six * 10, r: 1.8 });
       if (sec === "truth" && bar % 4 === 0) glass(o, t, [c.tri[2] + 24, c.tri[0] + 36], six * 48, 0.012);
       if (sec !== "truth") keys(o, t, c.r, 0.5, 3.2);
-      if (k === 24) riser(o, t, six * 64, 0.06);
+      if (k === 24) riser(o, t, six * 64, 0.045);
       if (style === "industrial" && sec === "memory" && bar % 4 === 0) pad(o, t, c.tri, six * 64, 0.018);   // the choir, under the strings
     }
     if (sec !== "truth" && st === 8 && mb !== 7) keys(o, t, c.tri[1], 0.3, 2.2);
     if (sec !== "truth" && mb === 7) C3.walkup.forEach(function (n) { if (n[0] === st) keys(o, t, n[1], 0.32 + (st - 8) * 0.02, 1.6); });
     if (sec !== "truth") melodyAt(C3.mel, mb, st).forEach(function (n) {
-      keys(o, t, n[2], sec === "piano" ? 0.8 : 0.7, n[3] * six * 1.4);
+      keys(o, t, n[2], sec === "piano" ? 1.3 : 0.9, n[3] * six * 1.4);
       if (style === "kpop" && sec === "memory") box(o, t, n[2] + 12, 0.4, n[3] * six * 1.4, 0);
     });
-    if (sec === "truth") C3.mel.forEach(function (n) { if (n[0] === Math.floor((k - 16) / 2) && n[1] * 2 === ((k - 16) % 2) * 16 + st) keys(o, t, n[2] - 12, 0.85, n[3] * six * 2.4); });   // half speed, low, alone
+    if (sec === "truth") C3.mel.forEach(function (n) { if (n[0] === Math.floor((k - 16) / 2) && n[1] * 2 === ((k - 16) % 2) * 16 + st) keys(o, t, n[2] - 12, 1.4, n[3] * six * 2.4); });   // half speed, low, alone
     if (sec === "memory" || sec === "climb") parp(o, t, pulseOf(c, st, C3.arp), (st % 4 === 0 ? 1 : 0.7) * (sec === "climb" ? 0.85 : 0.5), six * 0.75, st % 2 ? 0.5 : -0.5);
     if (sec === "climb") {   // no kit: the roll alone carries it up
-      if (bar >= 228 && st % (bar === 229 ? 1 : 2) === 0) rollHit(o, t, 0.3 + (bar - 228) * 0.25 + st * 0.02);
-      if (bar === 229 && st === 8) subDrop(o, t, six * 8, 0.4);
+      if (bar >= 228 && st % (bar === 229 ? 1 : 2) === 0) rollHit(o, t, 0.4);
+      if (bar === 229 && st === 8) subDrop(o, t, six * 8, 0.25);
     }
   }
   function cutFly(o, t, st, bar) {   // 230–262 · 132 · learning to fly: the character's theme as trance, then the hook flies with it
     var k = bar - 230, c = C3.ch[Math.floor(bar / 2) % 4], mb = bar % 8, six = o.six, sec = k < 16 ? "release" : k < 24 ? "becoming" : "both";
     if (bar === 261 && st >= 8) return;   // the breath before dawn
     if (st === 0) {
-      if (k === 0) mixTo(o, t, {}, six * 4);
+      if (k === 0) mixTo(o, t, {}, 0.05);
       sweep(o, "arpF", 3400, t, 1.2); sweep(o, "padF", 2800, t, 1.6); sweep(o, "fuzzF", sec === "release" ? 1100 : 1500, t, 0.5);
       o.sub.set(t, c.r - 12, 0.12);
       if (bar % 2 === 0) sm(o, t, c.tri.concat([c.tri[1] + 12]), six * 32, 0.05, { a: six * 2, r: 1.8 });
-      if (k % 8 === 0) crash(o, t, 1);
+      if (k % 8 === 0) crash(o, t, 0.5);
       keys(o, t, c.r, 0.35, 3);
     }
     var both = sec === "both" && mb < 6;   // the hook's last two bars want B major, the melody's want D: there the melody leads alone
@@ -1744,7 +1762,7 @@
   }
   function cutDawn(o, t, st, bar) {   // 262–310 · 66 → 60, A=432 · the epilogue, and this time the horns sing the hook in G
     var k = bar - 262, six = o.six, style = o.P.style;
-    if (k === 0 && st === 0) { mixTo(o, t, {}, six * 4); tremTo(o, t, 0); }
+    if (k === 0 && st === 0) { mixTo(o, t, {}, 0.05); tremTo(o, t, 0); }
     SONG_EPI.play(o, t, st, k);
     if (k >= 8 && k < 16 && st % 2 === 0) hookAt(((k - 8) * 16 + st) / 2).forEach(function (n) { br2(o, t, [n[1] - 12], n[2] * six * 2, 0.05); });
     if (style === "industrial" && k >= 24 && k < 32 && k % 2 === 0 && st === 0) { var g = E5.grief[(k - 24) % 8]; br2(o, t, [g[2], g[0] + 7], six * 32, 0.03); }   // the low brass, holding the grief up
@@ -1762,6 +1780,9 @@
   function cutOld(pos) { var b = Math.max(0, Math.floor(pos)), n = CUT_MAP.length; return b < n ? CUT_MAP[b] + (pos - b) : CUT_MAP[n - 1] + 1 + (pos - n); }
   CUT.chapters = [[0, "cold open"], [28, "the theme"], [64, "something in the dark"], [96, null], [144, "two cursors"], [192, "3 AM"], [214, "learning to fly"], [246, "dawn"]];
   var SONG_CUT = {
+    flat_golden: [6.4, 3.2, 4.0, 5.2, 5.8, 4.8, 5.5, 5.2, 4.1, 2.7, 3.7, 4.5, 5.4, 4.6, 4.4, 2.6, 5.1, 9.8, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 9.5, 7.1, 7.3, 5.0, 3.5, 5.1, 5.4, 4.9, 1.0, 1.8, 1.4, 1.4, 0.3, 0.4, 1.3, 1.2, -4.6, -4.0, -4.5, -4.2, -4.8, -4.7, -5.0, -4.7, -1.6, -2.2, -2.6, -2.7, -2.8, -3.1, -3.3, -4.7, -6.0, -5.3, -5.1, -4.5, -6.0, -5.0, -6.4, -4.9, -0.1, -1.1, 1.6, 10.0, 0.4, -1.3, 2.5, 8.8, -4.6, -4.7, -5.2, -5.2, -4.6, -4.5, -5.0, -4.8, 5.0, 8.9, 5.7, 4.6, 8.6, 9.4, 5.9, 3.8, -1.7, -0.9, -1.1, -0.6, -1.3, -0.4, -1.5, -0.9, 6.8, 8.4, 10.6, 9.7, 9.7, 6.7, 10.6, 9.5, 10.8, 9.2, 10.9, 10.9, 9.5, 7.7, 11.0, 10.3, -0.8, -1.4, -1.2, -1.2, -2.3, -2.7, -2.9, -4.8, -5.1, -4.6, -4.9, -4.5, -4.4, -4.7, -4.6, -4.9, 6.5, 8.5, 8.6, 8.0, 9.3, 6.1, 8.5, 3.1, -6.3, -5.7, -5.8, -5.7, -5.2, -6.0, 2.5, 7.8, 6.9, 9.8, 2.0, 1.5, 3.3, 6.9, 4.7, 8.4, -0.9, 1.7, 0.1, 0.2, -8.4, -7.9, -6.3, -8.3, -6.8, -5.9, -6.3, -8.3, -7.7, -7.0, -6.2, -7.9, -4.2, -3.8, -4.7, -3.7, -5.2, -3.9, -4.2, -3.2, -7.9, -5.9, -8.1, -6.2, -8.6, -6.6, -7.5, -6.6, -7.6, -4.9, -7.6, -6.8, -9.8, -6.4, -8.7, -5.5, -5.0, 9.5, 11.6, 12.0, 11.4, 12.0, 12.0, 11.3, 11.6, 10.8, 12.0, 11.4, 12.0, 10.4, 12.0, 11.6, 10.6, 9.5, 8.6, 7.5, 5.2, 2.1, -4.9, -3.7, -4.9, -4.4, -4.3, -3.6, -4.8, -4.6, -4.5, -3.6, -5.0, -4.5, -4.2, -3.8, -4.7, -4.8, -5.5, -4.7, -6.0, -5.5, -5.1, -4.9, -5.7, -5.8, -5.4, -5.0, -6.0, -5.1, -5.9, -4.7, -6.4, -1.4, 12.0, 12.0, 12.0, 12.0, 6.2, 5.9, 5.2, 9.1, 6.1, 5.3, 5.8, 8.9, 1.4, 1.3, 4.7, 5.3, 0.9, 0.7, 8.1, 9.6, 10.8, 9.2, 11.1, 11.5],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [8.5, 5.1, 4.8, 7.1, 7.1, 6.9, 7.7, 7.6, 7.2, 4.6, 5.5, 6.7, 8.4, 6.7, 6.5, 4.4, 7.2, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 10.7, 10.3, 10.0, 6.9, 5.2, 7.0, 8.4, 7.6, 4.8, 6.3, 5.6, 6.0, 4.0, 4.1, 5.3, 5.9, -1.8, -0.5, -1.6, -1.0, -2.1, -1.9, -1.8, -1.7, 2.7, 2.1, 2.1, 2.4, 1.6, 1.4, 0.8, -1.3, -3.4, -2.7, -2.6, -2.1, -4.4, -3.7, -4.8, -3.3, 2.9, 2.3, 5.3, 12.0, 3.7, 1.4, 5.7, 12.0, -2.9, -3.3, -3.5, -3.7, -3.3, -3.2, -3.3, -3.5, 9.4, 12.0, 8.6, 7.4, 12.0, 12.0, 8.9, 6.3, -1.5, -0.8, -1.2, -1.0, -1.9, -1.2, -1.3, -0.0, -3.4, 0.2, -0.8, -0.3, 12.0, 12.0, 12.0, 12.0, 0.0, 0.3, 0.3, 0.3, 0.4, 0.4, 0.3, 0.1, 3.3, 3.5, 2.9, -0.3, -2.8, -2.1, -2.3, -2.7, -2.6, -2.6, -2.6, -3.3, -3.2, -3.0, -3.3, -3.4, 7.8, 8.4, 8.3, 8.0, -3.3, -2.3, -2.7, -2.9, -2.2, -2.0, -2.3, -2.4, -2.7, -2.3, -2.6, 4.2, 11.8, 12.0, 5.7, 5.3, 5.5, 6.3, 5.3, 6.7, -0.0, 1.9, 1.2, 0.4, -6.7, -5.7, -5.3, -6.2, -5.7, -3.1, -5.9, -5.1, -7.6, -3.2, -6.9, -4.1, -3.3, -0.4, -3.9, 0.1, -4.6, -1.2, -3.6, -0.8, -6.6, -4.0, -6.6, -3.7, -7.0, -4.2, -5.8, -4.7, -6.3, -3.5, -6.2, -3.3, -7.6, -5.7, -7.3, -3.6, -3.2, 4.4, 6.0, 6.5, 6.8, 12.0, 8.4, 6.8, 8.0, 7.0, 8.5, 7.5, 8.1, 6.7, 9.5, 7.7, 7.6, 5.7, 5.5, 3.4, 2.6, -0.1, -3.6, -2.5, -3.3, -2.7, -2.8, -2.3, -3.5, -3.2, -3.5, -2.7, -3.4, -2.8, -2.6, -2.3, -3.7, -3.5, -4.7, -3.8, -4.5, -3.9, -3.8, -3.2, -4.5, -4.2, -4.4, -3.7, -4.5, -3.7, -4.0, -2.9, -4.6, -1.9, 8.8, 12.0, 12.0, 12.0, 4.1, 3.9, 3.8, 6.4, 2.9, 3.4, 4.3, 6.8, -1.0, -1.4, -0.6, 0.5, -2.0, -1.9, 4.5, 5.5, 5.1, 3.4, 4.7, 5.6],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [8.7, 6.1, 5.9, 7.8, 8.4, 7.7, 7.7, 7.5, 6.9, 5.2, 5.9, 7.2, 8.3, 8.0, 6.1, 4.7, 8.0, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 11.5, 12.1, 10.1, 6.9, 12.0, 11.6, 11.0, 6.1, 8.3, 7.6, 9.5, 5.9, 5.4, 8.0, 7.8, -1.6, -0.8, -1.6, -1.0, -2.1, -1.9, -1.7, -1.0, 1.6, 1.2, 0.2, 0.3, -0.0, -0.2, 0.0, -0.9, -3.9, -2.1, -1.8, -1.6, -3.7, -3.0, -4.6, -2.7, 2.3, 1.7, 4.9, 12.1, 4.6, 2.6, 7.0, 12.1, -2.0, -2.8, -2.5, -3.0, -2.4, -2.1, -2.5, -2.6, 9.2, 12.1, 11.2, 9.6, 12.1, 12.1, 12.1, 9.7, -0.8, 0.7, 0.9, 1.2, -0.1, 1.4, 0.4, 1.1, 3.4, 7.4, 6.7, 7.1, 5.7, 6.7, 5.5, 6.2, -2.4, -1.2, 0.9, 1.0, -2.8, -1.5, -0.0, 0.3, -3.9, -3.2, -1.9, -1.2, -4.8, -4.1, -3.2, -2.9, 6.2, 8.3, 7.5, 10.1, 7.8, 7.9, 7.2, 9.4, -4.3, -2.8, -1.1, -0.9, -4.5, -3.5, -2.3, -1.3, -5.9, -5.0, -3.8, -3.1, -5.6, -5.0, -4.2, -3.1, 4.9, 12.1, 12.1, 12.1, 3.6, 4.3, 2.8, 5.4, -0.1, 1.9, -0.3, 0.4, -8.1, -6.7, -7.3, -8.1, -6.9, -4.8, -7.4, -7.4, -8.2, -4.9, -7.7, -6.8, -4.6, -2.5, -4.9, -2.5, -5.5, -2.3, -4.8, -2.5, -7.9, -6.3, -7.4, -5.2, -8.0, -7.7, -8.0, -5.5, -7.5, -6.3, -7.8, -4.9, -8.6, -7.8, -9.1, -4.0, -2.0, 7.0, 5.4, 5.9, 6.4, 12.1, 8.8, 7.1, 7.3, 6.6, 6.8, 5.7, 7.0, 5.9, 8.6, 7.3, 6.6, 5.0, 4.9, 3.1, 2.9, 1.0, -4.1, -2.3, -3.4, -2.7, -3.1, -2.1, -3.4, -3.1, -3.8, -1.9, -3.2, -2.7, -2.2, -1.7, -3.7, -3.2, -5.3, -3.7, -4.4, -4.1, -3.8, -3.0, -4.6, -3.7, -4.9, -3.3, -5.0, -4.3, -4.4, -3.1, -5.4, -2.6, 7.7, 12.1, 12.1, 12.1, 4.6, 4.0, 4.5, 6.0, 3.6, 3.4, 4.9, 6.0, -1.7, -2.2, -1.1, -0.6, -2.4, -2.8, 3.7, 4.7, 4.6, 3.9, 4.2, 3.7],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: CUT_MOOD, bpm: 76, bars: CUT_MAP.length, outroBars: 2, v2: true, duckDepth: 0.4,
     tempo: function (pos) { return mapBpm(CUT.tempo, cutOld(pos)); },
     refAt: function (pos) { pos = cutOld(pos); return pos < 278 ? 440 : pos < 282 ? 440 - 2 * (pos - 278) : 432; },   // dawn retunes to A=432
@@ -1769,9 +1790,9 @@
     sec: function (bar) { return { id: cutSec(CUT_MAP[Math.min(bar, CUT_MAP.length - 1)]) }; },
     trim: { "phthalo": 8.2, "knight": 5.6, "golden": 5.1 },
     // measured: each section matched to the loudness of its counterpart in the five songs (cutSec names the match)
-    lift_golden: { "cold open": 0.7, "boot": 8.6, "boot 2": 0.6, "pulse": -1.8, "theme": -1.3, "break": -3.0, "drive": 0.0, "dark room": -4.9, "something moves": -7.1, "hide": -4.7, "found": -1.6, "sig 1": -0.6, "sig 2": 0.0, "sig 3": -1.8, "sig 4": -0.4, "sig 5": 0.1, "sig 6": -0.2, "run-up": 1.0, "handshake": -1.3, "exploit": -3.8, "stalemate": -4.8, "root": -2.7, "collapse": -0.3, "3 AM": 6.2, "memory": 2.2, "the truth": 3.3, "the climb": -0.5, "release": -1.9, "becoming": -1.1, "dawn: ashes": 5.0, "dawn: what remains": 0.9, "dawn: remember": -0.4, "dawn: grief": 1.0, "dawn: the weight lifts": 1.9, "dawn: last light": 2.5 },
-    lift_knight: { "cold open": -0.3, "boot": 10.3, "boot 2": 1.2, "pulse": -0.5, "theme": -0.5, "break": -0.8, "drive": 0.0, "dark room": -3.5, "something moves": -11.5, "hide": -4.4, "found": -0.6, "sig 1": -4.8, "sig 2": -0.7, "sig 3": -2.3, "sig 4": -0.2, "sig 5": -0.8, "sig 6": 0.0, "run-up": 4.1, "handshake": -0.9, "exploit": -3.4, "stalemate": -4.4, "root": -2.3, "collapse": 0.9, "3 AM": 7.0, "memory": 2.4, "the truth": 3.7, "the climb": 0.1, "release": -1.1, "becoming": -0.3, "dawn: ashes": 3.7, "dawn: what remains": 0.3, "dawn: remember": 0.9, "dawn: grief": 0.8, "dawn: the weight lifts": 2.4, "dawn: last light": 2.8 },
-    lift_phthalo: { "cold open": -0.9, "boot": 8.4, "boot 2": -2.6, "pulse": -4.3, "theme": -1.5, "break": -5.6, "drive": 0.0, "dark room": -6.9, "something moves": -10.5, "hide": -8.2, "found": -2.2, "sig 1": 0.1, "sig 2": -4.4, "sig 3": -5.1, "sig 4": 3.1, "sig 5": -4.5, "sig 6": -0.9, "run-up": -3.1, "handshake": -3.3, "exploit": -8.7, "stalemate": -9.7, "root": -7.5, "collapse": -1.6, "3 AM": 4.4, "memory": 0.7, "the truth": 1.0, "the climb": -3.5, "release": -2.6, "becoming": -1.4, "dawn: ashes": 2.6, "dawn: what remains": -1.8, "dawn: remember": -2.2, "dawn: grief": -1.3, "dawn: the weight lifts": -0.2, "dawn: last light": 0.1 },
+    lift_golden: { "cold open": 0.0, "boot": 0.0, "boot 2": 0.0, "pulse": 0.0, "theme": 0.0, "break": 0.0, "drive": 0.0, "dark room": 0.0, "something moves": 0.0, "hide": 0.0, "found": 0.0, "sig 1": 0.0, "sig 2": 0.0, "sig 3": 0.0, "sig 4": 0.0, "sig 5": 0.0, "sig 6": 0.0, "run-up": 0.0, "handshake": 0.0, "exploit": 0.0, "stalemate": 0.0, "root": 0.0, "collapse": 0.0, "3 AM": 0.0, "memory": 0.0, "the truth": 0.0, "the climb": 0.0, "release": 0.0, "becoming": 0.0, "dawn: ashes": 0.0, "dawn: what remains": 0.0, "dawn: remember": 0.0, "dawn: grief": 0.0, "dawn: the weight lifts": 0.0, "dawn: last light": 0.0 },
+    lift_knight: { "cold open": 0.0, "boot": 0.0, "boot 2": 0.0, "pulse": 0.0, "theme": 0.0, "break": 0.0, "drive": 0.0, "dark room": 0.0, "something moves": 0.0, "hide": 0.0, "found": 0.0, "sig 1": 0.0, "sig 2": 0.0, "sig 3": 0.0, "sig 4": 0.0, "sig 5": 0.0, "sig 6": 0.0, "run-up": 0.0, "handshake": 0.0, "exploit": 0.0, "stalemate": 0.0, "root": 0.0, "collapse": 0.0, "3 AM": 0.0, "memory": 0.0, "the truth": 0.0, "the climb": 0.0, "release": 0.0, "becoming": 0.0, "dawn: ashes": 0.0, "dawn: what remains": 0.0, "dawn: remember": 0.0, "dawn: grief": 0.0, "dawn: the weight lifts": 0.0, "dawn: last light": 0.0 },
+    lift_phthalo: { "cold open": 0.0, "boot": 0.0, "boot 2": 0.0, "pulse": 0.0, "theme": 0.0, "break": 0.0, "drive": 0.0, "dark room": 0.0, "something moves": 0.0, "hide": 0.0, "found": 0.0, "sig 1": 0.0, "sig 2": 0.0, "sig 3": 0.0, "sig 4": 0.0, "sig 5": 0.0, "sig 6": 0.0, "run-up": 0.0, "handshake": 0.0, "exploit": 0.0, "stalemate": 0.0, "root": 0.0, "collapse": 0.0, "3 AM": 0.0, "memory": 0.0, "the truth": 0.0, "the climb": 0.0, "release": 0.0, "becoming": 0.0, "dawn: ashes": 0.0, "dawn: what remains": 0.0, "dawn: remember": 0.0, "dawn: grief": 0.0, "dawn: the weight lifts": 0.0, "dawn: last light": 0.0 },
     ramp: 1,
     tone: { sub: -2, punch: 1.5, pres: 1.5 },
     init: function (o, t) {
@@ -1802,12 +1823,15 @@
    * Phthalo's chapter of the director's cut as a track of its own, in every palette's sound: alone, the inner voice,
    * the argument, the doubt, the build, the speech. Its levels are the cut's (the "sig" sections). */
   var SONG_MONO = {
+    flat_golden: [9.1, 7.5, 7.4, 7.8, 6.8, 7.1, 6.7, 7.1, -1.5, -0.0, 2.2, 2.8, -1.6, -0.5, 1.4, 2.0, -2.7, -1.9, -0.5, 0.0, -3.5, -2.6, -1.1, -1.1, 8.2, 8.7, 9.3, 10.8, 8.9, 8.8, 9.1, 10.5, -2.1, -1.2, 0.8, 1.3, -2.7, -1.7, -0.6, -0.1, -3.1, -2.3, -1.1, -0.9, -3.4, -2.7, -1.6, 2.4],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [9.8, 9.1, 8.8, 9.1, 8.2, 8.3, 7.8, 8.2, -1.4, 0.2, 1.5, 1.6, -1.7, -0.2, 0.6, 1.1, -2.3, -1.3, -0.8, 0.2, -3.1, -1.9, -1.5, -1.0, 9.4, 10.5, 10.6, 12.0, 10.5, 10.3, 10.3, 12.0, -2.3, -0.8, 0.2, 0.8, -3.2, -2.3, -2.2, -1.1, -4.1, -3.0, -3.1, -2.3, -4.4, -3.5, -3.3, -1.7],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [9.5, 8.2, 7.5, 7.7, 6.9, 7.4, 6.8, 7.5, -1.3, 0.1, 1.9, 2.2, -1.4, -0.4, 0.9, 1.5, -3.0, -2.4, -0.6, 0.1, -3.8, -3.0, -2.4, -2.2, 7.6, 9.2, 8.9, 11.0, 8.5, 8.1, 8.7, 10.5, -2.8, -1.5, -0.0, 0.3, -3.0, -2.1, -1.2, 0.0, -4.4, -3.6, -2.5, -1.7, -4.2, -3.4, -3.2, -1.8],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "The Monologue · a voice thinking out loud: the bass walking down, a pulse in threes, the hook upside down", bpm: 124, bars: 48, v2: true, duckDepth: 0.4,
     sec: function (bar) { return { id: "sig " + (1 + (bar >> 3)) }; },
     trim: { "phthalo": 8.2, "knight": 5.6, "golden": 5.1 },
-    lift_phthalo: { "sig 1": 0.1, "sig 2": -4.4, "sig 3": -5.1, "sig 4": 3.1, "sig 5": -4.5, "sig 6": -0.9 },
-    lift_knight: { "sig 1": 0.1, "sig 2": -4.4, "sig 3": -5.1, "sig 4": 3.1, "sig 5": -4.5, "sig 6": -0.9 },
-    lift_golden: { "sig 1": 0.1, "sig 2": -4.4, "sig 3": -5.1, "sig 4": 3.1, "sig 5": -4.5, "sig 6": -0.9 },
+    lift_phthalo: { "sig 1": 0.0, "sig 2": 0.0, "sig 3": 0.0, "sig 4": 0.0, "sig 5": 0.0, "sig 6": 0.0 },
+    lift_knight: { "sig 1": 0.0, "sig 2": 0.0, "sig 3": 0.0, "sig 4": 0.0, "sig 5": 0.0, "sig 6": 0.0 },
+    lift_golden: { "sig 1": 0.0, "sig 2": 0.0, "sig 3": 0.0, "sig 4": 0.0, "sig 5": 0.0, "sig 6": 0.0 },
     ramp: 1, tone: { sub: -2, punch: 1.5, pres: 1.5 },
     init: function (o, t) { o.sub = makeSub(o, t); o.lead = makeLead2(o, t, o.P.lead, -0.35); o.lb = makeLead2(o, t, o.P.lead2, 0.7); },
     play: function (o, t, st, bar) { if (bar === 0 && st === 0) tremTo(o, t, 0); sigMonologue(o, t, st, bar + 100); },
@@ -1921,15 +1945,18 @@
     sec: function (bar) {
       if (bar < 8) return { id: "enqueue", hq: bar < 4 ? 1 : 2, tick: 1, pad: bar >= 4, sky: 900 + bar * 200 };
       if (bar < 28) return { id: "workers", hq: 3, kick: 1, hats: 1, bass: bar >= 12 ? 1 : 0.6, clap: bar >= 20, pad: 1, sky: 2200 + (bar - 8) * 150, fill: bar === 27 };
-      if (bar < 44) return { id: "backlog", hq: 3, kick: 1, hats: 2, clap: 1, bass: 1, pad: 1, alarm: bar % 2 === 0 ? 0.3 + (bar - 28) / 22 : 0, sky: 3000 + (bar - 28) * 300, riser: bar === 40, roll: bar >= 40 ? 40 : 0, gap: bar === 43 };
+      if (bar < 44) return { id: "backlog", hq: 3, kick: 1, hats: 2, clap: 1, bass: 1, pad: 1, alarm: bar % 2 === 0 ? 0.6 : 0, sky: 3000 + (bar - 28) * 300, riser: bar === 40, roll: bar >= 40 ? 40 : 0 };
       if (bar < 68) return { id: "autoscale", r2: 1, hq: 3, kick: 1, hats: 2, clap: 1, bass: 2, lead: bar < 60 ? "A" : "B", stab: 1, ride: bar >= 52, sky: 9000, hit: bar === 44 || bar === 60, crash: bar % 8 === 4 };
       if (bar < 76) return { id: "rate limit", half: 1, hq: 2, kick: 1, bass: 1, pad: 1, sky: 1100, throttle: bar === 75 };
-      if (bar < 80) return { id: "redis flush", flush: bar === 76, tick: 1, bass: 0.6, sky: 600 + (bar - 76) * 900, riser: bar === 78, gap: bar === 79 };
+      if (bar < 80) return { id: "redis flush", flush: bar === 76, tick: 1, hq: 1, pad: 1, bass: 1, sky: 1800 + (bar - 76) * 600, riser: bar === 78 };   // never empty: a flush is heard, not a silence
       if (bar < 96) return { id: "batch ×2", r2: 1, hq: 3, kick: 1, hats: 3, clap: 1, bass: 2, lead: bar < 88 ? "A" : "B", oct: 1, stab: 1, ride: 1, sky: 9500, hit: bar === 80 || bar === 88, crash: bar % 4 === 0 };
       return { id: "drained", hq: bar < 100 ? 2 : 1, kick: bar < 100, hats: bar < 98 ? 1 : 0, bass: bar < 102 ? 0.6 : 0, pad: 1, sky: 3000 - (bar - 96) * 250 };
     }
   };
   var SONG_QUEUE = {
+    flat_golden: [-0.1, -0.1, -0.1, -0.1, 11.8, 10.1, 10.9, 9.9, 2.9, 2.6, 3.0, 2.4, 2.1, 1.4, 1.8, 1.0, 1.1, 0.7, 0.9, 0.4, 1.4, 1.0, 1.0, 0.6, 0.6, 0.0, 0.5, -0.6, 1.2, 1.1, 0.8, 0.4, 0.1, -0.4, 0.1, -0.5, 0.6, -0.1, -0.0, -0.2, -0.8, -1.0, -1.7, -3.7, -4.0, -2.8, -3.0, -2.7, -3.0, -2.9, -2.3, -2.4, -3.5, -3.1, -2.7, -3.0, -2.8, -3.0, -2.5, -2.3, -3.8, -2.8, -2.6, -2.9, -2.6, -2.9, -2.4, -2.0, 2.2, 2.7, 3.4, 2.6, 2.7, 2.2, 2.3, 8.3, 0.9, 2.6, 2.2, 1.7, -4.8, -4.0, -3.8, -3.5, -4.5, -4.2, -4.1, -3.8, -4.0, -3.6, -3.4, -3.5, -4.8, -4.2, -3.8, -3.7, 1.9, 2.0, 3.0, 2.4, 5.2, 5.3, 12.0, 10.9],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [0.0, 0.0, 0.0, 0.0, 12.1, 10.7, 11.3, 10.4, 3.0, 2.7, 3.1, 2.6, 1.6, 1.3, 1.5, 0.9, 1.2, 0.7, 0.9, 0.5, 1.2, 0.7, 0.6, 0.4, 0.6, 0.0, 0.6, -0.1, 0.9, 1.1, 0.6, 0.5, 0.5, -0.2, 0.2, -0.4, 0.2, -0.0, -0.2, -0.7, -0.6, -0.8, -1.3, -2.2, -4.9, -4.0, -3.2, -3.3, -3.8, -3.7, -2.9, -3.1, -4.4, -4.1, -3.4, -3.5, -4.0, -3.7, -3.2, -3.2, -4.4, -3.7, -3.2, -3.1, -3.6, -3.4, -3.2, -3.1, 2.4, 2.6, 2.8, 2.4, 2.8, 2.4, 2.7, 8.6, 0.2, 2.1, 1.2, 0.9, -4.8, -4.6, -4.2, -4.4, -5.2, -4.7, -4.8, -4.5, -4.7, -4.4, -3.8, -4.0, -4.9, -4.7, -4.5, -3.5, 2.2, 2.1, 2.9, 2.3, 4.7, 4.3, 11.9, 11.2],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [-0.1, -0.1, -0.1, -0.1, 12.0, 12.0, 12.0, 12.0, 3.9, 3.2, 3.9, 3.1, 2.2, 1.6, 2.1, 1.3, 1.5, 1.3, 1.5, 1.2, 1.4, 0.8, 1.1, 0.3, 0.9, 0.5, 0.7, -0.7, 1.1, 1.2, 0.6, 0.2, 0.4, -0.1, 0.2, -0.5, 0.1, -0.1, -0.6, -0.2, -0.7, -1.2, -2.7, -6.2, -4.3, -3.6, -3.2, -3.2, -3.6, -3.3, -2.9, -3.1, -4.3, -3.5, -3.4, -3.5, -3.3, -3.4, -3.1, -3.1, -4.2, -3.4, -3.4, -2.9, -3.3, -3.4, -3.0, -2.6, 3.6, 3.6, 4.4, 4.2, 4.2, 3.7, 4.8, 11.9, 2.4, 4.1, 3.9, 2.9, -4.6, -3.8, -3.7, -3.6, -4.7, -4.2, -4.1, -4.1, -4.4, -3.8, -3.6, -3.5, -4.8, -4.2, -3.8, -3.7, 2.3, 2.5, 3.3, 3.5, 6.9, 7.0, 12.0, 12.0],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "Sidekiq Rush · jobs routed to three queues, a backlog, autoscale, a Redis flush, batch ×2", bpm: 124, range: [124, 146], bars: 104,
     tempo: function (pos) { return mapBpm(DQ.tempo, pos); },
     part: function (bar) { return DQ.sec(bar).id; },
@@ -1943,13 +1970,13 @@
         o.bassLp.frequency.setTargetAtTime(o.cut * 1.6, t, 0.5);
         o.sub.set(t, root - 12, sec.kick ? 0.12 : 0.05);
         if (sec.pad && bar % 2 === 0) pad(o, t, tri.map(function (m) { return m + 12; }), six * 32, 0.025, "saw");
-        if (sec.hit) { crash(o, t, 0.9); boom(o, t, 0.9); zap(o, t, tri.concat([tri[0] + 12]), 1.2, 0); }
+        if (sec.hit) { crash(o, t, 0.6); boom(o, t, 0.7); zap(o, t, tri.concat([tri[0] + 12]), 1.2, 0); }
         else if (sec.crash) crash(o, t, 0.5);
-        if (sec.riser) riser(o, t, six * 64, 0.1);
+        if (sec.riser) riser(o, t, six * 64, 0.06);
         if (sec.alarm) alarm(o, t + six * 8, sec.alarm);
-        if (sec.flush) { flush(o, t, six * 24, 1); subDrop(o, t, six * 16, 0.7); }
+        if (sec.flush) { flush(o, t, six * 24, 1); subDrop(o, t, six * 16, 0.4); }
       }
-      if (sec.gap && st === 8) { o.sub.set(t, root - 12, 0.0001); subDrop(o, t, six * 8, 0.7); }
+      if (sec.gap && st === 8) { o.sub.set(t, root - 12, 0.0001); subDrop(o, t, six * 8, 0.4); }
       if (sec.throttle && st === 8) { o.sky(t, 500, six); zap(o, t, [tri[0] + 12, tri[0] + 13], 0.8, 0); }   // the rate limit bites: no new jobs
       if (hush || (sec.throttle && st >= 8)) return;
       // the kit
@@ -2061,7 +2088,7 @@
   function makeSky(o, t, hz) {
     var f = filt("lowpass", hz, 0.5), lv = gain(Math.pow(10, ((o.song.level && o.song.level[o.theme]) || 0) / 20));
     o.bus.disconnect(); o.bus.connect(f); f.connect(lv); lv.connect(master);
-    o.dyn = lv;   // kill() disconnects it with the track (scheduleDyn ignores songs without .sec)
+    o.dyn = lv;   // kill() disconnects it with the track; scheduleDyn applies the song's flat_<theme> to it
     return function (tt, to, tc) { f.frequency.setTargetAtTime(to, tt, tc); };
   }
   function spic(o, t, m, v, panV, bright) {   // one short bowed string note (spiccato): the ostinato's grain
@@ -2171,17 +2198,20 @@
     melB: [[0, 76, 4], [4, 79, 4], [8, 84, 8], [16, 83, 4], [20, 79, 4], [24, 76, 8], [32, 78, 4], [36, 81, 4], [40, 86, 8], [48, 84, 4], [52, 81, 4], [56, 78, 8],
            [64, 74, 4], [68, 78, 4], [72, 83, 8], [80, 81, 4], [84, 78, 4], [88, 74, 8], [96, 76, 4], [100, 79, 4], [104, 83, 8], [112, 86, 8], [120, 83, 4], [124, 81, 4]],
     sec: function (bar) {
-      if (bar < 4) return { id: "new board", from: 0, fall: 1, pizz: bar >= 2 ? 0.5 : 0, sky: 2500 + bar * 800 };
-      if (bar < 12) return { id: "first swap", from: 4, ost: 0.8, pizz: 0.6, kick: 1, shk: 1, bass: 0.7, swap: bar % 2 === 1, match: bar % 4 === 3, sky: 5000 };
+      if (bar < 4) return { id: "new board", from: 0, fall: 1, ost: 0.7, pizz: 0.6, bass: 0.7, sky: 4500 };
+      if (bar < 12) return { id: "first swap", from: 4, ost: 0.8, pizz: 0.6, kick: 1, shk: 1, bass: 1, swap: bar % 2 === 1, match: bar % 4 === 3, sky: 5000 };
       if (bar < 28) return { id: "matching", from: 12, ost: 1, kick: 1, shk: 1, clap: 1, bass: 1, mel: "A", harm: bar >= 20, match: bar % 4 === 3, cascade: bar === 19 || bar === 27, sky: 9000, crash: bar === 12 || bar === 20 };
       if (bar < 36) return { id: "cascade", from: 28, p2: 1, ost: 1, kick: 1, shk: 1, clap: 1, bass: 1, climb: 1, riser: bar === 32, roll: bar >= 34 ? 34 : 0, sky: 6000 + (bar - 28) * 400 };
       if (bar < 48) return { id: "power-ups", from: 36, p2: 1, ost: 1, kick: 1, shk: 1, clap: 1, bass: 1.2, mel: "B", pipe: bar === 36 || bar === 44, push: bar === 40 || bar === 46, sky: 9500, crash: bar === 36 };
       if (bar < 56) return { id: "bundle", from: 48, ost: 1, pizz: 1, kick: 1, shk: 1, clap: 1, ride: 1, bass: 1.2, mel: "A", oct: 1, harm: 1, rainbow: bar === 48 || bar === 52, sky: 10000, crash: bar === 48 || bar === 52 };
-      if (bar < 64) return { id: "last moves", from: 56, pedal: 1, ost: 0.6, kick: 1, bass: 0.8, clock: 1, count: bar >= 59 ? 64 - bar : 0, riser: bar === 60, sky: 3500 + (bar - 56) * 500 };
+      if (bar < 64) return { id: "last moves", from: 56, pedal: 1, ost: 0.9, pizz: 0.7, kick: 1, bass: 1, clock: 1, count: bar >= 59 ? 64 - bar : 0, riser: bar === 60, sky: 6000 };
       return { id: "board clear", from: 64, ost: bar < 74 ? 1 : 0, pizz: bar < 74 ? 1 : 0, kick: bar < 74, shk: bar < 74, clap: bar < 74, ride: bar < 74, bass: bar < 74 ? 1.2 : 0, mel: bar < 72 ? "A" : null, oct: 1, harm: 1, cascade: bar === 71, rainbow: bar === 64, final: bar >= 74, sky: 10000, crash: bar === 64 || bar === 68 };
     }
   };
   var SONG_GEMS = {
+    flat_golden: [12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, -1.4, 0.1, 0.2, 0.2, -0.1, -0.1, 0.8, 0.1, -2.5, -1.2, -1.4, -0.9, -1.6, -1.7, -0.7, -1.2, 3.4, 2.8, 2.8, 2.0, 3.0, 2.0, 1.8, -2.2, -0.2, 0.2, 0.2, -0.1, -0.9, -0.4, -0.2, -0.1, 0.3, 0.1, -0.9, -0.4, -3.1, -1.6, -1.9, -1.3, -2.7, -2.0, -1.0, -1.4, 11.8, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, 12.0, -3.4, -1.6, -1.7, -1.3, -2.6, -1.8, -1.0, -1.7, 7.3, 8.6, -5.7, -2.1],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, -1.1, -0.1, 0.5, 0.2, -0.0, -0.4, 0.8, 0.2, -2.6, -1.0, -1.4, -1.2, -1.5, -1.6, -0.8, -1.4, 3.5, 2.7, 3.1, 2.4, 3.8, 2.6, 2.0, -1.3, -0.7, 0.4, 0.0, -0.0, -0.4, 0.2, -0.2, -1.0, 0.1, 0.2, -0.8, -0.2, -3.1, -1.5, -1.9, -1.5, -2.7, -2.0, -1.4, -1.6, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, -3.6, -1.5, -1.9, -1.5, -2.3, -2.2, -1.4, -2.0, 7.7, 8.1, -2.9, -0.1],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, -1.5, -0.5, 0.1, -0.2, 0.4, 0.0, 0.7, -0.1, -3.1, -1.8, -1.3, -1.8, -1.5, -1.6, -0.8, -1.8, 3.4, 3.1, 3.3, 2.0, 4.2, 3.2, 2.7, -4.5, -0.4, 0.2, 0.2, -0.7, -1.0, 0.2, 0.4, -0.3, 0.6, -0.0, -1.1, -1.1, -3.7, -2.4, -2.1, -2.3, -2.8, -2.2, -1.7, -2.0, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, -4.1, -2.5, -2.0, -2.3, -2.8, -2.1, -1.5, -2.2, 6.0, 5.9, -3.9, -0.3],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "Gem Match · match three: swaps, cascades, power-ups, the last five moves, a cleared board", bpm: 110, bars: 76,
     part: function (bar) { return GT.sec(bar).id; },
     level: { phthalo: 3, knight: 2.5, golden: 3 },
@@ -2195,8 +2225,8 @@
         o.bassLp.frequency.setTargetAtTime(1300, t, 0.3);
         o.sub.set(t, root - 12, sec.bass ? 0.07 : 0.0001);
         if (sec.crash) crash(o, t, 0.55);
-        if (sec.riser) riser(o, t, six * 64, 0.07);
-        if (sec.rainbow) bundleFx(o, t, 1);
+        if (sec.riser) riser(o, t, six * 64, 0.045);
+        if (sec.rainbow) bundleFx(o, t, 0.65);
         if ((sec.mel || sec.climb) && bar % 2 === 0) pad(o, t, up, six * 32, 0.02, "warm");
         if (sec.final && bar === 74) {   // the board is clear: G, everything ringing, every gem glinting once
           [55, 59, 62, 67, 71, 74, 79].forEach(function (m, i) { mallet(o, t + i * six * 0.25, m, 0.8, -0.6 + i * 0.2, 3); });
@@ -2218,13 +2248,13 @@
       if (sec.ost && st % 2 === 0) { var oi = GT.ost[st / 2]; mallet(o, t, oi === 3 ? up[0] + 12 : up[oi], sec.ost * (st % 4 === 0 ? 0.9 : 0.6), st % 4 === 0 ? -0.3 : 0.3, six * 1.5); }
       if (sec.pizz && st % 4 === 2) spic(o, t, tri[st % 8 === 2 ? 0 : 2] + 12, 0.8 * sec.pizz, st % 8 === 2 ? 0.4 : -0.4, 0.6);
       // the moves
-      if (sec.swap && st === 12) swapFx(o, t, up[1] + 12, 1);
-      if (sec.match && st === 8) matchFx(o, t, [up[0] + 12, up[1] + 12, up[2] + 12], 0.9, 0.3);
-      if (sec.cascade && st >= 8 && st % 2 === 0) { var ck = (st - 8) / 2; matchFx(o, t, [PENT[ck], PENT[ck + 1], PENT[ck + 2]], 0.6 + ck * 0.1, ck % 2 ? 0.4 : -0.4); }   // a combo: each match a step higher
+      if (sec.swap && st === 12) swapFx(o, t, up[1] + 12, 0.7);
+      if (sec.match && st === 8) matchFx(o, t, [up[0] + 12, up[1] + 12, up[2] + 12], 0.55, 0.3);
+      if (sec.cascade && st >= 8 && st % 2 === 0) { var ck = (st - 8) / 2; matchFx(o, t, [PENT[ck], PENT[ck + 1], PENT[ck + 2]], 0.5, ck % 2 ? 0.4 : -0.4); }   // a combo: each match a step higher
       if (sec.climb && st % 4 === 0) { var cb = ((bar - 28) * 4 + st / 4) % 6; matchFx(o, t, [PENT[cb], PENT[cb + 1], PENT[cb + 2]], 0.7, (cb % 3 - 1) * 0.5); }
       if (sec.pipe && st === 0) pipeline(o, t, six * 6, 1);
       if (sec.push && st === 8) forcePush(o, t, tri, 1);
-      if (sec.count && st === 0) mallet(o, t, [0, 79, 81, 83, 86, 88][sec.count], 1, 0, six * 6);   // moves left: five, four, three, two, one
+      if (sec.count && st === 0) mallet(o, t, [0, 79, 81, 83, 86, 88][sec.count], 0.7, 0, six * 6);   // moves left: five, four, three, two, one
       if (sec.mel) {
         var pos = ((bar - sec.from) % 8) * 16 + st;
         GT["mel" + sec.mel].forEach(function (n) {
@@ -2279,17 +2309,20 @@
     // level up: E G B, a leap to E, and a B major arpeggio pointing at the next level
     fan: [[0, 76, 2], [2, 79, 2], [4, 83, 2], [6, 88, 6], [12, 86, 2], [14, 88, 2], [16, 91, 12], [32, 83, 2], [34, 87, 2], [36, 90, 2], [38, 95, 10]],
     sec: function (bar) {
-      if (bar < 4) return { id: "new schema", from: 0, cursor: 1, bass: bar >= 2 ? 0.6 : 0 };
+      if (bar < 4) return { id: "new schema", from: 0, cursor: 1, bass: 0.8 };
       if (bar < 28) return { id: "level 1", from: 4, mel: bar < 20 ? "A" : "B", harm: bar >= 12 && bar < 20, drums: 1, bass: 1, clear: (bar - 4) % 8 === 7 };
       if (bar < 32) return { id: "level up", from: 28, fan: 1, drums: 2, bass: 1 };
       if (bar < 56) return { id: "level 2", from: 32, mel: bar < 40 ? "A" : "B", counter: bar < 40, pending: bar >= 40 && bar < 48, harm: bar >= 48, arp: bar >= 48, drums: 2, bass: 1, clear: (bar - 32) % 8 === 7 };
-      if (bar < 60) return { id: "db:rollback", from: 56, back: 1 };
+      if (bar < 60) return { id: "db:rollback", from: 56, back: 1, bass: 1 };   // bass: the sub holds under it
       if (bar < 84) return { id: "level 3", from: 60, mel: bar < 76 ? "A" : "B", oct: 1, harm: bar >= 68, arp: 1, drums: 3, bass: 2, clear: (bar - 60) % 8 === 7 };
       if (bar < 88) return { id: "four rows", from: 84, tetris: bar === 84, fan: 1, drums: 3, bass: 2 };
       return { id: "deployed", from: 88, mel: "end", drums: bar < 94 ? 1 : 0, bass: bar < 95 ? 1 : 0, last: bar === 95 };
     }
   };
   var SONG_STACK = {
+    flat_golden: [6.9, 6.1, 9.4, 9.6, -0.8, 0.1, 1.6, 1.9, 0.3, 0.4, 2.5, 1.9, -2.2, -1.9, -0.4, -0.1, -1.4, -1.3, 0.4, -0.0, 0.3, 0.4, 1.6, 2.4, 2.2, 2.2, 2.5, 1.8, -1.8, 0.5, 0.8, 6.9, -1.5, -0.7, 0.8, 0.5, -0.7, -0.6, 1.1, 0.7, 0.0, -0.0, 1.1, 1.7, 1.7, 1.7, 2.1, 1.2, -1.9, -2.2, -1.0, -0.7, -0.5, -0.2, -0.4, -0.9, 12.0, 12.0, 12.0, 12.0, -2.9, -2.3, -0.6, -0.8, -2.1, -1.7, -0.2, -0.7, -3.7, -3.6, -2.2, -2.2, -3.1, -3.2, -1.5, -2.0, -3.1, -3.2, -2.0, -2.0, -1.7, -1.4, -1.5, -2.0, -3.1, 0.5, 0.6, 6.0, -0.1, 1.2, 0.9, 0.9, 2.3, 3.4, 4.3, 1.3],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [10.0, 9.4, 10.6, 10.9, 1.0, 1.8, 2.2, 2.4, -0.3, -0.1, 2.8, 2.2, -0.7, -0.4, -0.0, 0.0, -2.1, -2.0, 0.4, -0.1, -0.3, -0.3, 2.2, 3.1, 2.0, 3.0, 2.9, 2.0, -0.4, 2.2, 1.1, 8.0, -0.1, 0.8, 1.0, 1.2, -1.3, -1.2, 1.4, 0.9, -0.7, -0.5, 1.6, 2.5, 1.6, 2.2, 2.3, 1.5, -2.9, -2.7, -0.8, -0.3, -0.9, -0.3, -0.3, -1.0, 12.0, 12.0, 12.0, 12.0, -1.6, -0.8, -0.7, -0.2, -2.7, -2.5, 0.3, -0.8, -2.5, -2.3, -2.3, -1.8, -4.1, -3.7, -1.4, -2.3, -3.6, -3.6, -2.0, -1.4, -2.2, -1.2, -1.4, -2.2, -1.6, 1.9, 1.2, 7.0, 1.8, 3.1, 2.9, 2.7, 2.9, 4.4, 4.9, 1.7],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [10.5, 10.0, 10.7, 10.4, 0.4, 0.9, 1.3, 1.5, 0.0, 0.1, 2.4, 1.4, -1.1, -0.7, -0.5, -0.6, -1.7, -1.5, 0.3, -0.3, 0.3, 0.3, 1.3, 1.6, 2.2, 2.2, 2.2, 1.5, -0.9, 1.5, 0.2, 6.3, -1.0, 0.2, -0.0, 0.3, -1.3, -0.9, 0.9, 0.1, -0.3, -0.9, 0.9, 1.1, 1.2, 1.5, 1.2, 0.9, -2.7, -2.3, -1.6, -0.9, -1.0, -0.5, -0.5, -1.2, 12.0, 12.0, 12.0, 12.0, -2.6, -2.2, -1.5, -1.5, -2.6, -2.6, -1.0, -1.7, -3.4, -3.3, -2.7, -3.0, -3.9, -3.8, -2.2, -2.8, -3.7, -3.8, -2.7, -2.6, -2.6, -2.4, -2.1, -2.6, -3.2, 0.3, -0.5, 4.0, 0.8, 1.8, 1.6, 1.8, 2.3, 3.0, 4.8, 1.9],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "Schema Stack · falling migrations: three levels, each faster, a rollback played backwards, four rows at once", bpm: 136, range: [136, 160], bars: 96,
     tempo: function (pos) { return mapBpm(ST.tempo, pos); },
     part: function (bar) { return ST.sec(bar).id; },
@@ -2303,15 +2336,15 @@
       if (st === 0) {
         o.sky(t, sec.back ? 3000 : 9000, six * 2);
         o.sub.set(t, root - 12, sec.bass ? 0.06 : 0.0001);
-        if (sec.tetris) { crash(o, t, 0.8); boom(o, t, 0.6); for (var r = 0; r < 4; r++) lineClear(o, t + r * six * 2, 1); }   // four rows at once
+        if (sec.tetris) { crash(o, t, 0.5); boom(o, t, 0.5); for (var r = 0; r < 4; r++) lineClear(o, t + r * six * 2, 1); }   // four rows at once
         if (sec.last) { up.concat([up[0] + 12]).forEach(function (m, i) { chip(o, t + i * six * 0.25, m, six * 14, 0.8, -0.4 + i * 0.25); }); triBass(o, t, 28, 1, six * 14); crash(o, t, 0.7); o.sub.set(t, 28, 0.05); }
-        if (sec.back && k === 3) rewind(o, t + six * 8, six * 8, 0.8);   // the tape spins forward again, into level 3
+        if (sec.back && k === 3) rewind(o, t + six * 8, six * 8, 0.45);   // the tape spins forward again, into level 3
       }
       if (sec.last) return;
       if (sec.back) {   // db:rollback: the first four bars of the tune, backwards - each note swells in and stops dead
-        ST.melA.forEach(function (n) { if (n[0] < 64 && 64 - n[0] - n[2] === k * 16 + st) backTone(o, t, [n[1]], n[2] * six, 0.07, { bright: 3200, wave: "square", pan: -0.1 }); });
-        if (st % 4 === 0) backKick(o, t + six * 4 - 0.25, 0.25, 0.5);
-        if (st % 8 === 0) backTone(o, t, [ST.progA[3 - Math.floor(k / 2)][0]], six * 8, 0.12, { bright: 600, wave: "triangle" });
+        ST.melA.forEach(function (n) { if (n[0] < 64 && 64 - n[0] - n[2] === k * 16 + st) backTone(o, t, [n[1]], n[2] * six, 0.16, { bright: 3200, wave: "square", pan: -0.1 }); });
+        if (st % 4 === 0) backKick(o, t + six * 4 - 0.25, 0.25, 0.7);
+        if (st % 8 === 0) backTone(o, t, [ST.progA[3 - Math.floor(k / 2)][0]], six * 8, 0.2, { bright: 600, wave: "triangle" });
         return;
       }
       // the drums: level 1 plain, level 2 with 8th hats and an extra kick, level 3 every 16th
@@ -2456,6 +2489,9 @@
     });
   }
   var SONG_PIT = {
+    flat_golden: [12.0, 11.6, 12.0, 9.5, 6.6, 5.4, 5.1, 4.4, 0.2, 1.6, 2.5, 3.1, 2.5, 3.4, 3.0, 3.3, 0.0, 1.0, -0.0, 0.8, 0.1, 0.6, 0.3, 0.7, 3.0, 5.2, 5.5, 5.7, 5.3, 5.6, 5.2, 5.5, 0.8, 0.2, -1.4, -1.4, -1.8, -1.2, -1.1, -0.8, -0.8, 0.4, -0.7, 1.9, 8.2, 6.9, 6.5, 8.6, 8.4, 7.6, 8.4, 4.3, 5.2, 5.2, 4.9, 3.7, 3.1, 3.0, 4.1, -2.1, -1.5, -2.2, -1.0, -2.0, -0.8, -1.3, -1.0, -2.4, -2.1, -3.3, -2.7, -3.1, -2.5, -2.4, -2.5, -1.1, -0.3, -0.0, -0.0, -0.8, -0.8, -1.3, -1.0, -1.5, -1.5, -1.6, -1.5, -2.4, -2.3, -2.1, -2.4, -2.2, -1.7, -1.5, -1.5, -2.4, -2.1, -2.3, -2.5, -1.6, -0.8, 2.5, -2.0, 1.7],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [12.0, 11.5, 12.0, 9.1, 6.6, 5.8, 5.2, 4.4, -1.2, -0.1, 0.9, 1.7, 1.4, 1.5, 1.8, 1.7, -0.1, 0.4, -0.4, 0.2, -0.1, 0.1, 0.1, 0.2, 3.5, 4.6, 4.6, 5.0, 5.0, 4.6, 4.7, 5.1, 1.0, 0.4, -1.2, -0.8, -0.7, -0.1, -0.5, -0.5, -0.9, -0.0, -1.0, 1.7, 7.2, 5.5, 5.6, 7.9, 7.4, 5.9, 7.7, 3.9, 4.1, 4.6, 4.8, 3.9, 3.2, 2.8, 4.2, -2.5, -1.7, -2.4, -1.0, -1.3, -1.0, -1.1, -1.1, -2.1, -1.9, -3.3, -2.3, -2.6, -2.3, -2.4, -2.3, -0.7, 0.1, 0.7, 0.4, -0.2, 0.2, 0.0, -0.0, -1.4, -1.7, -1.3, -1.3, -1.8, -2.3, -1.9, -1.8, -1.8, -1.7, -1.5, -1.0, -1.8, -2.1, -2.0, -1.9, -1.6, -0.7, 3.4, -2.4, 3.2],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [11.9, 11.9, 11.9, 10.1, 7.7, 6.7, 6.4, 5.3, -0.4, 0.4, 1.0, 1.7, 1.5, 2.0, 1.9, 2.1, -0.6, 0.4, -0.4, -0.3, -0.6, 0.3, -0.0, 0.0, 2.9, 4.7, 4.7, 4.8, 5.0, 5.0, 5.0, 5.0, 1.8, 1.0, -0.7, -0.5, -0.9, 0.0, -0.0, 0.5, -1.0, -0.1, -0.8, 2.2, 7.5, 6.3, 5.8, 7.8, 7.8, 6.7, 8.1, 4.0, 4.3, 4.6, 4.1, 1.7, 1.5, 1.2, 1.8, -2.5, -1.6, -2.3, -1.2, -1.8, -0.8, -1.4, -0.8, -2.8, -1.9, -3.5, -2.6, -3.1, -2.3, -2.8, -1.8, -0.8, 0.4, 0.4, 0.4, -0.3, 0.0, -0.8, -0.3, -1.8, -1.5, -1.5, -1.2, -1.7, -1.6, -2.2, -2.0, -2.0, -1.4, -1.6, -1.1, -1.7, -1.6, -2.0, -1.9, -1.7, -0.2, 1.7, -0.9, 3.9],   // per-bar level (dB), written by soundtrack-lab/flatten.py
     mood: "Pit Wall · a race theme, lights out, and a replay that runs backwards, scrubs and fast-forwards", bpm: 116, bars: 104,
     part: function (bar) { return PW.sec(bar).id; },
     level: { phthalo: 0.7, knight: -0.1, golden: 0.6 },
@@ -2468,7 +2504,7 @@
       var pos = ((bar - (sec.from || 0)) % 8) * 16 + st, hush = sec.rewind && st >= 8;
       if (sec.flag) {   // the last hit: B♭ over C, left hanging; everything else has stopped
         if (sec.last && st === 0) {
-          kick(o, t, 1); boom(o, t, 1); crash(o, t, 0.9); taiko(o, t, 1, -0.6, 70); taiko(o, t, 1, 0.6, 85);
+          kick(o, t, 1); boom(o, t, 0.8); crash(o, t, 0.55); taiko(o, t, 1, -0.6, 70); taiko(o, t, 1, 0.6, 85);
           horns(o, t, [58, 62, 65], six * 20, 0.09, { a: 0.02 }); choir(o, t, [62, 65, 70], six * 20, 0.06, { a: 0.03, r: 3 });
           strings(o, t, [36, 48], six * 24, 0.08, { a: 0.02, r: 3, bright: 0.5 }); o.sub.set(t, 24, 0.12); o.sky(t, 6000, six * 8);
           v8.level(t, 0.05, 0.3); v8.rpm(t, 150, 0.3);
@@ -2483,7 +2519,7 @@
         if (sec.pad) pad(o, t, up, six * 16, 0.026, "saw");
         if (sec.choir && bar % 2 === 0) choir(o, t, sec.key === "grid" ? [62, 66, 71] : up, six * 32, 0.05, { a: six * 8, r: 2, pan: bar % 4 ? 0.3 : -0.3 });
         if (sec.crash) crash(o, t, 0.6);
-        if (sec.riser) riser(o, t, six * 32, 0.1);
+        if (sec.riser) riser(o, t, six * 32, 0.06);
         if (sec.boom) taiko(o, t, 0.35 + bar * 0.06, 0, 62);
         // the car
         if (sec.idle) { v8.level(t, 0.06, 0.3); v8.rpm(t, 52, 0.25); }
