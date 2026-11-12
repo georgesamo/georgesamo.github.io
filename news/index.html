@@ -12,6 +12,11 @@ icon: rss
 {%- assign n_tech = items | where: "section", "tech" | size -%}
 {%- assign n_gaming = items | where: "section", "gaming" | size -%}
 {%- assign n_dev = items | where: "section", "dev" | size -%}
+{%- assign mk = site.data.markets -%}
+{%- assign mk_items = mk.items | default: empty | where_exp: "i", "i.impact >= 2" -%}
+{%- assign mk_open = mk.calls | default: empty | where_exp: "c", "c.evaluated_at == nil" -%}
+{%- assign mk_index = "SPY,QQQ" | split: "," -%}
+{%- assign mk_scored = mk.calls | default: empty | where_exp: "c", "c.evaluated_at != nil" -%}
 <section class="section news" id="news" data-file="feeds/news.rss" data-icon="rss" data-news>
   <header class="section__head reveal">
     <p class="section__path">feeds/<b>news.rss</b></p>
@@ -25,6 +30,7 @@ icon: rss
       <button type="button" class="pr-filter__btn" data-news-filter="tech" aria-pressed="false"><i class="news__dot news__dot--tech"></i>tech <small>{{ n_tech }}</small></button>
       <button type="button" class="pr-filter__btn" data-news-filter="gaming" aria-pressed="false"><i class="news__dot news__dot--gaming"></i>gaming <small>{{ n_gaming }}</small></button>
       <button type="button" class="pr-filter__btn" data-news-filter="dev" aria-pressed="false"><i class="news__dot news__dot--dev"></i>ruby &amp; dev <small>{{ n_dev }}</small></button>
+      <button type="button" class="pr-filter__btn" data-news-filter="markets" aria-pressed="false"><i class="news__dot news__dot--markets"></i>markets <small>{{ mk_items.size }}</small></button>
       <button type="button" class="pr-filter__btn" data-news-filter="saved" aria-pressed="false">★ saved <small data-news-saved-n>0</small></button>
     </div>
     <input class="news__search" type="search" placeholder="grep headlines…" aria-label="Search headlines" data-news-q autocomplete="off" spellcheck="false">
@@ -62,6 +68,110 @@ icon: rss
     </li>
     {%- endfor %}
   </ol>
+
+  {%- comment -%} markets tab: scripts/fetch_markets.rb → _data/markets.json (Claude-analyzed catalysts + tracked calls) {%- endcomment -%}
+  <div class="mk" data-news-markets hidden>
+    {%- if mk.generated_at %}
+    {%- assign mood = mk.mood.score | default: 0 | plus: 100 | divided_by: 2.0 -%}
+    <div class="mk__strip">
+      <div class="mk__cell">
+        <p class="mk__label">market mood</p>
+        <p class="mk__value mk__value--{% if mk.mood.score >= 10 %}up{% elsif mk.mood.score <= -10 %}down{% else %}flat{% endif %}">{{ mk.mood.label }}</p>
+        <p class="mk__gauge" role="img" aria-label="Mood {{ mk.mood.score }} on a scale from -100 (risk-off) to 100 (risk-on)"><i style="left: {{ mood }}%"></i></p>
+        <p class="mk__sub muted">risk-off · risk-on</p>
+      </div>
+      {%- for sym in mk_index %}
+      {%- assign q = mk.quotes[sym] %}
+      {%- if q %}
+      <div class="mk__cell">
+        <p class="mk__label">{{ sym }} · {{ q.name }}</p>
+        <p class="mk__value">{{ q.price | round: 2 }}</p>
+        <p class="mk__sub mk__chg--{% if q.change_percent >= 0 %}up{% else %}down{% endif %}">{% if q.change_percent >= 0 %}▲ +{% else %}▼ {% endif %}{{ q.change_percent | round: 2 }}% today</p>
+      </div>
+      {%- endif %}
+      {%- endfor %}
+      <div class="mk__cell">
+        <p class="mk__label">calls hit rate</p>
+        <p class="mk__value">{% if mk.scorecard.hit_rate %}{{ mk.scorecard.hit_rate }}%{% else %}—{% endif %}</p>
+        <p class="mk__sub muted">{{ mk.scorecard.scored }} scored · {{ mk.scorecard.open }} open · 50% = coin flip</p>
+      </div>
+    </div>
+
+    {%- if mk.sectors.size > 0 %}
+    <ul class="mk__sectors" aria-label="Sector pressure from today's stories">
+      {%- for s in mk.sectors %}
+      <li class="mk__sector mk__sector--{% if s.score >= 0.1 %}up{% elsif s.score <= -0.1 %}down{% else %}flat{% endif %}">{{ s.name }} <b>{% if s.score >= 0 %}+{% endif %}{{ s.score }}</b></li>
+      {%- endfor %}
+    </ul>
+    {%- endif %}
+
+    <div class="news__meta muted"><span>updated <time datetime="{{ mk.generated_at }}" data-news-ago>{{ mk.generated_at | date: "%b %-d, %H:%M UTC" }}</time> · {{ mk.mood.stories }} stories in the mood{% if mk.status.queued > 0 %} · {{ mk.status.queued }} waiting for analysis{% endif %}</span></div>
+    {%- endif %}
+
+    {%- if mk_items.size == 0 %}
+    <p class="news__empty muted"># no market stories yet: they're analyzed on the next deploy</p>
+    {%- endif %}
+    <ol class="news__list" data-news-markets-list>
+      {%- for i in mk_items %}
+      <li class="news-row mk-row" data-section="markets" data-at="{{ i.published }}" data-url="{{ i.url | escape }}" data-source="{{ i.source | escape }}">
+        <div class="news-row__main">
+          <p class="news-row__meta"><span class="mk-dir mk-dir--{{ i.direction }}">{% if i.direction == "bullish" %}▲{% elsif i.direction == "bearish" %}▼{% else %}●{% endif %} {{ i.direction }}</span><span class="mk-impact" title="impact {{ i.impact }} of 5" aria-label="impact {{ i.impact }} of 5">{% for n in (1..5) %}<i{% if n <= i.impact %} class="on"{% endif %}></i>{% endfor %}</span><b>{{ i.source | escape }}</b> · <time datetime="{{ i.published }}">{{ i.published | date: "%b %-d, %H:%M" }}</time> · {{ i.event_type | replace: "_", " " }}</p>
+          <a class="news-row__title" href="{{ i.url | escape }}" target="_blank" rel="noopener external">{{ i.title | escape }}</a>
+          {%- if i.rationale != "" %}
+          <p class="news-row__teaser">{{ i.rationale | escape }}</p>
+          {%- endif %}
+          {%- if i.tickers.size > 0 %}
+          <p class="mk-tickers">{% for t in i.tickers %}<span class="mk-t mk-t--{{ t.direction }}" title="{{ t.symbol }}: {{ t.direction }}">{% if t.direction == "bullish" %}▲ {% elsif t.direction == "bearish" %}▼ {% endif %}{{ t.symbol }}</span>{% endfor %}</p>
+          {%- endif %}
+          {%- if i.invalidation != "" %}
+          <p class="mk-wrong muted">wrong if: {{ i.invalidation | escape }}</p>
+          {%- endif %}
+        </div>
+        <button type="button" class="news-row__save" data-news-save aria-pressed="false" aria-label="Save for later" title="Save for later">☆</button>
+      </li>
+      {%- endfor %}
+    </ol>
+
+    {%- if mk.generated_at %}
+    <div class="mk__cols">
+      <section class="mk__box" aria-labelledby="mk-calls">
+        <h2 class="mk__h" id="mk-calls">open calls <small class="muted">· one per ticker, scored after 3 days</small></h2>
+        {%- if mk_open.size > 0 %}
+        <ul class="mk__rows">
+          {%- for c in mk_open %}
+          {%- assign stories = c.supporting.size | plus: 1 %}
+          <li><span class="mk-t mk-t--{% if c.direction == 'up' %}bullish{% else %}bearish{% endif %}">{% if c.direction == "up" %}▲{% else %}▼{% endif %} {{ c.ticker }}</span><span class="mk__row-txt"><a href="{{ c.story_url | escape }}" target="_blank" rel="noopener external">{{ c.story_title | escape }}</a> <small class="muted">{{ stories }} {% if stories == 1 %}story{% else %}stories{% endif %} · from {{ c.price_at }} · due <time datetime="{{ c.due_at }}">{{ c.due_at | date: "%b %-d" }}</time></small></span></li>
+          {%- endfor %}
+        </ul>
+        {%- else %}
+        <p class="muted mk__none"># no open calls</p>
+        {%- endif %}
+        {%- if mk_scored.size > 0 %}
+        <h3 class="mk__h mk__h--sub">recently scored</h3>
+        <ul class="mk__rows">
+          {%- for c in mk_scored limit: 8 %}
+          <li><span class="mk-t mk-t--{% if c.direction == 'up' %}bullish{% else %}bearish{% endif %}">{% if c.direction == "up" %}▲{% else %}▼{% endif %} {{ c.ticker }}</span><span class="mk__row-txt">{{ c.story_title | escape }} <small class="mk__chg--{% if c.correct %}up{% else %}down{% endif %}">{% if c.correct %}hit{% else %}miss{% endif %} · {% if c.move >= 0 %}+{% endif %}{{ c.move }}%</small></span></li>
+          {%- endfor %}
+        </ul>
+        {%- endif %}
+      </section>
+      <section class="mk__box" aria-labelledby="mk-cal">
+        <h2 class="mk__h" id="mk-cal">coming up</h2>
+        {%- if mk.events.size > 0 %}
+        <ul class="mk__rows">
+          {%- for e in mk.events %}
+          <li><span class="mk__date"><time datetime="{{ e.starts_on }}">{{ e.starts_on | date: "%b %-d" }}</time></span><span class="mk__row-txt">{{ e.name | escape }} <small class="muted">{{ e.kind }}{% if e.details %} · {{ e.details | escape }}{% endif %}</small></span></li>
+          {%- endfor %}
+        </ul>
+        {%- else %}
+        <p class="muted mk__none"># nothing scheduled in the next weeks</p>
+        {%- endif %}
+      </section>
+    </div>
+    {%- endif %}
+    <p class="news__fine muted">Market stories come from Finnhub; Claude reads each one and says which stocks it may move, which way and why. Calls are scored against the real price after 3 days. Research for fun, not financial advice.</p>
+  </div>
+
   <p class="news__none muted" data-news-none hidden># no stories match</p>
   <p class="news__fine muted">Headlines and teasers belong to their publishers; every story opens on the original site. Saved stories stay on this device.</p>
 </section>
