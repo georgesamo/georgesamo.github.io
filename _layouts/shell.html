@@ -81,7 +81,7 @@ layout: default
       <button type="button" class="tree__dir" data-tree-dir="team" aria-expanded="true" data-team-only hidden>team</button>
       <div class="tree__group" data-tree-group="team" data-team-only hidden>
         <a href="{{ '/nino/' | relative_url }}"{% if tab == "nino" %} class="is-here"{% endif %}><i class="fi fi--md"></i><span class="nav-l">Nino's corner</span><small class="nav-f">ninos-corner.md</small></a>
-        <a href="{{ '/soundtrack/' | relative_url }}" target="_blank" rel="noopener" title="Opens in a new tab"{% if tab == "soundtrack" %} class="is-here"{% endif %}><i class="fi fi--log"></i><span class="nav-l">Soundtrack ↗</span><small class="nav-f">soundtrack.wav</small></a>
+        <a href="{{ '/soundtrack/' | relative_url }}"{% if tab == "soundtrack" %} class="is-here"{% endif %}><i class="fi fi--log"></i><span class="nav-l">Soundtrack</span><small class="nav-f">soundtrack.wav</small></a>
       </div>
     </nav>
     <div class="tree__foot">
@@ -117,7 +117,7 @@ layout: default
         <a class="tabs__tab tabs__tab--idle tabs__tab--{{ tp[0] }}" href="{{ tp[3] | relative_url }}"><i class="fi fi--{{ tp[2] }}"></i><span class="nav-l">{{ tp[4] }}</span><small class="nav-f">{{ tp[1] }}</small></a>
           {%- endif -%}
         {%- endfor -%}
-        {%- if tab == "player" or tab == "nino" or tab == "me" or tab == "settings" or tab == "hire" %}
+        {%- if tab == "player" or tab == "nino" or tab == "me" or tab == "settings" or tab == "hire" or tab == "soundtrack" %}
         <a class="tabs__tab is-active" href="{{ page.url | relative_url }}" aria-current="page"><i class="fi fi--{{ icon }}" data-tab-icon></i><span class="nav-l">{{ page.title | default: "Player" }}</span><small class="nav-f" data-tab-name>{{ file_name }}</small><span class="tabs__dot"></span></a>
         {%- endif %}
       </div>
@@ -146,7 +146,7 @@ layout: default
   {%- for m in mn -%}{%- assign mp = m | split: "|" %}
   <a href="{{ mp[2] | relative_url }}" class="mnav__item{% if tab == mp[0] %} is-here{% endif %}"{% if tab == mp[0] %} aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="{{ mp[3] }}"/></svg><span>{{ mp[1] }}</span></a>
   {%- endfor %}
-  <button type="button" class="mnav__item{% if tab == "leaderboards" or tab == "samuka" or tab == "pulls" or tab == "news" or tab == "watch" or tab == "updates" or tab == "nino" or tab == "player" or tab == "settings" or tab == "hire" %} is-here{% endif %}" data-mnav-more aria-expanded="false" aria-controls="msheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg><span>more</span></button>
+  <button type="button" class="mnav__item{% if tab == "leaderboards" or tab == "samuka" or tab == "pulls" or tab == "news" or tab == "watch" or tab == "updates" or tab == "nino" or tab == "player" or tab == "settings" or tab == "hire" or tab == "soundtrack" %} is-here{% endif %}" data-mnav-more aria-expanded="false" aria-controls="msheet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"/></svg><span>more</span></button>
 </nav>
 <div class="msheet" id="msheet" hidden>
   <div class="msheet__backdrop" data-mnav-close></div>
@@ -162,7 +162,7 @@ layout: default
     <a href="{{ '/#wall' | relative_url }}"><i class="fi fi--log"></i>Guestbook <small>visitors.log</small></a>
     <a href="{{ '/u/' | relative_url }}"><i class="fi fi--rb"></i>Find a player <small>player cards</small></a>
     <a href="{{ '/nino/' | relative_url }}" data-team-only hidden><i class="fi fi--md"></i>Nino's corner <small>ninos-corner.md</small></a>
-    <a href="{{ '/soundtrack/' | relative_url }}" data-team-only hidden target="_blank" rel="noopener"><i class="fi fi--log"></i>Soundtrack ↗ <small>opens a new tab</small></a>
+    <a href="{{ '/soundtrack/' | relative_url }}" data-team-only hidden><i class="fi fi--log"></i>Soundtrack <small>the music room</small></a>
     <button type="button" data-open-palette><span>⌕</span> Search <small>go to anything</small></button>
     <button type="button" data-open-terminal><span>&gt;_</span> Terminal <small>for the curious</small></button>
     <a href="{{ '/settings/' | relative_url }}"><i class="fi fi--yml"></i>Settings <small>look, sound, account</small></a>
