@@ -1,17 +1,19 @@
 # Samuka · markets fetcher for the /news/ "markets" tab
 #
-# Pulls market headlines and quotes from Finnhub, has Claude turn each new headline into a
-# catalyst card (which tickers it moves, which way, how hard, why, what would prove it wrong),
-# turns strong cards into tracked calls and scores them against the real price after 3 days.
+# Pulls market headlines and quotes from Finnhub (free tier), turns each new headline into a
+# catalyst card with the free finance rules in scripts/markets_rules.rb (which tickers it moves,
+# which way, how hard, why, what would prove it wrong), turns strong cards into tracked calls
+# and scores them against the real price after 3 days. No paid API anywhere.
 # Writes _data/markets.json, which Jekyll renders into the markets tab on /news/.
 #
-#   FINNHUB_API_KEY=... ANTHROPIC_API_KEY=... bundle exec ruby scripts/fetch_markets.rb
+#   FINNHUB_API_KEY=... bundle exec ruby scripts/fetch_markets.rb
 #   bundle exec ruby scripts/fetch_markets.rb --dry-run   # print what would be written
 #
 # Like fetch_news.rb, every run starts from the last run's file (CI restores it from the
 # Actions cache, and the committed copy is the fallback), so headlines, calls and the scorecard
-# carry over between builds. Without the API keys it changes nothing and exits cleanly, so
-# local and fork builds still work. Research support only, not financial advice.
+# carry over between builds. Without the Finnhub key it changes nothing and exits cleanly, so
+# local and fork builds still work. Research for fun, not financial advice.
+require_relative "markets_rules"
 require "date"
 require "digest"
 require "json"
@@ -25,13 +27,12 @@ module Markets
   SOURCES = File.join(ROOT, "_data/markets_sources.yml")
   OUT = File.join(ROOT, "_data/markets.json")
   AGENT = "SamukaMarketsBot/1.0 (+https://georgesamo.github.io/news/)"
-  MODEL = ENV.fetch("CLAUDE_MODEL", "claude-opus-5-5")
 
   ITEM_MAX_AGE = 4 * 86_400     # analyzed stories kept this long
   ITEM_MAX = 150
   PENDING_MAX_AGE = 2 * 86_400  # headlines not analyzed by then are dropped
   PENDING_MAX = 150
-  ANALYZE_PER_RUN = ENV.fetch("MARKETS_ANALYZE_LIMIT", 30).to_i
+  ANALYZE_PER_RUN = ENV.fetch("MARKETS_ANALYZE_LIMIT", 300).to_i # rules are free: effectively all
   CALL_HISTORY = 120 * 86_400   # scored calls kept for the scorecard
   MIN_IMPACT = 3
   MIN_CONFIDENCE = 0.5
@@ -41,39 +42,6 @@ module Markets
     earnings guidance macro_data central_bank policy_regulation geopolitics product_launch
     conference mergers_acquisitions analyst_rating legal supply_chain management_change other
   ].freeze
-
-  SYSTEM_PROMPT = <<~PROMPT.freeze
-    You are a markets analyst who reads one news item and judges how it is likely
-    to move US-listed stocks over the next 1-5 trading days.
-
-    Be calibrated, not dramatic. Most headlines are noise or already priced in:
-    give those impact 1-2 and direction "neutral". Reserve impact 4-5 for news that
-    plausibly moves a large company or a whole sector by several percent
-    (earnings surprises, guidance changes, central-bank decisions, major
-    regulation, big M&A, flagship product launches at conferences).
-
-    Field guide:
-    - headline_summary: one plain sentence, max 25 words.
-    - tickers: US tickers directly affected, including clear second-order names
-      (suppliers, competitors, customers). Uppercase symbol, max 6. Empty if none.
-      Give EACH ticker its own direction for that company. Stories often split:
-      an oil spike is bullish for producers but bearish for airlines; a CEO exit
-      can be bearish for the company and bullish for its rivals. Never copy the
-      overall direction onto a ticker it doesn't fit; use neutral when unsure.
-    - sectors: pick from the allowed list only.
-    - direction: the overall market read of the story (bullish, bearish or
-      neutral). It drives the market-mood gauge, not the per-ticker calls.
-    - sentiment: -1.0 (very negative) to 1.0 (very positive).
-    - impact: integer 1-5 as described above.
-    - confidence: 0.0-1.0, how sure you are about the directions.
-    - rationale: 1-3 sentences on the mechanism, citing comparable past events
-      when you know them.
-    - invalidation: one sentence on what would prove this call wrong.
-
-    This is research support, not investment advice.
-  PROMPT
-
-  class Refused < StandardError; end
 
   module_function
 
@@ -146,58 +114,12 @@ module Markets
     end
   end
 
-  # ---------------------------------------------------------------- claude
+  # ---------------------------------------------------------------- analysis
 
-  def schema
-    {
-      type: "object", additionalProperties: false,
-      required: %w[headline_summary event_type direction sentiment impact confidence tickers sectors rationale invalidation],
-      properties: {
-        headline_summary: { type: "string" },
-        event_type: { type: "string", enum: EVENT_TYPES },
-        direction: { type: "string", enum: DIRECTIONS },
-        sentiment: { type: "number" },
-        impact: { type: "integer" },
-        confidence: { type: "number" },
-        tickers: { type: "array", items: {
-          type: "object", additionalProperties: false, required: %w[symbol direction],
-          properties: { symbol: { type: "string" }, direction: { type: "string", enum: DIRECTIONS } }
-        } },
-        sectors: { type: "array", items: { type: "string", enum: sectors } },
-        rationale: { type: "string" },
-        invalidation: { type: "string" }
-      }
-    }
-  end
+  # free finance rules (scripts/markets_rules.rb); returns the fields card() expects
+  def classify(h) = MarketRules.analyze(h, config)
 
-  def claude
-    require "anthropic"
-    @claude ||= Anthropic::Client.new
-  end
-
-  def classify(h)
-    message = claude.beta.messages.create(
-      model: MODEL,
-      max_tokens: 4096,
-      output_config: { effort: :low, format_: { type: :json_schema, schema: schema } },
-      fallbacks: :default,
-      betas: [ "server-side-fallback-2026-07-01" ],
-      system_: [ { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } } ],
-      messages: [ { role: "user", content: <<~TEXT } ]
-        Source: #{h['source']}
-        Published: #{h['published']}
-        Tagged ticker: #{h['related'].to_s.empty? ? 'none' : h['related']}
-        Headline: #{h['title']}
-        Summary: #{h['summary'].to_s.empty? ? '(none)' : h['summary']}
-      TEXT
-    )
-    raise Refused, "declined" if message.stop_reason == :refusal
-    text = message.content.find { |b| b.type == :text }&.text
-    raise JSON::ParserError, "empty response" if text.to_s.strip.empty?
-    JSON.parse(text)
-  end
-
-  # Claude's answer + the headline => the stored catalyst card
+  # the analysis + the headline => the stored catalyst card
   def card(h, r)
     calls = []
     Array(r["tickers"]).each do |t|
@@ -227,17 +149,13 @@ module Markets
     queue = queue.sort_by { |h| h["published"] }.reverse
     todo = queue.first(ANALYZE_PER_RUN)
     rest = queue.drop(ANALYZE_PER_RUN)
-    todo.each_with_index do |h, i|
+    todo.each do |h|
       cards << card(h, classify(h))
       warn format("  ✓ %-60s %s", h["title"][0, 60], cards.last["tickers"].map { |t| "#{t['symbol']}:#{t['direction'][0, 4]}" }.join(" "))
-    rescue Refused, JSON::ParserError, Anthropic::Errors::BadRequestError => e
+    rescue StandardError => e
+      # one odd headline never stops the run
       skipped += 1
-      warn "  ✗ skipped #{h['title'][0, 60]} (#{e.class.name.split('::').last})"
-    rescue Anthropic::Errors::APIError => e
-      # rate limit, overload, network: keep this and the rest for the next run
-      warn "  ! Claude unavailable (#{e.class.name.split('::').last}); #{todo.size - i} headlines wait for the next run"
-      rest = todo.drop(i) + rest
-      break
+      warn "  ✗ skipped #{h['title'].to_s[0, 60]} (#{e.class})"
     end
     [ cards, rest, skipped ]
   end
@@ -341,8 +259,8 @@ module Markets
   # The new markets.json contents, or nil when the API keys are missing (keep the last file).
   def run(now: Time.now.utc)
     prev = load_previous
-    unless ENV["FINNHUB_API_KEY"].to_s != "" && ENV["ANTHROPIC_API_KEY"].to_s != ""
-      warn "markets: FINNHUB_API_KEY / ANTHROPIC_API_KEY not set, keeping the last _data/markets.json"
+    if ENV["FINNHUB_API_KEY"].to_s.empty?
+      warn "markets: FINNHUB_API_KEY not set, keeping the last _data/markets.json"
       return nil
     end
 
