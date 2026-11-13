@@ -77,6 +77,18 @@
 .mk__date { flex: none; min-width: 52px; font: 600 12px var(--mono); color: var(--hl); }
 .mk__none { margin: 4px 0; font: 12.5px var(--mono); }
 
+/* jump shortcuts: ↓ open calls / ↓ coming up at the top, ↑ back to the market on the boxes */
+.mk__jumps { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.mk__jump { display: inline-flex; align-items: center; gap: 5px; min-height: 26px; padding: 0 9px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg-elev); color: var(--text-2); font: 12px var(--mono); cursor: pointer; transition: color 0.2s, border-color 0.2s, background 0.2s; }
+.mk__jump small { font-size: 10.5px; color: var(--muted); }
+.mk__jump:hover { color: var(--text); border-color: var(--line-strong); background: var(--bg-hover); }
+.mk__jump:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
+.mk__boxhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.mk__boxhead .mk__h { margin-bottom: 6px; }
+.mk__boxhead .mk__jump { flex: none; }
+.mk__h[tabindex="-1"]:focus { outline: none; }
+.mk__box, .news__bar { scroll-margin-top: 16px; }
+
 .news__list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-top: 0; }
 .news__list[hidden] { display: none; }
 .news__list:empty { display: none; }
@@ -125,6 +137,11 @@
   .mk__cell:nth-child(n + 3) { border-top: 1px solid var(--line); }
   .mk__value { font-size: 17px; }
   .mk__cols { grid-template-columns: minmax(0, 1fr); }
+  .mk__jumps { flex: 1 1 100%; }
+  .mk__long { display: none; }   /* "↑ back to the market" → "↑ market" next to the box headings */
+}
+@media (max-width: 760px) {
+  :root .mk__jump { min-height: 40px; }   /* phones: every tap target at least 40px (see main.css) */
 }
 
 /* ---------- /watch/: trailers + reviews (assets/js/watch.js) ---------- */

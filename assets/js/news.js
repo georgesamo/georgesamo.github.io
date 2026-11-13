@@ -130,7 +130,21 @@
   }
 
   /* ---------- events (delegated, registered once) ---------- */
+  // markets tab shortcuts: ↓ open calls / ↓ coming up, and ↑ back to the market (the tab bar)
+  function jump(where) {
+    var r = root(); if (!r) return;
+    var target = where === "top" ? r.querySelector(".news__bar") : document.getElementById(where);
+    if (!target) return;
+    var calm = window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    (target.closest(".mk__box") || target).scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "start" });
+    // keyboard and screen-reader users land where they jumped: the heading, or back on the markets tab
+    var focusEl = where === "top" ? r.querySelector('[data-news-filter="markets"]') : target;
+    if (focusEl) try { focusEl.focus({ preventScroll: true }); } catch (x) {}
+  }
+
   document.addEventListener("click", function (e) {
+    var j = e.target.closest && e.target.closest("[data-mk-jump]");
+    if (j) { jump(j.dataset.mkJump); return; }
     var f = e.target.closest && e.target.closest("[data-news-filter]");
     if (f) { state.section = f.dataset.newsFilter; store.set(TAB, state.section || null); apply(); return; }
     var b = e.target.closest && e.target.closest("[data-news-save]");

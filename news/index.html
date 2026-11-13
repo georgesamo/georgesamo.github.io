@@ -69,7 +69,7 @@ icon: rss
     {%- endfor %}
   </ol>
 
-  {%- comment -%} markets tab: scripts/fetch_markets.rb → _data/markets.json (Claude-analyzed catalysts + tracked calls) {%- endcomment -%}
+  {%- comment -%} markets tab: scripts/fetch_markets.rb → _data/markets.json (catalysts read by the free rules in scripts/markets_rules.rb + tracked calls) {%- endcomment -%}
   <div class="mk" data-news-markets hidden>
     {%- if mk.generated_at %}
     {%- assign mood = mk.mood.score | default: 0 | plus: 100 | divided_by: 2.0 -%}
@@ -105,7 +105,8 @@ icon: rss
     </ul>
     {%- endif %}
 
-    <div class="news__meta muted"><span>updated <time datetime="{{ mk.generated_at }}" data-news-ago>{{ mk.generated_at | date: "%b %-d, %H:%M UTC" }}</time> · {{ mk.mood.stories }} stories in the mood{% if mk.status.queued > 0 %} · {{ mk.status.queued }} waiting for analysis{% endif %}</span></div>
+    <div class="news__meta muted"><span>updated <time datetime="{{ mk.generated_at }}" data-news-ago>{{ mk.generated_at | date: "%b %-d, %H:%M UTC" }}</time> · {{ mk.mood.stories }} stories in the mood{% if mk.status.queued > 0 %} · {{ mk.status.queued }} waiting for analysis{% endif %}</span>
+      <span class="mk__jumps" role="group" aria-label="Jump to"><button type="button" class="mk__jump" data-mk-jump="mk-calls">↓ open calls <small>{{ mk_open.size }}</small></button><button type="button" class="mk__jump" data-mk-jump="mk-cal">↓ coming up <small>{{ mk.events.size }}</small></button></span></div>
     {%- endif %}
 
     {%- if mk_items.size == 0 %}
@@ -135,7 +136,10 @@ icon: rss
     {%- if mk.generated_at %}
     <div class="mk__cols">
       <section class="mk__box" aria-labelledby="mk-calls">
-        <h2 class="mk__h" id="mk-calls">open calls <small class="muted">· one per ticker, scored after 3 days</small></h2>
+        <div class="mk__boxhead">
+          <h2 class="mk__h" id="mk-calls" tabindex="-1">open calls <small class="muted">· one per ticker, scored after 3 days</small></h2>
+          <button type="button" class="mk__jump" data-mk-jump="top">↑ <span class="mk__long">back to the </span>market</button>
+        </div>
         {%- if mk_open.size > 0 %}
         <ul class="mk__rows">
           {%- for c in mk_open %}
@@ -156,7 +160,10 @@ icon: rss
         {%- endif %}
       </section>
       <section class="mk__box" aria-labelledby="mk-cal">
-        <h2 class="mk__h" id="mk-cal">coming up</h2>
+        <div class="mk__boxhead">
+          <h2 class="mk__h" id="mk-cal" tabindex="-1">coming up</h2>
+          <button type="button" class="mk__jump" data-mk-jump="top">↑ market</button>
+        </div>
         {%- if mk.events.size > 0 %}
         <ul class="mk__rows">
           {%- for e in mk.events %}
@@ -169,7 +176,7 @@ icon: rss
       </section>
     </div>
     {%- endif %}
-    <p class="news__fine muted">Market stories come from Finnhub; Claude reads each one and says which stocks it may move, which way and why. Calls are scored against the real price after 3 days. Research for fun, not financial advice.</p>
+    <p class="news__fine muted">Market stories come from Finnhub. Built-in finance rules (no AI) read each one: which stocks it may move, which way, and the phrases behind it. Calls are scored against the real price after 3 days. Research for fun, not financial advice.</p>
   </div>
 
   <p class="news__none muted" data-news-none hidden># no stories match</p>
