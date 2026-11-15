@@ -1,5 +1,352 @@
 {
+  "_how": "Median of `runs` Lighthouse runs per page is compared with these. Scores: below warn = warning, below fail = blocks the deploy. LCP (ms), CLS, JS/CSS (gzip KB): above warn = warning, above fail = blocks. baseline = worst median of 3 CI workflow runs on 2026-11-15 (commit before this file). Scores warn 3 / fail 10 points under it (medians moved up to 2 between runs); a11y/best-practices/SEO are deterministic, so any drop warns and 5+ points blocks; LCP warns at +10% / blocks at +30% (medians moved up to ~20%); CLS +0.02 / +0.10; bytes +5% / +20% (JS moved 3%). After an intended change, re-measure and move these.",
   "runs": 5,
-  "pages": ["/", "/games/", "/samuka/", "/leaderboards/"],
-  "budgets": {}
+  "pages": [
+    "/",
+    "/games/",
+    "/samuka/",
+    "/leaderboards/"
+  ],
+  "budgets": {
+    "mobile": {
+      "/": {
+        "performance": {
+          "baseline": 87,
+          "warn": 84,
+          "fail": 77
+        },
+        "accessibility": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "best-practices": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "seo": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "lcp": {
+          "baseline": 3157,
+          "warn": 3500,
+          "fail": 4200
+        },
+        "cls": {
+          "baseline": 0.142,
+          "warn": 0.162,
+          "fail": 0.242
+        },
+        "jsKB": {
+          "baseline": 172.0,
+          "warn": 181,
+          "fail": 207
+        },
+        "cssKB": {
+          "baseline": 43.5,
+          "warn": 46,
+          "fail": 53
+        }
+      },
+      "/games/": {
+        "performance": {
+          "baseline": 85,
+          "warn": 82,
+          "fail": 75
+        },
+        "accessibility": {
+          "baseline": 98,
+          "warn": 98,
+          "fail": 93
+        },
+        "best-practices": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "seo": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "lcp": {
+          "baseline": 4383,
+          "warn": 4850,
+          "fail": 5700
+        },
+        "cls": {
+          "baseline": 0.002,
+          "warn": 0.022,
+          "fail": 0.102
+        },
+        "jsKB": {
+          "baseline": 172.0,
+          "warn": 181,
+          "fail": 207
+        },
+        "cssKB": {
+          "baseline": 43.5,
+          "warn": 46,
+          "fail": 53
+        }
+      },
+      "/samuka/": {
+        "performance": {
+          "baseline": 92,
+          "warn": 89,
+          "fail": 82
+        },
+        "accessibility": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "best-practices": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "seo": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "lcp": {
+          "baseline": 3320,
+          "warn": 3700,
+          "fail": 4400
+        },
+        "cls": {
+          "baseline": 0.005,
+          "warn": 0.025,
+          "fail": 0.105
+        },
+        "jsKB": {
+          "baseline": 172.0,
+          "warn": 181,
+          "fail": 207
+        },
+        "cssKB": {
+          "baseline": 43.5,
+          "warn": 46,
+          "fail": 53
+        }
+      },
+      "/leaderboards/": {
+        "performance": {
+          "baseline": 71,
+          "warn": 68,
+          "fail": 61
+        },
+        "accessibility": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "best-practices": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "seo": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "lcp": {
+          "baseline": 3502,
+          "warn": 3900,
+          "fail": 4600
+        },
+        "cls": {
+          "baseline": 0.447,
+          "warn": 0.467,
+          "fail": 0.547
+        },
+        "jsKB": {
+          "baseline": 172.0,
+          "warn": 181,
+          "fail": 207
+        },
+        "cssKB": {
+          "baseline": 43.5,
+          "warn": 46,
+          "fail": 53
+        }
+      }
+    },
+    "desktop": {
+      "/": {
+        "performance": {
+          "baseline": 98,
+          "warn": 95,
+          "fail": 88
+        },
+        "accessibility": {
+          "baseline": 93,
+          "warn": 93,
+          "fail": 88
+        },
+        "best-practices": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "seo": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "lcp": {
+          "baseline": 741,
+          "warn": 850,
+          "fail": 1000
+        },
+        "cls": {
+          "baseline": 0.035,
+          "warn": 0.055,
+          "fail": 0.135
+        },
+        "jsKB": {
+          "baseline": 172.0,
+          "warn": 181,
+          "fail": 207
+        },
+        "cssKB": {
+          "baseline": 43.5,
+          "warn": 46,
+          "fail": 53
+        }
+      },
+      "/games/": {
+        "performance": {
+          "baseline": 99,
+          "warn": 96,
+          "fail": 89
+        },
+        "accessibility": {
+          "baseline": 90,
+          "warn": 90,
+          "fail": 85
+        },
+        "best-practices": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "seo": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "lcp": {
+          "baseline": 985,
+          "warn": 1100,
+          "fail": 1300
+        },
+        "cls": {
+          "baseline": 0.001,
+          "warn": 0.021,
+          "fail": 0.101
+        },
+        "jsKB": {
+          "baseline": 172.0,
+          "warn": 181,
+          "fail": 207
+        },
+        "cssKB": {
+          "baseline": 43.5,
+          "warn": 46,
+          "fail": 53
+        }
+      },
+      "/samuka/": {
+        "performance": {
+          "baseline": 100,
+          "warn": 97,
+          "fail": 90
+        },
+        "accessibility": {
+          "baseline": 93,
+          "warn": 93,
+          "fail": 88
+        },
+        "best-practices": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "seo": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "lcp": {
+          "baseline": 774,
+          "warn": 900,
+          "fail": 1100
+        },
+        "cls": {
+          "baseline": 0.001,
+          "warn": 0.021,
+          "fail": 0.101
+        },
+        "jsKB": {
+          "baseline": 172.0,
+          "warn": 181,
+          "fail": 207
+        },
+        "cssKB": {
+          "baseline": 43.5,
+          "warn": 46,
+          "fail": 53
+        }
+      },
+      "/leaderboards/": {
+        "performance": {
+          "baseline": 92,
+          "warn": 89,
+          "fail": 82
+        },
+        "accessibility": {
+          "baseline": 92,
+          "warn": 92,
+          "fail": 87
+        },
+        "best-practices": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "seo": {
+          "baseline": 100,
+          "warn": 100,
+          "fail": 95
+        },
+        "lcp": {
+          "baseline": 1051,
+          "warn": 1200,
+          "fail": 1400
+        },
+        "cls": {
+          "baseline": 0.15,
+          "warn": 0.17,
+          "fail": 0.25
+        },
+        "jsKB": {
+          "baseline": 172.0,
+          "warn": 181,
+          "fail": 207
+        },
+        "cssKB": {
+          "baseline": 43.5,
+          "warn": 46,
+          "fail": 53
+        }
+      }
+    }
+  }
 }
