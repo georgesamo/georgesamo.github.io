@@ -110,7 +110,7 @@
     var M = window.SamukaMe, K = window.SamukaStreak, a = A(), S = window.SamukaScores;
     if (!user() || !M || !M.fetchCard || !K) return Promise.resolve(null);
     return M.fetchCard(a.publicName()).then(function (card) {
-      var st = K.state({ signedIn: true, streak: card && card.streak, done: !!(S && S.dailyDone && S.dailyDone("gems")), on: true, hiddenDay: null, now: Date.now() });
+      var st = K.state({ signedIn: true, streak: card && card.streak, done: !!(S && S.dailyDone && S.dailyDone()), on: true, hiddenDay: null, now: Date.now() });
       return st.show ? { current: card.streak.current | 0, kind: st.kind } : null;
     }, function () { return null; });
   }

@@ -15,7 +15,7 @@ import { chromium } from "playwright";
 
 const site = path.resolve(process.argv[2] || "_site");
 const HOST = "georgesamo.github.io", ORIGIN = "https://" + HOST;
-const GAMES = ["gems", "sidekiq", "schema", "pitwall"];
+const GAMES = ["gems", "sidekiq", "schema", "pitwall", "deps"];
 const MAX = 60;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -60,7 +60,7 @@ async function supabase() {
 function page(card) {
   const name = card.name, best = card.best || {};
   const top = Object.entries(card.ranks || {}).sort((a, b) => a[1].rank - b[1].rank)[0];
-  const GN = { gems: "Gem Match", sidekiq: "Sidekiq Rush", schema: "Schema Stack", pitwall: "Pit Wall" };
+  const GN = { gems: "Gem Match", sidekiq: "Sidekiq Rush", schema: "Schema Stack", pitwall: "Pit Wall", deps: "Dependency Hell" };
   const bits = [];
   if (top) bits.push("#" + top[1].rank + " in " + GN[top[0]]);
   const hi = Object.entries(best).sort((a, b) => b[1] - a[1])[0];

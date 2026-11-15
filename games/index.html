@@ -1,7 +1,7 @@
 ---
 layout: shell
 title: Games
-description: "Small games about the Rails stack: Sidekiq Rush, Gem Match, Schema Stack and Pit Wall, solo or live with a friend."
+description: "Small games about the Rails stack: Sidekiq Rush, Gem Match, Schema Stack, Pit Wall and Dependency Hell, solo, daily or live with a friend."
 permalink: /games/
 tab: games
 file: arcade/games/
@@ -93,10 +93,34 @@ icon: log
               </div>
             </div>
           </article>
+          {%- assign gd = site.data.games | where: "id", "deps" | first %}
+          <article class="arcade-card reveal" data-game-card data-modes="{{ gd.modes | join: ' ' }}" data-length="{{ gd.length }}">
+            <div class="arcade-card__preview" aria-hidden="true">
+              <div class="pv-dh">
+                <div class="pv-dh__row"><span>rails</span><i></i><i></i><i class="is-on"></i><i></i></div>
+                <div class="pv-dh__row"><span>rack</span><i></i><i></i><i class="is-mv2"></i><i class="is-mv"></i></div>
+                <div class="pv-dh__row"><span>sidekiq</span><i></i><i class="is-on"></i><i></i><i></i></div>
+                <div class="pv-dh__row"><span>redis</span><i></i><i></i><i></i><i class="is-on"></i></div>
+                <p class="pv-dh__rule">rails &gt;= 7.2 → rack &lt; 3.2</p>
+              </div>
+            </div>
+            <div class="arcade-card__body">
+              <p class="arcade-card__file">games/dependency_hell.rb</p>
+              <h3 class="arcade-card__title">Dependency Hell</h3>
+              <p class="arcade-card__text"><code>bundle update</code> pinned everything to the newest and nothing resolves. Read the Gemfile and the gemspec rules, pin one version per gem and run <b>bundle install</b>. Three Gemfiles, three installs each: find the freshest lock that works.</p>
+              {% include game-meta.html id="deps" %}
+              <div class="arcade-card__row">
+                <button class="btn btn--primary" type="button" data-play="deps"><span class="btn__prompt">▶</span> play</button>
+                <button class="btn" type="button" data-daily="deps" title="Same three Gemfiles for everyone today">📅 daily</button>
+                <span class="arcade-card__best" data-best="deps"></span>
+              </div>
+            </div>
+          </article>
         </div>
         <p class="muted games-empty" data-games-empty hidden>No game matches that filter.</p>
         <div class="lobby__actions games-more">
           <button class="btn" type="button" data-daily>📅 daily Gem Match</button>
+          <button class="btn" type="button" data-daily="deps">📅 daily Dependency Hell</button>
           <button class="btn" type="button" data-race>⚔ live 2-player</button>
           <a class="btn" href="{{ '/leaderboards/' | relative_url }}">🏆 leaderboards</a>
         </div>

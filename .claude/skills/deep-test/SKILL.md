@@ -68,7 +68,7 @@ For each of `?as=guest`, `?as=user`, `?as=samuka`, `?as=nino`, then `?as=out`:
 - Sidebar `me` folder and leaderboard "jump to me" behave; `/u/` player card for the mock user renders without errors.
 - Fresh sign-in starts in dark mode (documented behaviour).
 
-### games — `SamukaArcade` (ids: `gems`, `sidekiq`, `schema`, `pitwall`)
+### games — `SamukaArcade` (ids: `gems`, `sidekiq`, `schema`, `pitwall`, `deps`)
 For each game, on desktop and phone:
 - Open from its card (`[data-play]`) and from the command palette. Modal is `aria-modal`, focus moves inside, background previews stop animating, page doesn't scroll behind it.
 - Play: start, a few real inputs (keyboard on desktop: arrow keys / 1-2-3 for Sidekiq; taps on phone via `computer left_click` on the stage), pause if available. `SamukaArcade._debug()` exposes state for automated playtests — use it to drive to **game over** quickly rather than playing minutes.

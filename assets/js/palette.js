@@ -69,7 +69,7 @@
     if (it.href) { if (window.SamukaNav) window.SamukaNav.go(it.href); else location.href = it.href; return true; }
     var act = it.act || "", Ar = window.SamukaArcade;
     if (act.indexOf("play:") === 0) { if (Ar) Ar.open(act.slice(5)); return true; }
-    if (act === "daily") { if (window.SamukaScores) window.SamukaScores.openDaily(); return true; }
+    if (act === "daily" || act.indexOf("daily:") === 0) { if (window.SamukaScores) window.SamukaScores.openDaily(act.slice(6) || "gems"); return true; }
     if (act === "race") { if (window.SamukaRace) window.SamukaRace.open(); return true; }
     if (act === "theme") { var t = document.querySelector("[data-toggle-theme]"); if (t) t.click(); return true; }
     if (act === "terminal") { if (window.SamukaTerminal) window.SamukaTerminal.open(); return true; }

@@ -51,7 +51,7 @@
       '<article class="pcard pcard--' + esc(card.role) + '" aria-label="Player card for ' + esc(card.name) + '">' +
         '<div class="pcard__top"><span class="pcard__avatar" aria-hidden="true">' + esc(card.name.charAt(0).toUpperCase()) + "</span>" +
         '<div><h1 class="pcard__name">' + esc(card.name) + '</h1><p class="pcard__meta">' + role + " · joined " + esc(month(card.joined)) + " · " + fmt(card.games) + " games</p></div></div>" +
-        '<div class="pcard__stats pcard__stats--games">' + [["gems", "Gem Match"], ["sidekiq", "Sidekiq Rush"], ["schema", "Schema Stack"], ["pitwall", "Pit Wall"]].map(function (g) { return "<div><b>" + fmt(best[g[0]]) + "</b><span>" + g[1] + "</span></div>"; }).join("") + "<div><b>" + n + "/" + list.length + "</b><span>badges</span></div></div>" +
+        '<div class="pcard__stats pcard__stats--games">' + [["gems", "Gem Match"], ["sidekiq", "Sidekiq Rush"], ["schema", "Schema Stack"], ["pitwall", "Pit Wall"], ["deps", "Dependency Hell"]].map(function (g) { return "<div><b>" + fmt(best[g[0]]) + "</b><span>" + g[1] + "</span></div>"; }).join("") + "<div><b>" + n + "/" + list.length + "</b><span>badges</span></div></div>" +
         '<div class="pcard__badges">' + list.map(function (x) {
           var on = !!got[x.key], hide = x.secret && !on;
           return '<span class="pcard__badge' + (on ? "" : " is-off") + '" title="' + esc(hide ? "secret" : x.title) + '">' + (hide ? "?" : esc(x.icon)) + "</span>";
@@ -87,11 +87,11 @@
     var best = c.best || {}, list = (window.SamukaAch && window.SamukaAch.list) || [];
     var have = {}; (c.achievements || []).forEach(function (k) { have[k] = 1; });
     var got = list.filter(function (a) { return have[a.key]; }).length;
-    [["Gem Match", fmt(best.gems)], ["Sidekiq", fmt(best.sidekiq)], ["Schema", fmt(best.schema)], ["Pit Wall", fmt(best.pitwall)], ["badges", got + "/" + list.length]].forEach(function (s, i) {
-      var x = 52 + i * 190;
-      g.fillStyle = soft; g.fillRect(x, 220, 176, 130);
-      g.fillStyle = accent; g.font = "700 34px 'JetBrains Mono', monospace"; g.fillText(s[1], x + 16, 290);
-      g.fillStyle = muted; g.font = "17px 'JetBrains Mono', monospace"; g.fillText(s[0].toUpperCase(), x + 16, 330);
+    [["Gem Match", fmt(best.gems)], ["Sidekiq", fmt(best.sidekiq)], ["Schema", fmt(best.schema)], ["Pit Wall", fmt(best.pitwall)], ["Dep. Hell", fmt(best.deps)], ["badges", got + "/" + list.length]].forEach(function (s, i) {
+      var x = 52 + i * 158;   // six tiles across the 936px inside the card
+      g.fillStyle = soft; g.fillRect(x, 220, 146, 130);
+      g.fillStyle = accent; g.font = "700 30px 'JetBrains Mono', monospace"; g.fillText(s[1], x + 14, 290, 118);
+      g.fillStyle = muted; g.font = "16px 'JetBrains Mono', monospace"; g.fillText(s[0].toUpperCase(), x + 14, 330, 118);
     });
     // badges: one row while they fit in the card (936px), otherwise two rows, shrinking if needed
     var room = CW - 104, one = list.length * 47 <= room, per = one ? list.length : Math.ceil(list.length / 2);
