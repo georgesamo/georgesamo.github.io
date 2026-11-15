@@ -307,6 +307,84 @@
       '<a class="btn btn--primary" href="/leaderboards/tournament/"><span class="btn__prompt">▶</span> enter</a>';
   }
 
+  /* ---------- last week, for the weekly recap and the winner toast ---------- */
+  // pure: s = tournament_standings(last week, 1), gs = games() →
+  //   { week, games: [{ id, name, icon, winner, role, score, me, place }], played }
+  //   winner = the top row (ties: the earlier run, same as tournament_winners()); place = your { rank, of, score }
+  function lastWeekFrom(s, gs, key) {
+    s = s || {};
+    var byId = {}, out = [];
+    (gs || []).forEach(function (g) { byId[g.id] = g; });
+    var ids = (gs || []).map(function (g) { return g.id; });
+    Object.keys(s.games || {}).forEach(function (id) { if (ids.indexOf(id) < 0) ids.push(id); });
+    ids.forEach(function (id) {
+      var top = ((s.games || {})[id] || [])[0];
+      if (!top) return;
+      var g = byId[id] || { name: pretty(id), icon: "🎮" }, mine = (s.mine || {})[id];
+      out.push({ id: id, name: g.name, icon: g.icon, winner: top.name, role: top.role, score: top.score | 0, me: !!top.me,
+        place: mine ? { rank: mine.rank | 0, of: mine.of | 0, score: mine.score | 0 } : null });
+    });
+    return { week: s.week || key, games: out, played: out.some(function (g) { return g.place; }) };
+  }
+  // last finished week's results (rejects when the tournament can't be reached)
+  function lastWeek(now) {
+    var w = prevWeek(now);
+    return cached("l:" + w.key, function () { return backend().standings(w.key, 1); }).then(function (s) { return lastWeekFrom(s, games(), w.key); });
+  }
+
+  // "You won last week": once per ISO week per account (kept on this device), signed-in only
+  var WIN_KEY = "samuka-tourney-win-toast:";
+  function winKey(u) { return WIN_KEY + (u && u.id); }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+  function calm() { return window.SamukaCalm ? window.SamukaCalm.on() : !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); }
+  // pure: the toast's inside. won = lastWeekFrom().games where me
+  function winToastHtml(won, key) {
+    var what = won.length === 1 ? won[0].name : won.length + " games";
+    return '<span class="ach-toast__icon" aria-hidden="true">🏆</span><span><small>you won ' + esc(weekLabel(key)) + "</small>" +
+      "<b>" + esc(what) + " · " + (won.length === 1 ? fmt(won[0].score) : won.map(function (g) { return esc(g.name); }).join(", ")) + "</b>" +
+      '<a class="tourney-toast__link" href="/leaderboards/tournament/" data-tourney-toast-link>see the standings →</a></span>' +
+      '<button class="tourney-toast__x" type="button" aria-label="Dismiss">×</button>';
+  }
+  function showWinToast(won, key) {
+    var tries = 0;
+    (function show() {   // after any achievement toast in the same corner
+      if (document.querySelector(".ach-toast") && ++tries < 10) { setTimeout(show, 900); return; }
+      var el = document.createElement("div"), quiet = calm(), gone = false;
+      el.className = "ach-toast tourney-toast";
+      el.setAttribute("role", "status");
+      el.innerHTML = winToastHtml(won, key);
+      var bye = function () { if (gone) return; gone = true; el.classList.remove("is-in"); setTimeout(function () { el.remove(); }, quiet ? 0 : 600); };
+      el.querySelector(".tourney-toast__x").addEventListener("click", bye);
+      el.querySelector("a").addEventListener("click", bye);
+      document.body.appendChild(el);
+      // calm mode: no slide (main.css), and it stays until you dismiss it or move on, rather than timing out
+      if (quiet) el.classList.add("is-in"); else requestAnimationFrame(function () { el.classList.add("is-in"); });
+      if (!quiet) setTimeout(bye, 10000);
+      window.addEventListener("samuka:page", bye, { once: true });
+      track("tournament:win-toast");
+    })();
+  }
+  var winChecking = null;
+  function checkWin() {
+    var u = user(), a = A();
+    if (!u || !u.id || (a && a.mock && a.mock() === "guest")) return Promise.resolve(false);
+    var w = weekOf(), k = winKey(u);
+    if (store(k) === w.key || winChecking === k + w.key) return Promise.resolve(false);
+    winChecking = k + w.key;
+    return lastWeek().then(function (lw) {
+      winChecking = null;
+      var now = user();
+      if (!now || now.id !== u.id || weekOf().key !== w.key || store(k) === w.key) return false;
+      store(k, w.key);   // checked this week, won or not: no more lookups until next Monday
+      var won = lw.games.filter(function (g) { return g.me; });
+      if (!won.length) return false;
+      showWinToast(won, lw.week);
+      return true;
+    }, function () { winChecking = null; return false; });   // offline / not set up: try again on a later page
+  }
+  var winT = null;
+  function checkWinSoon() { clearTimeout(winT); winT = setTimeout(checkWin, 1500); }
+
   var opened = null;
   function paintPage(root) {
     var gs = games(), w = weekOf();
@@ -363,14 +441,16 @@
     if (root) { root.__painted = false; paintPage(root); }
     paintCards();
     tick();
+    checkWinSoon();
   }
-  window.addEventListener("samuka:auth", function () { cache = {}; var root = document.querySelector("[data-tournament]"); if (root) paintPage(root); paintCards(); });
+  window.addEventListener("samuka:auth", function () { cache = {}; checkWinSoon(); var root = document.querySelector("[data-tournament]"); if (root) paintPage(root); paintCards(); });
   window.addEventListener("samuka:page", function () { opened = null; boot(); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 
   window.SamukaTournament = {
     weekOf: weekOf, prevWeek: prevWeek, seedFor: seedFor, timeLeft: timeLeft, left: left, weekLabel: weekLabel,
     games: games, play: play, withTrophies: withTrophies,
+    lastWeek: lastWeek, lastWeekFrom: lastWeekFrom, winToastHtml: winToastHtml, checkWin: checkWin, _winKey: winKey,
     standingsFrom: standingsFrom, resultHtml: resultHtml, pageHtml: pageHtml, cardHtml: cardHtml,
     reload: function () { cache = {}; repaint(); },
     mockBackend: mock,
