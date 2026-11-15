@@ -61,3 +61,18 @@
     - Pick quick race, Grand Prix or a 10-round World Championship.
     - Call pit stops, choose tyres and deploy ERS while the race runs.
     - Rain and safety cars change everything; react before your rivals do.
+
+- id: deps
+  name: Dependency Hell
+  file: games/dependency_hell.rb
+  icon: "📦"
+  tone: dh
+  tagline: Pin every gem so bundle install resolves, on the newest versions you can.
+  minutes: "2–4 min"
+  length: quick
+  modes: [solo, daily]
+  controls: arrow keys or tap
+  how:
+    - "Three Gemfiles (4, 5 and 6 gems). Pin one version per gem, then run bundle install."
+    - "Every Gemfile line and gemspec rule must hold: sidekiq >= 7.3 → redis >= 5.2 means a newer sidekiq needs a newer redis."
+    - Newer is better. A failed install shows the broken rules and costs one of three installs; the daily is the same for everyone.

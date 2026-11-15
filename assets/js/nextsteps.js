@@ -9,7 +9,7 @@
 (function () {
   "use strict";
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
-  var NAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match", schema: "Schema Stack", pitwall: "Pit Wall" };
+  var NAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match", schema: "Schema Stack", pitwall: "Pit Wall", deps: "Dependency Hell" };
   var run = null;   // { game, mode, unlocks: [], rank: undefined | null | {rank, behind} }
 
   function user() { var a = window.SamukaAuth; return a && a.user && a.user(); }
@@ -53,7 +53,7 @@
   function suggestion(r) {
     var S = window.SamukaScores, signed = !!user();
     // signed-in players who haven't done today's puzzle: that's the best next game
-    if (signed && S && S.dailyDone && !S.dailyDone("gems")) return '<button class="btn" type="button" data-daily>📅 today\'s puzzle</button>';
+    if (signed && S && S.dailyDone && !S.dailyDone()) return '<button class="btn" type="button" data-daily>📅 today\'s puzzle</button>';
     // a game they've never scored in
     var fresh = Object.keys(NAMES).filter(function (id) { return id !== r.game && !best(id); })[0];
     if (fresh) return '<button class="btn" type="button" data-play="' + fresh + '">▶ try ' + esc(NAMES[fresh]) + "</button>";

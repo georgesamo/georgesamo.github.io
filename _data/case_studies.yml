@@ -146,3 +146,31 @@
       }
   related: [sidekiq, gems]
   lesson: "Keeping the simulation apart from the drawing is what made it workable: I could keep tuning the race model without cars ever jumping on screen."
+
+- id: deps
+  source: assets/js/games/dependency-hell.js
+  pitch: A daily logic puzzle about Gemfile.lock. Pin one version per gem so bundle install resolves, on the newest versions the rules allow.
+  shows:
+    - title: A generator with a quality bar
+      text: "Each Gemfile is drawn from the run's seed and kept only if it passes: solvable, newest-everything fails, one or two freshest answers, an old safe lock clearly worse, and no rule that never matters."
+    - title: A tiny exact solver
+      text: "Six gems with four versions is 4,096 locks, so the game checks every one. That gives the freshest possible lock to score against, and it proves every puzzle has an answer."
+    - title: One pass, many answers
+      text: "The same sweep counts the locks that resolve, finds the freshest and stalest, and marks a rule as relevant when some lock breaks that rule alone."
+    - title: Fair dailies
+      text: "All three Gemfiles come from one seed before play starts, so the daily, challenge links and replays are the same puzzles for everyone, on every device."
+  how:
+    - "`bundle update` has pinned every gem to its newest version and nothing resolves. The Gemfile asks for some minimums, and gemspec rules tie gems together: `sidekiq >= 7.3 → redis >= 5.2`, `rails >= 8.0 → rack < 3.2`."
+    - "Pin one version per gem and run `bundle install`. A broken lock shows the rules it broke and costs one of three installs; a lock that resolves scores by freshness against the best lock possible, plus a speed bonus."
+    - Three Gemfiles of 4, 5 and 6 gems make a run of two to four minutes. The version rules are made up for the puzzle; they aren't the real gems' requirements.
+  code:
+    file: assets/js/games/dependency-hell.js
+    text: |-
+      function holds(r, v) {
+        if (r.k === "min") return v[r.a] >= r.i;
+        if (r.k === "max") return v[r.a] < r.j;
+        if (v[r.a] < r.i) return true;
+        return r.k === "need" ? v[r.b] >= r.j : v[r.b] < r.j;   // "cap"
+      }
+  related: [gems, schema]
+  lesson: "TODO(owner): a line on what you'd change after watching people play it."
