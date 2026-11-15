@@ -50,12 +50,18 @@ async function openPage(context, path, label) {
   // GitHub's public API rate-limits shared CI runners (403/429 without a token). /samuka/ already
   // falls back when that happens, so the browser's own "Failed to load resource" line for it isn't a site bug.
   let rateLimited = 0;
+  // A Supabase function from a SQL file that hasn't been run yet answers 404. The site handles that
+  // ("being set up"), and running the SQL is a manual step, so it mustn't block a deploy. Only the
+  // functions listed here, so a typo in a call to an existing one still shows up.
+  const PENDING_SQL = /\/rest\/v1\/rpc\/tournament_/;   // supabase/tournament.sql
+  let sqlPending = 0;
   page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text().slice(0, 200)); });
   page.on("response", (r) => {
     try {
       const u = new URL(r.url());
       if (u.origin === origin && r.status() >= 400) failed.push(`${r.status()} ${u.pathname}${u.search}`);
       if (u.hostname === "api.github.com" && (r.status() === 403 || r.status() === 429)) rateLimited++;
+      if (/\.supabase\.co$/.test(u.hostname) && r.status() === 404 && PENDING_SQL.test(u.pathname)) sqlPending++;
     } catch (e) {}
   });
   const res = await page.goto(base + path, { waitUntil: "load" });
@@ -64,6 +70,10 @@ async function openPage(context, path, label) {
     // drop one browser "Failed to load resource … 403/429" line per rate-limited GitHub API response
     for (let i = consoleErrors.length - 1; i >= 0 && rateLimited > 0; i--) {
       if (/^Failed to load resource: .*status of (403|429)\b/.test(consoleErrors[i])) { consoleErrors.splice(i, 1); rateLimited--; }
+    }
+    // and one "… 404" line per call to a function whose SQL isn't applied yet
+    for (let i = consoleErrors.length - 1; i >= 0 && sqlPending > 0; i--) {
+      if (/^Failed to load resource: .*status of 404\b/.test(consoleErrors[i])) { consoleErrors.splice(i, 1); sqlPending--; }
     }
     if (errors.length) add("error", label, "page errors", errors.join(" | "));
     if (failed.length) add("error", label, "failed same-origin requests", [...new Set(failed)].join(", "));
