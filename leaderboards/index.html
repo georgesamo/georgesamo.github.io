@@ -14,6 +14,7 @@ lang_label: YAML
           <h1 class="section__title">Leaderboards</h1>
           <p class="section__cmd"><span class="prompt">$</span> rails leaderboard:show --all <span class="muted"># click a name to see their player card</span></p>
         </header>
+        <p class="tourney-link"><a href="{{ '/leaderboards/tournament/' | relative_url }}"><span aria-hidden="true">🏆</span> This week's tournament: same board for everyone, best run wins a trophy →</a></p>
         <div class="boards">
           <div class="lb" data-leaderboard data-fixed data-game="gems" data-limit="25" aria-live="polite"></div>
           <div class="lb" data-leaderboard data-fixed data-game="sidekiq" data-limit="25" aria-live="polite"></div>
@@ -22,6 +23,7 @@ lang_label: YAML
         </div>
         <div class="lobby__actions" style="margin-top:20px">
           <button class="btn btn--primary" type="button" data-daily>📅 daily Gem Match</button>
+          <a class="btn" href="{{ '/leaderboards/tournament/' | relative_url }}">🏆 weekly tournament</a>
           <button class="btn" type="button" data-lb-jump hidden>📍 jump to me</button>
           <a class="btn" href="{{ '/u/' | relative_url }}">🪪 your player card</a>
         </div>

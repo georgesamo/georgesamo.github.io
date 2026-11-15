@@ -1,0 +1,26 @@
+---
+layout: shell
+title: Weekly tournament
+description: One board per game, the same for everyone this week. Best run wins a trophy on your player card.
+permalink: /leaderboards/tournament/
+tab: leaderboards
+file: arcade/tournament.yml
+icon: yml
+lang_label: YAML
+---
+      {%- comment -%} tournament.js fills [data-tournament]; the game list and names come from _data/games.yml {%- endcomment %}
+      <script type="application/json" data-tourney-games>{{ site.data.games | jsonify }}</script>
+      <section class="section" id="tournament" data-file="arcade/tournament.yml" data-icon="yml">
+        <header class="section__head reveal">
+          <p class="section__path">arcade/<b>tournament.yml</b></p>
+          <h1 class="section__title">Weekly tournament</h1>
+          <p class="section__cmd"><span class="prompt">$</span> rails tournament:show --week=current <span class="muted"># new boards every Monday, 00:00 UTC</span></p>
+        </header>
+        <div class="tourney" data-tournament aria-live="polite">
+          <p class="muted">loading this week's tournament…</p>
+        </div>
+        <div class="lobby__actions" style="margin-top:20px">
+          <a class="btn" href="{{ '/leaderboards/' | relative_url }}">🏆 all-time leaderboards</a>
+          <a class="btn" href="{{ '/u/' | relative_url }}">🪪 your player card</a>
+        </div>
+      </section>

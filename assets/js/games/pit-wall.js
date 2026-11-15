@@ -731,8 +731,8 @@
       }
       stage.addEventListener("click", onClick);
       if (race) { setup(TRACKS[Math.floor(rng() * TRACKS.length)], { length: "full" }); brief(); start(weather !== "dry" ? "I" : "M"); }
-      // a challenge replays the challenger's quick race: same seed, same length, no menu
-      else if (api.mode === "challenge") { session.length = api.opts.length === "sprint" ? "sprint" : "full"; quickRace(); }
+      // a challenge replays the challenger's quick race (same seed, same length, no menu); the weekly tournament is a full one
+      else if (api.mode === "challenge" || api.mode === "tournament") { session.length = api.opts.length === "sprint" ? "sprint" : "full"; quickRace(); }
       else menu();
       return {
         key: function (e) {
