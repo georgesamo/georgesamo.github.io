@@ -42,8 +42,8 @@
         },
         "jsKB": {
           "baseline": 172.0,
-          "warn": 181,
-          "fail": 207
+          "warn": 100,
+          "fail": 150
         },
         "cssKB": {
           "baseline": 43.5,
@@ -286,7 +286,7 @@
         },
         "lcp": {
           "baseline": 774,
-          "warn": 950,
+          "warn": 700,
           "fail": 1100
         },
         "cls": {
