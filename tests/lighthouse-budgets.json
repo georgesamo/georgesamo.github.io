@@ -1,0 +1,5 @@
+{
+  "runs": 5,
+  "pages": ["/", "/games/", "/samuka/", "/leaderboards/"],
+  "budgets": {}
+}
