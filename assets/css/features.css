@@ -221,7 +221,8 @@
 .lb { margin-top: 18px; padding: 16px 18px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-elev); }
 .lb__head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 12px; }
 .lb__title { margin: 0; flex: 1 1 100%; font: 13px var(--mono); color: var(--text-2); }
-.lb__tabs { display: inline-flex; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-soft); }
+.lb__tabs { display: inline-flex; flex-wrap: wrap; max-width: 100%; gap: 4px;   /* five games: the tabs wrap on a phone */
+   padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-soft); }
 .lb__tabs button { border: 0; border-radius: 7px; padding: 5px 11px; background: transparent; color: var(--muted); font: 12px var(--mono); cursor: pointer; }
 .lb__tabs button[aria-selected="true"], .lb__tabs button[aria-pressed="true"] { background: var(--bg-elev); color: var(--text); box-shadow: 0 0 0 1px var(--line-strong); }
 .lb__tabs--sub button[aria-pressed="true"] { color: var(--hl); }

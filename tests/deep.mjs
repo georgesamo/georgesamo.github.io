@@ -24,7 +24,7 @@ const PAGE_PROBE = readFileSync(new URL("./probes/page.js", import.meta.url), "u
 const VISUAL_PROBE = readFileSync(new URL("./probes/visual.js", import.meta.url), "utf8");
 
 // pages on the shell layout get the module check; the rest only the generic ones
-const SHELL_PAGES = ["/", "/games/", "/leaderboards/", "/events/", "/news/", "/watch/", "/samuka/", "/blog/", "/settings/", "/hire/", "/games/sidekiq/about/", "/games/gems/about/", "/games/schema/about/", "/games/pitwall/about/", "/u/", "/nino/", "/soundtrack/", "/offline/"];
+const SHELL_PAGES = ["/", "/games/", "/leaderboards/", "/leaderboards/tournament/", "/events/", "/news/", "/watch/", "/samuka/", "/blog/", "/settings/", "/hire/", "/games/sidekiq/about/", "/games/gems/about/", "/games/schema/about/", "/games/pitwall/about/", "/games/deps/about/", "/u/", "/nino/", "/soundtrack/", "/offline/"];
 const OTHER_PAGES = ["/404.html"];
 const VIEWPORTS = [
   { name: "desktop", opts: { viewport: { width: 1280, height: 800 } } },
@@ -50,12 +50,18 @@ async function openPage(context, path, label) {
   // GitHub's public API rate-limits shared CI runners (403/429 without a token). /samuka/ already
   // falls back when that happens, so the browser's own "Failed to load resource" line for it isn't a site bug.
   let rateLimited = 0;
+  // A Supabase function from a SQL file that hasn't been run yet answers 404. The site handles that
+  // ("being set up"), and running the SQL is a manual step, so it mustn't block a deploy. Only the
+  // functions listed here, so a typo in a call to an existing one still shows up.
+  const PENDING_SQL = /\/rest\/v1\/rpc\/tournament_/;   // supabase/tournament.sql
+  let sqlPending = 0;
   page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text().slice(0, 200)); });
   page.on("response", (r) => {
     try {
       const u = new URL(r.url());
       if (u.origin === origin && r.status() >= 400) failed.push(`${r.status()} ${u.pathname}${u.search}`);
       if (u.hostname === "api.github.com" && (r.status() === 403 || r.status() === 429)) rateLimited++;
+      if (/\.supabase\.co$/.test(u.hostname) && r.status() === 404 && PENDING_SQL.test(u.pathname)) sqlPending++;
     } catch (e) {}
   });
   const res = await page.goto(base + path, { waitUntil: "load" });
@@ -64,6 +70,10 @@ async function openPage(context, path, label) {
     // drop one browser "Failed to load resource … 403/429" line per rate-limited GitHub API response
     for (let i = consoleErrors.length - 1; i >= 0 && rateLimited > 0; i--) {
       if (/^Failed to load resource: .*status of (403|429)\b/.test(consoleErrors[i])) { consoleErrors.splice(i, 1); rateLimited--; }
+    }
+    // and one "… 404" line per call to a function whose SQL isn't applied yet
+    for (let i = consoleErrors.length - 1; i >= 0 && sqlPending > 0; i--) {
+      if (/^Failed to load resource: .*status of 404\b/.test(consoleErrors[i])) { consoleErrors.splice(i, 1); sqlPending--; }
     }
     if (errors.length) add("error", label, "page errors", errors.join(" | "));
     if (failed.length) add("error", label, "failed same-origin requests", [...new Set(failed)].join(", "));
@@ -240,6 +250,55 @@ async function rolesFlow(browser, vp) {
   }
 }
 
+// weekly tournament (mock session, nothing reaches Supabase): every arcade game has a board and a play
+// button, last week's winners show, play opens this week's seeded board, the mock winner's card has a 🏆,
+// and a signed-out visitor is asked to sign in instead
+async function tournamentFlow(context, vp) {
+  const label = `${vp.name} flow:tournament`;
+  const { page, done } = await openPage(context, "/leaderboards/tournament/?as=user", label);
+  await page.waitForFunction(() => document.querySelector("[data-tournament] .tourney-head"), null, { timeout: 5000 }).catch(() => {});
+  const st = await page.evaluate(() => ({
+    games: window.SamukaArcade ? window.SamukaArcade.list().map((g) => g.id) : [],
+    play: [...document.querySelectorAll("[data-tourney-play]")].map((b) => b.getAttribute("data-tourney-play")),
+    left: (document.querySelector("[data-tourney-left]") || {}).textContent || "",
+    champs: document.querySelectorAll(".tourney-champ").length,
+    tracked: window.__samukaTracked || []
+  }));
+  if (!st.play.length) { add("error", label, "tournament page", "no [data-tourney-play] buttons"); await snap(page, label); return done(); }
+  for (const g of st.games) if (!st.play.includes(g)) add("error", label, "tournament games", `no board for ${g}`);
+  if (!/\d+ (d|h|min)/.test(st.left)) add("error", label, "time left", `"${st.left}"`);
+  if (!st.champs) add("error", label, "last week's winners", "none shown in the mock session");
+  if (!st.tracked.includes("tournament:open")) add("warn", label, "tracking", "tournament:open not tracked");
+  await visual(page, label);
+  const game = st.play[0];
+  await page.locator(`[data-tourney-play="${game}"]`).first().click();
+  await page.waitForTimeout(900);
+  const run = await page.evaluate((g) => ({
+    open: window.SamukaArcade.isOpen(), cur: window.SamukaArcade.current(), seed: window.SamukaArcade.seed(),
+    want: window.SamukaTournament.seedFor(g, window.SamukaTournament.weekOf().key),
+    title: (document.getElementById("arcade-title") || {}).textContent || "", tracked: window.__samukaTracked || []
+  }), game);
+  if (!run.open || run.cur !== game) add("error", label, "tournament play", `${game} didn't open (current=${run.cur})`);
+  else {
+    if (run.seed !== run.want) add("error", label, "tournament seed", `${run.seed} instead of ${run.want}`);
+    if (!/tournament/.test(run.title)) add("warn", label, "tournament title", `"${run.title}"`);
+    if (!run.tracked.includes("tournament:play:" + game)) add("warn", label, "tracking", `tournament:play:${game} not tracked`);
+  }
+  await page.evaluate(() => window.SamukaArcade.close());
+  // the mock player won last week in some games: their card shows it
+  await page.goto(base + "/u/"); await page.waitForTimeout(1200);
+  const card = await page.evaluate(() => (document.querySelector("[data-pcard]") || {}).textContent || "");
+  if (!/weekly tournament/.test(card)) add("error", label, "player card trophies", "no weekly tournament section on the mock player's card");
+  // signed out: play asks to sign in, no game opens
+  await page.goto(base + "/leaderboards/tournament/?as=out"); await page.waitForTimeout(900);
+  const btn = page.locator("[data-tourney-play]").first();
+  if (await btn.count()) {
+    await btn.click(); await page.waitForTimeout(500);
+    if (await page.evaluate(() => window.SamukaArcade.isOpen())) add("error", label, "tournament sign-in", "a signed-out visitor got a tournament game");
+  }
+  await done();
+}
+
 // music dock opens from ♪, renders, closes; music stopped again
 async function musicFlow(context, vp) {
   const label = `${vp.name} flow:music`;
@@ -262,7 +321,7 @@ try {
     const context = await browser.newContext(vp.opts);
     for (const p of SHELL_PAGES) await pageChecks(context, vp, p, true).catch((e) => add("error", `${vp.name} ${p}`, "crashed", e.message));
     for (const p of OTHER_PAGES) await pageChecks(context, vp, p, false).catch((e) => add("error", `${vp.name} ${p}`, "crashed", e.message));
-    const flows = [navFlow, themeFlow, gamesFlow, musicFlow, vp.name === "desktop" ? paletteFlow : sheetFlow];
+    const flows = [navFlow, themeFlow, gamesFlow, tournamentFlow, musicFlow, vp.name === "desktop" ? paletteFlow : sheetFlow];
     for (const f of flows) {
       const c = await browser.newContext(vp.opts);   // fresh storage per flow
       await f(c, vp).catch((e) => add("error", `${vp.name} ${f.name}`, "crashed", e.message.split("\n")[0]));
@@ -281,7 +340,7 @@ const secs = Math.round((Date.now() - started) / 1000);
 const esc = (s) => String(s).replace(/\|/g, "\\|").replace(/\n/g, " ");
 const md = [
   `## Deep test: ${errors.length ? "❌" : "✅"} ${errors.length} error(s), ${warns.length} warning(s)${STRICT ? " (strict)" : ""}`,
-  `${SHELL_PAGES.length + OTHER_PAGES.length} pages × ${VIEWPORTS.length} viewports + nav/theme/games/music/palette/sheet/role flows, ${secs}s. Screenshots are in the **deep-report** artifact.`,
+  `${SHELL_PAGES.length + OTHER_PAGES.length} pages × ${VIEWPORTS.length} viewports + nav/theme/games/tournament/music/palette/sheet/role flows, ${secs}s. Screenshots are in the **deep-report** artifact.`,
   "",
   ...(findings.length ? ["| level | where | check | detail |", "|---|---|---|---|", ...[...errors, ...warns].map((f) => `| ${f.level} | ${esc(f.where)} | ${esc(f.check)} | ${esc(f.detail).slice(0, 400)} |`)] : ["Nothing found."])
 ].join("\n");

@@ -132,7 +132,7 @@
     });
     it("search finds the game case studies, but a game's name still offers to play it first", function () {
       var hits = C.searchPalette(C.paletteItems({ games: [] }), "case").map(function (i) { return i.href; });
-      ["sidekiq", "gems", "schema", "pitwall"].forEach(function (id) { expect(hits).toContain("/games/" + id + "/about/"); });
+      ["sidekiq", "gems", "schema", "pitwall", "deps"].forEach(function (id) { expect(hits).toContain("/games/" + id + "/about/"); });
       var items = C.paletteItems({ games: [{ id: "sidekiq", title: "sidekiq-rush.rb" }] });
       var s = C.searchPalette(items, "sidekiq");
       expect(s[0].label).toBe("Play Sidekiq Rush");

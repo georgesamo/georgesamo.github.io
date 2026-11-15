@@ -347,7 +347,11 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .home-head__more { font: 12.5px var(--mono); white-space: nowrap; }
 .home-foot { margin: 14px 0 0; font: 12.5px var(--mono); color: var(--muted); }
 
-.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+/* five games: three across, then two wider ones (a six-track grid); two across with the last one
+   full width on mid screens, one column on phones */
+.tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+.tiles > .tile { grid-column: span 2; }
+.tiles > .tile:nth-child(n+4) { grid-column: span 3; }
 .tile { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-elev); transition: border-color 0.2s, transform 0.2s; }
 .tile:hover { border-color: var(--accent); transform: translateY(-2px); }
 .tile__top { display: flex; gap: 12px; align-items: center; }
@@ -409,10 +413,11 @@ a.hub-card:hover { border-color: var(--accent); text-decoration: none; }
 .maker--wide .maker__name { font-size: 22px; }
 .maker--wide .maker__role { font-size: 13px; color: var(--text-2); }
 
-@media (max-width: 1180px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .maker--wide { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1180px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tiles > .tile, .tiles > .tile:nth-child(n+4) { grid-column: auto; } .tiles > .tile:last-child:nth-child(odd) { grid-column: 1 / -1; } .maker--wide { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 980px) { .lobby { grid-template-columns: minmax(0, 1fr); } .today { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 560px) {
   .tiles { grid-template-columns: minmax(0, 1fr); }
+  .tiles > .tile:last-child:nth-child(odd) { grid-column: auto; }
   .lobby { padding-top: 24px; gap: 20px; }
   .section--tight { padding-top: 36px; }
   .update { grid-template-columns: auto minmax(0, 1fr); }
@@ -631,3 +636,42 @@ button.tabs__tab { margin: 0; border-top: 0; border-bottom: 0; border-left: 0; f
 .feeds-menu a .fi { grid-row: span 2; }
 .feeds-menu a:hover, .feeds-menu a:focus-visible { background: var(--bg-hover); outline: none; }
 .feeds-menu a.is-here { background: var(--bg-soft); box-shadow: inset 2px 0 0 var(--hl); }
+
+/* ---------- weekly tournament (tournament.js): /leaderboards/tournament/, the lobby card, the game-over line ---------- */
+.today__tourney { grid-column: 1 / -1; }
+.tourney-link { margin: 0 0 16px; font: 13px var(--mono); }
+.tourney-link a { font-weight: 600; }
+.tourney-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: baseline; margin: 0 0 18px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-elev); }
+.tourney-head p { margin: 0; }
+.tourney-head__week { font: 700 18px/1.3 var(--sans); }
+.tourney-head__left { font: 13px var(--mono); color: var(--text-2); text-align: right; }
+.tourney-head__left b { color: var(--hl); }
+.tourney-head__text, .tourney-head__signin { grid-column: 1 / -1; font-size: 14px; }
+.tourney-head__signin { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px !important; }
+.tourney-off { margin: 0 0 14px; font: 13px var(--mono); }
+.tourney-game .lb__title { flex: 1 1 100%; }
+.tourney-game .lb__head { flex-wrap: wrap; }
+.tourney-game .lb__fixed { flex: 1; margin: 0; font: 700 16px var(--sans); }
+.tourney-game__play { flex: none; }
+.tourney-game__mine { margin: 0 0 8px; font: 12.5px var(--mono); color: var(--text-2); }
+.tourney-game__mine b { color: var(--accent); }
+.tourney-last { margin-top: 28px; }
+.tourney-last__title { margin: 0 0 10px; font: 700 18px/1.3 var(--sans); }
+.tourney-last__title small { font: 12px var(--mono); }
+.tourney-last__fine { margin: 10px 0 0; font: 12.5px var(--mono); }
+.tourney-champs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.tourney-champ { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-elev); font: 13px var(--mono); }
+.tourney-champ.is-me { box-shadow: inset 0 0 0 1px var(--accent); }
+.tourney-champ__game { grid-column: 1 / -1; color: var(--muted); font-size: 12px; }
+.tourney-champ__who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tourney-out { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); text-align: left; }
+.tourney-out p { margin: 0 0 4px; }
+.tourney-out__head { font-weight: 700; }
+.tourney-out__place { font: 13px var(--mono); color: var(--accent); }
+.tourney-out__fine { font: 12px var(--mono); color: var(--muted); }
+.pcard__trophies { margin-left: 6px; color: var(--hl); white-space: nowrap; }
+@media (max-width: 560px) { .tourney-head { grid-template-columns: minmax(0, 1fr); } .tourney-head__left { text-align: left; } }
+
+/* two dailies side by side; they wrap under each other on a narrow card */
+.today__btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 10px; }
+.today > .hub-card .today__btns .btn { margin-top: 0; }

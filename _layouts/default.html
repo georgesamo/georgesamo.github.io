@@ -101,12 +101,14 @@
     sidekiq: { src: "{{ '/assets/js/games/sidekiq-rush.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "sidekiq-rush.rb", blurb: "Route jobs to the right queue before Redis runs out of memory." },
     gems: { src: "{{ '/assets/js/games/gem-match.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "gem-match.rb", blurb: "Match three gems from the Gemfile. Power-ups: Pipeline, Force push, Bundle." },
     schema: { src: "{{ '/assets/js/games/schema-stack.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "schema-stack.rb", blurb: "Stack falling migrations; create tables before you change them." },
-    pitwall: { src: "{{ '/assets/js/games/pit-wall.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "pit-wall.rb", blurb: "Grand prix race strategy: quick race, grand prix or a 10-round championship." }
+    pitwall: { src: "{{ '/assets/js/games/pit-wall.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "pit-wall.rb", blurb: "Grand prix race strategy: quick race, grand prix or a 10-round championship." },
+    deps: { src: "{{ '/assets/js/games/dependency-hell.js' | relative_url }}?v={{ site.time | date: '%s' }}", title: "dependency-hell.rb", blurb: "Pin every gem so bundle install resolves, on the newest versions you can." }
   };</script>
   <script src="{{ '/assets/js/achievements.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/scores.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/nextsteps.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/challenge.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+  <script src="{{ '/assets/js/tournament.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/race.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/presence.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
   <script src="{{ '/assets/js/wall.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>

@@ -15,9 +15,9 @@
   function fmt(n) { return Number(n || 0).toLocaleString("en-US"); }
 
   var ROLE_LABEL = { guest: "guest", user: "user", samuka: "samuka · owner", nino: "nino · PM" };
-  var GAMES = { gems: "Gem Match", sidekiq: "Sidekiq Rush", schema: "Schema Stack", pitwall: "Pit Wall" };
+  var GAMES = { gems: "Gem Match", sidekiq: "Sidekiq Rush", schema: "Schema Stack", pitwall: "Pit Wall", deps: "Dependency Hell" };
   // /games/<id>/about/ (_data/case_studies.yml): [id, search words]
-  var CASE_STUDIES = [["sidekiq", "queues workers retries redis concurrency"], ["gems", "match-3 grid seeded daily"], ["schema", "migrations dependencies rails"], ["pitwall", "simulation racing strategy"]];
+  var CASE_STUDIES = [["sidekiq", "queues workers retries redis concurrency"], ["gems", "match-3 grid seeded daily"], ["schema", "migrations dependencies rails"], ["pitwall", "simulation racing strategy"], ["deps", "constraint solver puzzle bundler lockfile seeded daily"]];
   var RANKS_HREF = "/leaderboards/#me";
   var SETTINGS_HREF = "/settings/";
 
@@ -128,6 +128,23 @@
     var s = card && card.streak;
     return s ? { current: Number(s.current) || 0, best: Number(s.best) || 0 } : null;
   }
+  /* ---------- weekly tournament wins (card.trophies, added by tournament.js from supabase/tournament.sql) ---------- */
+  var TOURNAMENT_HREF = "/leaderboards/tournament/";
+  function trophiesOf(card) {
+    return (card && Array.isArray(card.trophies) ? card.trophies : []).filter(function (t) { return t && t.game && /^\d{4}-W\d{2}$/.test(t.week || ""); });
+  }
+  function gameName(id) { return GAMES[id] || String(id || "").replace(/(^|[-_])(\w)/g, function (m, s, c) { return (s ? " " : "") + c.toUpperCase(); }); }
+  function weekNo(key) { return "week " + (+String(key).slice(6)) + ", " + String(key).slice(0, 4); }
+  // "Gem Match · week 46, 2026, Pit Wall · week 45, 2026"
+  function trophyTitle(list) { return list.slice(0, 6).map(function (t) { return gameName(t.game) + " · " + weekNo(t.week); }).join(", ") + (list.length > 6 ? ", …" : ""); }
+  function trophiesHtml(card) {
+    var list = trophiesOf(card);
+    if (!list.length) return "";
+    return '<section class="pcard-more pcard-trophies"><h3>weekly tournament <small>' + list.length + " win" + (list.length === 1 ? "" : "s") + '</small></h3><ul class="pcard-ranks">' +
+      list.slice(0, 8).map(function (t) {
+        return '<li><span><span aria-hidden="true">🏆</span> ' + esc(gameName(t.game)) + ' <small class="muted">' + esc(weekNo(t.week)) + "</small></span><b>" + fmt(t.score) + (t.players > 1 ? ' <small class="muted">· ' + (t.players | 0) + " players</small>" : "") + "</b></li>";
+      }).join("") + (list.length > 8 ? '<li class="muted">…and ' + (list.length - 8) + " more</li>" : "") + "</ul></section>";
+  }
   function ago(t, now) {
     var s = Math.max(0, Math.round(((now || Date.now()) - new Date(t).getTime()) / 1000));
     if (!isFinite(s)) return "";
@@ -141,7 +158,7 @@
   // c: { ach: {n,total}, card: undefined (loading) | null (none) | { games, best, ranks?, streak? } }
   function statsHtml(c) {
     var ach = c.ach || { n: 0, total: 0 }, card = c.card, loading = card === undefined;
-    var top = card ? bestGame(card.best) : null, place = card ? topRank(card.ranks) : null, streak = streakOf(card);
+    var top = card ? bestGame(card.best) : null, place = card ? topRank(card.ranks) : null, streak = streakOf(card), wins = trophiesOf(card);
     var third = loading ? ["…", "best rank"]
       : place ? ["#" + place.rank, "of " + place.of + " · " + esc(place.label)]
       : top ? [fmt(top.score), "best · " + esc(top.label)]
@@ -151,6 +168,7 @@
       '<a class="acct__stat" href="' + esc(c.cardHref || "/u/") + '"><b>' + (loading ? "…" : card ? fmt(card.games) : "0") + "</b><span>games played</span></a>" +
       '<a class="acct__stat" href="' + RANKS_HREF + '"' + (place ? ' title="' + esc(rankLine(place)) + '"' : "") + "><b>" + third[0] + "</b><span>" + third[1] + "</span></a>" +
       (streak ? '<button type="button" class="acct__stat" data-daily><b>' + (streak.current ? "🔥 " : "") + streak.current + "</b><span>day streak · best " + streak.best + "</span></button>" : "") +
+      (wins.length ? '<a class="acct__stat acct__stat--trophy" href="' + TOURNAMENT_HREF + '" title="' + esc(trophyTitle(wins)) + '"><b>🏆 ' + wins.length + "</b><span>tournament win" + (wins.length === 1 ? "" : "s") + "</span></a>" : "") +
       "</div>";
   }
   // the extra sections of a public player card
@@ -161,7 +179,7 @@
       var r = ranks[k];
       return '<li><span>' + esc(GAMES[k]) + "</span><b>" + esc(rankLine({ rank: Number(r.rank), of: Number(r.of), behind: Number(r.behind) || 0 })) + "</b></li>";
     });
-    return (rows.length ? '<section class="pcard-more"><h3>ranks <small>all-time</small></h3><ul class="pcard-ranks">' + rows.join("") + "</ul></section>" : "") +
+    return trophiesHtml(card) + (rows.length ? '<section class="pcard-more"><h3>ranks <small>all-time</small></h3><ul class="pcard-ranks">' + rows.join("") + "</ul></section>" : "") +
       (streak ? '<section class="pcard-more"><h3>daily streak</h3><p class="pcard-streak"><b>' + (streak.current ? "🔥 " : "") + streak.current + "</b> day" + (streak.current === 1 ? "" : "s") + ' now · best <b>' + streak.best + "</b></p></section>" : "") +
       (recent.length ? '<section class="pcard-more"><h3>recent games</h3><ol class="pcard-recent">' + recent.map(function (g) {
         return "<li><span>" + esc(GAMES[g.game] || g.game) + (g.mode && g.mode !== "free" ? ' <small class="muted">' + esc(g.mode) + "</small>" : "") + "</span><b>" + fmt(g.score) + '</b><time datetime="' + esc(g.at) + '">' + esc(ago(g.at, now)) + "</time></li>";
@@ -281,6 +299,7 @@
       { label: "Lobby", hint: "home", href: "/", kw: "arcade home start" },
       { label: "Games", hint: "page", href: "/games/", kw: "arcade play" },
       { label: "Leaderboards", hint: "page", href: "/leaderboards/", kw: "scores top ranking" },
+      { label: "Weekly tournament", hint: "same board all week", href: "/leaderboards/tournament/", kw: "tournament week weekly compete trophy winner standings" },
       { label: "Today", hint: "daily, live, weekly", href: "/events/", kw: "events week challenge daily puzzle live 1v1" },
       { label: "Your collection", hint: "bests, badges, music", href: "/me/", kw: "me collection unlocks secrets bonus tracks" },
       { label: "Settings", hint: "look, sound, account", href: SETTINGS_HREF, kw: "preferences options theme skin dark light mode music volume sound shuffle cursors glitches" },
@@ -301,6 +320,7 @@
     // case studies come after the "Play …" items, so typing a game's name still offers to play it first
     CASE_STUDIES.forEach(function (s) { items.push({ label: "How " + GAMES[s[0]] + " works", hint: "case study", href: "/games/" + s[0] + "/about/", kw: "case study about built engineering recruiter " + s[0] + " " + s[1] }); });
     items.push({ label: "Daily Gem Match", hint: "one try a day", act: "daily", kw: "puzzle today streak" });
+    items.push({ label: "Daily Dependency Hell", hint: "one try a day", act: "daily:deps", kw: "puzzle today streak bundle lockfile" });
     items.push({ label: "1v1 race", hint: "live Sidekiq Rush", act: "race", kw: "versus multiplayer duel" });
     if (c.signedIn) {
       items.push(
@@ -412,6 +432,7 @@
     statsHtml: statsHtml, profileHtml: profileHtml, appearanceHtml: appearanceHtml, settingsHtml: settingsHtml, footerHtml: footerHtml, guestHtml: guestHtml,
     dataHtml: dataHtml, deleteConfirmHtml: deleteConfirmHtml, confirmMatches: confirmMatches, exportFileName: exportFileName,
     topRank: topRank, rankLine: rankLine, streakOf: streakOf, ago: ago, cardExtrasHtml: cardExtrasHtml,
+    trophiesOf: trophiesOf, trophiesHtml: trophiesHtml, trophyTitle: trophyTitle,
     achProgress: achProgress, nextUp: nextUp, progressBar: progressBar, nextUpHtml: nextUpHtml,
     paletteItems: paletteItems, searchPalette: searchPalette,
     menuItems: menuItems, menuHtml: menuHtml, treeHtml: treeHtml, sheetHtml: sheetHtml

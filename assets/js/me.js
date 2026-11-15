@@ -211,6 +211,13 @@
     var a = A(), c = a && a.client && !a.mock() ? a.client() : null, p;
     if (c) p = c.rpc("player_card", { p_name: name }).then(function (r) { return r.error ? null : r.data || null; }, function () { return null; });
     else p = Promise.resolve(a && a.mock && a.mock() ? { games: 7, best: { gems: 2310, sidekiq: 840 }, ranks: { gems: { rank: 3, of: 12, behind: 140 } }, streak: { current: 2, best: 5 } } : null);   // local test session
+    // weekly tournament wins (tournament.js): the 🏆 stat in the account window
+    p = p.then(function (card) {
+      var T = window.SamukaTournament;
+      if (!card || !T) return card;
+      if (!card.name) card.name = name;
+      return T.withTrophies(card);
+    });
     p = p.then(function (card) { if (cards[name] && cards[name].promise === p) cards[name].card = card; return card; });
     cards[name] = { at: Date.now(), promise: p };
     return p;

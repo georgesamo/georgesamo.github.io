@@ -68,7 +68,7 @@ For each of `?as=guest`, `?as=user`, `?as=samuka`, `?as=nino`, then `?as=out`:
 - Sidebar `me` folder and leaderboard "jump to me" behave; `/u/` player card for the mock user renders without errors.
 - Fresh sign-in starts in dark mode (documented behaviour).
 
-### games — `SamukaArcade` (ids: `gems`, `sidekiq`, `schema`, `pitwall`)
+### games — `SamukaArcade` (ids: `gems`, `sidekiq`, `schema`, `pitwall`, `deps`)
 For each game, on desktop and phone:
 - Open from its card (`[data-play]`) and from the command palette. Modal is `aria-modal`, focus moves inside, background previews stop animating, page doesn't scroll behind it.
 - Play: start, a few real inputs (keyboard on desktop: arrow keys / 1-2-3 for Sidekiq; taps on phone via `computer left_click` on the stage), pause if available. `SamukaArcade._debug()` exposes state for automated playtests — use it to drive to **game over** quickly rather than playing minutes.
@@ -142,4 +142,4 @@ Finish with `wrap_up`, then a report in chat:
 - For a long report, offer once to publish it as a private Artifact page.
 
 ## In CI
-`tests/deep.mjs` is the automated half of this skill. It uses the same probes (`tests/probes/`) on every page × desktop/phone, plus the nav, theme, games, music, palette, more-sheet and mock-role flows. It runs in `.github/workflows/pages.yml` after the unit tests and the smoke test, against the exact built artifact that gets deployed, and runs with `--strict`, so errors and warnings (visual, a11y, tap targets) both block the deploy. Every finding shows in the run's job summary, with screenshots in the `deep-report` artifact. When asked to look into a failed or warning-heavy deploy, start from that report: `gh run download <run-id> -n deep-report`. Then reproduce locally with this skill. The judgment parts — looking at screenshots per skin, real interactions, edge cases — stay with the skill.
+`tests/deep.mjs` is the automated half of this skill. It uses the same probes (`tests/probes/`) on every page × desktop/phone, plus the nav, theme, games, weekly tournament, music, palette, more-sheet and mock-role flows. It runs in `.github/workflows/pages.yml` after the unit tests and the smoke test, against the exact built artifact that gets deployed, and runs with `--strict`, so errors and warnings (visual, a11y, tap targets) both block the deploy. Every finding shows in the run's job summary, with screenshots in the `deep-report` artifact. When asked to look into a failed or warning-heavy deploy, start from that report: `gh run download <run-id> -n deep-report`. Then reproduce locally with this skill. The judgment parts — looking at screenshots per skin, real interactions, edge cases — stay with the skill.
