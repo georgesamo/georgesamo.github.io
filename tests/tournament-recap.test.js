@@ -104,6 +104,12 @@
       expect(R.html(model({ tourney: t }))).toContain("You didn't play last week");
       expect(R.html(model({ tourney: t, signedIn: false }))).not.toContain("You didn't play");
     });
+    it("never shows a guest a win or a place", function () {
+      var h = R.html(model({ signedIn: false }));
+      expect(h).not.toContain("you won it");
+      expect(h).not.toContain("you: #");
+      expect(h).toContain("won by");
+    });
     it("leaves the section out when the tournament can't be reached", function () {
       var m = model({ tourney: null });
       expect(m.tourney).toBe(null);

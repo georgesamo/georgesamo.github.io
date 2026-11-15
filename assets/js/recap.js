@@ -45,7 +45,9 @@
     var thisWeek = function (x) { return +x.t >= from && +x.t <= c.now; };
     var badges = (c.badges || []).filter(thisWeek), tracks = (c.tracks || []).filter(thisWeek);
     var streak = c.streak && c.streak.current > 0 ? c.streak : null;
-    var t = c.tourney && c.tourney.games ? { week: c.tourney.week, games: c.tourney.games, played: !!c.tourney.played, signedIn: !!c.signedIn } : null;
+    // a guest has no place and no wins, whatever the data says
+    var tg = c.tourney && c.tourney.games ? (c.signedIn ? c.tourney.games : c.tourney.games.map(function (g) { return Object.assign({}, g, { me: false, place: null }); })) : null;
+    var t = tg ? { week: c.tourney.week, games: tg, played: !!c.signedIn && !!c.tourney.played, signedIn: !!c.signedIn } : null;
     return { empty: !played, from: from, games: games, played: played, badges: badges, tracks: tracks, streak: streak, tourney: t };
   }
 

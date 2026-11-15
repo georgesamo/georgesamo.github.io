@@ -125,7 +125,7 @@
     return out;
   }
   function mockRows(week) {
-    var me = mockRole() ? myName() : null, ids = games().map(function (g) { return g.id; });
+    var me = mockRole() && user() ? myName() : null, ids = games().map(function (g) { return g.id; });
     var mine = mockRuns().filter(function (r) { return r.week === week && r.who === mockRole(); })
       .map(function (r) { return { name: me, role: r.role, game: r.game, week: week, score: r.score, at: r.at, mine: true }; });
     return rivals(week, ids, me).concat(mine);
