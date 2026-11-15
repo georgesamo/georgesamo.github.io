@@ -11,7 +11,7 @@ boot: true
 {%- assign p = site.data.resume.person -%}
 {%- assign games = site.data.games -%}
 {%- assign log = site.data.changelog -%}
-<script id="home-games" type="application/json">{{ games | jsonify }}</script>
+<script id="home-games" type="application/json" data-tourney-games>{{ games | jsonify }}</script>
       <!-- ================= LOBBY: what you can do right now ================= -->
       <section class="lobby" id="lobby" data-file="arcade/lobby.rb" data-icon="rb">
         <div class="lobby__copy">
@@ -82,6 +82,8 @@ boot: true
             <div data-hub-players><p class="hub-card__title">play live</p><p class="muted">Race a friend on the same board, in real time.</p></div>
             <button class="btn" type="button" data-race>⚔ start a 1v1</button>
           </div>
+          {%- comment -%} tournament.js fills it: this week's number, players so far, time left {%- endcomment %}
+          <div class="hub-card today__tourney reveal" data-tourney-card><p class="hub-card__title">weekly tournament</p><p class="today__big"><span aria-hidden="true">🏆</span> This week's boards</p><p class="muted">Same board for everyone in every game this week. Best run wins a trophy.</p><a class="btn btn--primary" href="{{ '/leaderboards/tournament/' | relative_url }}"><span class="btn__prompt">▶</span> enter</a></div>
         </div>
       </section>
 

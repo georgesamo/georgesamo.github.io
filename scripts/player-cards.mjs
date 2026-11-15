@@ -65,6 +65,8 @@ function page(card) {
   if (top) bits.push("#" + top[1].rank + " in " + GN[top[0]]);
   const hi = Object.entries(best).sort((a, b) => b[1] - a[1])[0];
   if (hi) bits.push("best " + fmt(hi[1]) + " in " + GN[hi[0]]);
+  const wins = (card.trophies || []).length;
+  if (wins) bits.push(wins + " weekly tournament win" + (wins === 1 ? "" : "s"));
   bits.push((card.achievements || []).length + " badges");
   const title = name + "'s player card · Samuka's Arcade";
   const desc = bits.join(" · ") + ". Small games about the Rails stack: play right away in your browser.";
@@ -104,7 +106,11 @@ async function players() {
   const cards = [];
   for (const n of names.slice(0, MAX)) {
     const c = await rpc("player_card", { p_name: n }).catch((e) => { console.warn("  skip " + n + ": " + e.message); return null; });
-    if (c && c.name) cards.push(c);
+    if (!c || !c.name) continue;
+    // weekly tournament wins (supabase/tournament.sql); none until that SQL has run
+    c.trophies = await rpc("tournament_trophies", { p_name: c.name }).catch(() => []);
+    if (!Array.isArray(c.trophies)) c.trophies = [];
+    cards.push(c);
   }
   return cards;
 }

@@ -2,6 +2,12 @@
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
 - date: 2026-11-15
+  tag: feature
+  title: Weekly tournament
+  text: Every week each game gets one board that's the same for everyone. Play it as often as you like until Sunday night (UTC); your best run counts. The tournament page shows this week's standings in every game, the time left and last week's winners. Top a game for the week and you get a 🏆 on your player card. Signed-in players only, so every score has a name on it.
+  link: /leaderboards/tournament/
+
+- date: 2026-11-15
   tag: game
   title: "New game: Dependency Hell"
   text: "bundle update pinned every gem to its newest version, and now nothing resolves. Read the Gemfile and the gemspec rules, pin one version per gem and run bundle install. Three Gemfiles, three installs each, and the freshest lock that works scores best. It has its own daily, the same three Gemfiles for everyone, and it counts toward your streak. About three minutes."

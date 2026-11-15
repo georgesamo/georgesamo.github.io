@@ -37,9 +37,17 @@
         recent: [{ game: "gems", score: 2310, mode: "free", at: new Date(Date.now() - 36e5).toISOString() }, { game: "sidekiq", score: 840, mode: "free", at: new Date(Date.now() - 864e5).toISOString() }] };
     }
     if (!card) return finder("No player called <b>" + esc(name) + "</b>. Check the spelling, or find someone else:");
+    // weekly tournament wins (tournament.js; empty until supabase/tournament.sql runs)
+    if (window.SamukaTournament) { var shown = card; await window.SamukaTournament.withTrophies(card); if (card !== shown) return; }
     render();
   }
 
+  // 🏆 n: weekly tournament wins, with the list as a tooltip
+  function trophyCount(c) { var C = window.SamukaAccountCore; return C && C.trophiesOf ? C.trophiesOf(c).length : 0; }
+  function trophyPill(c) {
+    var n = trophyCount(c), C = window.SamukaAccountCore;
+    return n ? ' · <span class="pcard__trophies" title="' + esc(C.trophyTitle(C.trophiesOf(c))) + '">🏆 ' + n + " tournament win" + (n === 1 ? "" : "s") + "</span>" : "";
+  }
   function render() {
     var list = (window.SamukaAch && window.SamukaAch.list) || [];
     var got = {}; (card.achievements || []).forEach(function (k) { got[k] = 1; });
@@ -50,7 +58,7 @@
     root.innerHTML =
       '<article class="pcard pcard--' + esc(card.role) + '" aria-label="Player card for ' + esc(card.name) + '">' +
         '<div class="pcard__top"><span class="pcard__avatar" aria-hidden="true">' + esc(card.name.charAt(0).toUpperCase()) + "</span>" +
-        '<div><h1 class="pcard__name">' + esc(card.name) + '</h1><p class="pcard__meta">' + role + " · joined " + esc(month(card.joined)) + " · " + fmt(card.games) + " games</p></div></div>" +
+        '<div><h1 class="pcard__name">' + esc(card.name) + '</h1><p class="pcard__meta">' + role + " · joined " + esc(month(card.joined)) + " · " + fmt(card.games) + " games" + trophyPill(card) + "</p></div></div>" +
         '<div class="pcard__stats pcard__stats--games">' + [["gems", "Gem Match"], ["sidekiq", "Sidekiq Rush"], ["schema", "Schema Stack"], ["pitwall", "Pit Wall"], ["deps", "Dependency Hell"]].map(function (g) { return "<div><b>" + fmt(best[g[0]]) + "</b><span>" + g[1] + "</span></div>"; }).join("") + "<div><b>" + n + "/" + list.length + "</b><span>badges</span></div></div>" +
         '<div class="pcard__badges">' + list.map(function (x) {
           var on = !!got[x.key], hide = x.secret && !on;
@@ -84,6 +92,12 @@
     g.textAlign = "left"; g.textBaseline = "alphabetic";
     g.fillStyle = text; g.font = "800 56px Inter, sans-serif"; g.fillText(c.name, 200, 112);
     g.fillStyle = muted; g.font = "22px 'JetBrains Mono', monospace"; g.fillText((c.role === "samuka" ? "creator" : c.role === "nino" ? "PM" : "player") + " · joined " + month(c.joined) + " · " + fmt(c.games) + " games", 200, 154);
+    var wins = trophyCount(c);
+    if (wins) {   // weekly tournament wins, right of the meta line (the name above can run the full width)
+      g.textAlign = "right"; g.fillStyle = hl; g.font = "700 22px 'JetBrains Mono', monospace";
+      g.fillText("🏆 " + wins + " weekly win" + (wins === 1 ? "" : "s"), CW - 52, 154);
+      g.textAlign = "left";
+    }
     var best = c.best || {}, list = (window.SamukaAch && window.SamukaAch.list) || [];
     var have = {}; (c.achievements || []).forEach(function (k) { have[k] = 1; });
     var got = list.filter(function (a) { return have[a.key]; }).length;

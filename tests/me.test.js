@@ -221,13 +221,20 @@
       var root = mount(window.SamukaAccountCore.statsHtml({ ach: { n: 0, total: 3 } }));
       expect(await M.fillStats(root)).toBe(true);
       var vals = Array.prototype.map.call(root.querySelectorAll(".acct__stat b"), function (b) { return b.textContent; });
-      expect(vals).toEqual(["1/3", "7", "#3", "🔥 2"]);
+      // the first four; a weekly tournament 🏆 stat may follow (the mock session has a made-up win)
+      expect(vals.slice(0, 4)).toEqual(["1/3", "7", "#3", "🔥 2"]);
     });
     it("asks the database once per name and caches it", async function () {
-      var n = 0;
-      fake({ user: true, client: { rpc: function (fn, args) { n++; expect(fn).toBe("player_card"); expect(args).toEqual({ p_name: "neo" }); return Promise.resolve({ data: { games: 3, best: { schema: 40 } } }); } } });
+      // the card, plus the weekly tournament wins when tournament.js is on the page; each once
+      var n = 0, wins = 0;
+      fake({ user: true, client: { rpc: function (fn, args) {
+        expect(args).toEqual({ p_name: "neo" });
+        if (fn === "tournament_trophies") { wins++; return Promise.resolve({ data: [] }); }
+        n++; expect(fn).toBe("player_card"); return Promise.resolve({ data: { games: 3, best: { schema: 40 } } });
+      } } });
       var a = await M.fetchCard("neo"), b = await M.fetchCard("neo");
       expect(n).toBe(1);
+      expect(wins).toBe(window.SamukaTournament ? 1 : 0);
       expect(a).toBe(b);
       var root = mount(window.SamukaAccountCore.statsHtml({ ach: { n: 0, total: 3 } }));
       await M.fillStats(root);

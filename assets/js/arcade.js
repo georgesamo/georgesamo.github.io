@@ -101,8 +101,8 @@
       best: function (score, extra) {
         var payload = { score: score, seed: runSeed }; if (extra) for (var k in extra) payload[k] = extra[k];
         emit(id, "over", payload, opts);
-        // a challenge is a known board: it doesn't count as a best or go on the boards
-        if (opts.mode === "daily" || opts.mode === "race" || opts.mode === "challenge") return { best: score, isNew: false };
+        // a challenge or the weekly tournament is a known board: it doesn't count as a best or go on the boards
+        if (opts.mode === "daily" || opts.mode === "race" || opts.mode === "challenge" || opts.mode === "tournament") return { best: score, isNew: false };
         guestNudge(stage, score);
         var prev = getBest(id);
         if (score > prev) { setBest(id, score); return { best: score, isNew: true }; }
@@ -159,9 +159,9 @@
   var pending = null;   // the game whose code is on its way
   function open(id, opts) {
     if (!games[id] && !src()[id]) return false;
-    // guests can play; the daily puzzle and live races need an account (one try a day, a name to race)
+    // guests can play; the daily puzzle, live races and the weekly tournament need an account (one try a day, a name to race, a name on the standings)
     var A = window.SamukaAuth;
-    if (A && A.enabled && !A.user() && opts && (opts.mode === "daily" || opts.mode === "race")) { A.open({ reason: "arcade" }); return false; }
+    if (A && A.enabled && !A.user() && opts && (opts.mode === "daily" || opts.mode === "race" || opts.mode === "tournament")) { A.open({ reason: "arcade" }); return false; }
     if (!modal) build();
     if (current || currentId) teardown();
     lastFocus = document.activeElement;
