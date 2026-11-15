@@ -30,6 +30,7 @@
     var d = e.detail || {};
     if (d.name !== "over" || !GAMES[d.game]) return;
     if (d.mode === "challenge" || d.mode === "tournament") return;   // a known board: head-to-head (challenge.js) or the weekly standings (tournament.js), never the boards
+    if (d.practice) return;   // a practice difficulty (Dependency Hell easy / hard): its best stays on this device
     if (!user()) { keepGuestScore(d); return; }
     if (d.mode === "daily") store.set(dailyKey(d.game), JSON.stringify({ score: d.score, grid: d.game === "gems" ? grid(d.log || []) : typeof d.grid === "string" ? d.grid.slice(0, 200) : "" }));
     var c = db();
@@ -277,7 +278,7 @@
   // fill mini boards when a free-play game-over screen appears
   window.addEventListener("samuka:game", function (e) {
     var d = e.detail || {};
-    if (d.name === "over" && d.mode === "free") setTimeout(function () { fillMinis(d.game, "all"); }, 30);
+    if (d.name === "over" && d.mode === "free" && !d.practice) setTimeout(function () { fillMinis(d.game, "all"); }, 30);
   });
   window.addEventListener("samuka:auth", function () { cache = {}; loadAll(); if (user()) { syncBests(); flushPending(); } });
   window.addEventListener("online", flushPending);

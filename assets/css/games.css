@@ -312,6 +312,27 @@
 .dh__legend li { line-height: 1.45; }
 .dh__legend b { margin-right: 0; }
 .dh__legend code { font-size: 12px; }
+/* difficulty (free play only): three native radios styled as cards, so arrows / Tab / Space and taps
+   all work as usual; easy and hard are practice and stay off the shared boards */
+.dh__level { min-width: 0; margin: 14px 0 6px; padding: 0; border: 0; }
+.dh__level legend { margin-bottom: 6px; padding: 0; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10.5px; }
+.dh__level-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.dh__level-opt { position: relative; display: grid; align-content: start; gap: 2px; min-height: 48px; padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--bg-soft); color: var(--text-2); font: 12.5px var(--mono); text-align: left; cursor: pointer; touch-action: manipulation; }
+.dh__level-opt input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.dh__level-opt b { color: var(--text); }
+.dh__level-opt span { color: var(--muted); font-size: 11px; line-height: 1.3; }
+.dh__level-opt:hover { border-color: var(--accent); }
+.dh__level-opt:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.dh__level-opt:has(input:checked) span { color: var(--text-2); }
+.dh__level-opt:has(input:checked) b::before { content: "● "; color: var(--accent); }
+.dh__level-opt:has(input:focus-visible) { outline: 2px solid var(--hl); outline-offset: 2px; }
+.dh__lvl { padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 6px; color: var(--text-2); }
+.dh__again { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.arcade__card .dh__practice { font-size: 13px; }
+@container stage (max-width: 420px) {
+  .dh__level-opt { padding: 7px 8px; }
+  .dh__level-opt span { font-size: 10.5px; }
+}
 /* a narrow stage (phone held upright): the lock, then the rules (they scroll), then the button */
 @container stage (max-width: 620px) {
   .dh { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "lock" "rules" "act"; gap: 8px; }
