@@ -73,6 +73,54 @@
     });
   });
 
+  describe("Dependency Hell · difficulty", function () {
+    function run(seed, lvl) { var rng = Ar.seeded(seed); return [0, 1, 2].map(function (r) { return L.generate(rng, r, lvl); }); }
+    it("make normal the default, so the daily and old challenge seeds keep their Gemfiles", function () {
+      var plain = three("deps-daily-2026-11-15").map(strip);
+      expect(run("deps-daily-2026-11-15", "normal").map(strip)).toEqual(plain);
+      expect(run("deps-daily-2026-11-15", "nightmare").map(strip)).toEqual(plain);   // unknown → normal
+      expect(L.level("hard")).toBe("hard");
+      expect(L.level(null)).toBe("normal");
+      expect(L.level("constructor")).toBe("normal");
+      expect(L.LEVEL_NAMES).toEqual(["easy", "normal", "hard"]);
+      expect(L.LEVELS.normal.rounds).toEqual(L.ROUNDS);
+      expect(L.LEVELS.normal.installs).toBe(L.MAX_INSTALLS);
+    });
+    it("give each level the same Gemfiles for the same seed, and a different set per level", function () {
+      L.LEVEL_NAMES.forEach(function (lvl) {
+        expect(run("deps-lvl-seed", lvl).map(strip)).toEqual(run("deps-lvl-seed", lvl).map(strip));
+      });
+      expect(JSON.stringify(run("deps-lvl-seed", "easy").map(strip)) === JSON.stringify(run("deps-lvl-seed", "hard").map(strip))).toBe(false);
+    });
+    it("keep every level fair: solvable, newest-everything fails, every rule matters, sizes grow easy → hard", function () {
+      L.LEVEL_NAMES.forEach(function (lvl) {
+        var cfg = L.LEVELS[lvl];
+        for (var d = 0; d < (lvl === "hard" ? 20 : 40); d++) {
+          run("deps-" + lvl + "-" + d, lvl).forEach(function (p, r) {
+            var n = cfg.rounds[r].n, s = L.solve(p), max = n * (L.V - 1);
+            expect(p.level).toBe(lvl);
+            expect(p.gems.length).toBe(n);
+            expect(p.tries < 200).toBe(true);                                 // found on the strict bar, not the fallback
+            expect(s.feasible).toBeGreaterThan(0);
+            expect(s.opt < max).toBe(true);
+            expect(s.opt - s.minF >= cfg.span).toBe(true);
+            expect(s.best.length <= cfg.best[0]).toBe(true);
+            expect(s.matters.indexOf(false)).toBe(-1);
+            s.best.forEach(function (v) { expect(L.broken(p, v)).toEqual([]); });
+            expect(p.solution.opt).toBe(s.opt);
+          });
+        }
+      });
+      var gems = function (lvl) { return L.LEVELS[lvl].rounds.map(function (r) { return r.n; }); };
+      expect(gems("easy")).toEqual([3, 4, 5]);
+      expect(gems("normal")).toEqual([4, 5, 6]);
+      expect(gems("hard")).toEqual([5, 6, 7]);
+      expect(L.LEVELS.easy.installs > L.LEVELS.normal.installs).toBe(true);
+      expect(L.LEVELS.hard.best[0]).toBe(1);                                  // one freshest lock to find
+      expect(L.LEVELS.hard.focus).toBe(false);                                // and no rule hints
+    });
+  });
+
   describe("Dependency Hell · scoring", function () {
     it("pay full marks for the freshest lock on the first install, fast", function () {
       expect(L.roundScore({ resolved: true, sum: 9, opt: 9, minF: 3, fails: 0, secs: 0, round: 0 })).toBe(1300);
@@ -106,12 +154,16 @@
       var events = [], on = function (e) { if (e.detail.game === "deps") events.push(e.detail); };
       var key = function (k) { document.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true })); };
       window.addEventListener("samuka:game", on);
+      var keptLevel = null; try { keptLevel = localStorage.getItem("samuka-deps-level"); localStorage.setItem("samuka-deps-level", "hard"); } catch (e) {}
       try {
+        // a challenge is always normal, whatever this device last picked for free play
         expect(Ar.open("deps", { mode: "challenge", seed: "deps-test-run" })).toBe(true);
         for (var i = 0; i < 40 && !document.querySelector(".arcade [data-dh-start]"); i++) await wait(50);
         var stage = document.querySelector(".arcade [data-stage]");
+        expect(stage.querySelector('input[name="dh-level"]')).toBe(null);   // no picker on a shared board
         stage.querySelector("[data-dh-start]").click();
         var dbg = Ar._debug(), want = three("deps-test-run").map(strip);
+        expect(dbg.state().level).toBe("normal");
         expect(strip(dbg.puzzle())).toEqual(want[0]);                       // the run is the seed's Gemfiles
         expect(stage.querySelectorAll(".dh__row").length).toBe(4);
         expect(dbg.pins()).toEqual([3, 3, 3, 3]);                            // bundle update: everything newest
@@ -141,7 +193,72 @@
         expect(over.grid.split("\n")).toEqual(["⬛🟩", "🟩", "🟩"]);
         expect(over.score).toBeGreaterThan(5000);
         expect(events.some(function (d) { return d.name === "all_fresh"; })).toBe(true);
-      } finally { Ar.close(); window.removeEventListener("samuka:game", on); }
+        expect(over.practice).toBe(undefined);
+      } finally {
+        Ar.close(); window.removeEventListener("samuka:game", on);
+        try { if (keptLevel == null) localStorage.removeItem("samuka-deps-level"); else localStorage.setItem("samuka-deps-level", keptLevel); } catch (e) {}
+      }
+    });
+    it("lets free play pick a difficulty, remembers it, and keeps easy / hard off the boards", async function () {
+      var events = [], on = function (e) { if (e.detail.game === "deps") events.push(e.detail); };
+      var key = function (k) { document.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true })); };
+      var LK = "samuka-deps-level", keptLevel = null, keptBest = null, keptEasy = null;
+      try { keptLevel = localStorage.getItem(LK); keptBest = localStorage.getItem("samuka-best-deps"); keptEasy = localStorage.getItem("samuka-best-deps-easy"); localStorage.removeItem(LK); localStorage.removeItem("samuka-best-deps-easy"); } catch (e) {}
+      window.addEventListener("samuka:game", on);
+      window.__samukaTracked = [];
+      try {
+        expect(Ar.open("deps")).toBe(true);
+        for (var i = 0; i < 40 && !document.querySelector(".arcade [data-dh-start]"); i++) await wait(50);
+        var stage = document.querySelector(".arcade [data-stage]");
+        var radios = stage.querySelectorAll('input[name="dh-level"]');
+        expect(radios.length).toBe(3);
+        expect(stage.querySelector('input[name="dh-level"]:checked').value).toBe("normal");   // nothing saved yet
+        expect(stage.querySelectorAll(".dh__row").length).toBe(4);
+        var easy = stage.querySelector('input[name="dh-level"][value="easy"]');
+        easy.click();
+        expect(localStorage.getItem(LK)).toBe("easy");
+        expect(stage.querySelectorAll(".dh__row").length).toBe(3);             // the demo board follows the pick
+        expect(stage.querySelector("[data-dh-sizes]").textContent).toBe("3, 4 and 5 gems");
+        stage.querySelector("[data-dh-start]").click();
+        var dbg = Ar._debug();
+        expect(dbg.state().level).toBe("easy");
+        expect(window.__samukaTracked).toContain("deps:difficulty:easy");
+        expect(stage.querySelectorAll(".dh__row").length).toBe(3);
+        expect(document.querySelector(".arcade [data-hud]").textContent).toContain("●●●●");   // four installs on easy
+        var played = [];
+        for (var r = 0; r < 3; r++) {
+          played.push(strip(dbg.puzzle()));
+          dbg.solve(); key("Enter");
+          for (i = 0; i < 40 && !stage.querySelector("[data-dh-next]"); i++) await wait(50);
+          stage.querySelector("[data-dh-next]").click();
+        }
+        var over = events.filter(function (d) { return d.name === "over"; })[0];
+        expect(over.practice).toBe("easy");
+        expect(over.level).toBe("easy");
+        var rng = Ar.seeded(over.seed);                                       // the run replays from its seed at its level
+        expect([0, 1, 2].map(function (q) { return strip(L.generate(rng, q, "easy")); })).toEqual(played);
+        expect(window.SamukaChallenge.canChallenge({ game: "deps", seed: over.seed, score: over.score, practice: over.practice })).toBe(false);
+        expect(+localStorage.getItem(Object.keys(localStorage).filter(function (k) { return /^samuka-best-(.+-)?deps-easy$/.test(k); })[0])).toBe(over.score);
+        expect(localStorage.getItem("samuka-best-deps")).toBe(keptBest);       // the ranked best is untouched
+        expect(events.some(function (d) { return d.name === "all_fresh"; })).toBe(false);   // no achievement from easy
+        expect(stage.querySelector("[data-lb-mini]")).toBe(null);
+        expect(stage.querySelector(".dh__practice")).not.toBe(null);
+        // the end card goes back to the picker, which remembers easy
+        stage.querySelector("[data-dh-menu]").click();
+        expect(stage.querySelector('input[name="dh-level"]:checked').value).toBe("easy");
+        Ar.close();
+        // a fresh window remembers the pick too
+        Ar.open("deps");
+        for (i = 0; i < 40 && !document.querySelector(".arcade [data-dh-start]"); i++) await wait(50);
+        expect(document.querySelector('.arcade input[name="dh-level"]:checked').value).toBe("easy");
+      } finally {
+        Ar.close(); window.removeEventListener("samuka:game", on);
+        try {
+          if (keptLevel == null) localStorage.removeItem(LK); else localStorage.setItem(LK, keptLevel);
+          Object.keys(localStorage).forEach(function (k) { if (/^samuka-best-(.+-)?deps-easy$/.test(k)) localStorage.removeItem(k); });
+          if (keptEasy != null) localStorage.setItem("samuka-best-deps-easy", keptEasy);
+        } catch (e) {}
+      }
     });
   });
 })();

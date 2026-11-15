@@ -2,6 +2,12 @@
 #   tag   game | music | feature | fix
 #   link  optional, a page on this site
 - date: 2026-11-15
+  tag: game
+  title: "Dependency Hell: easy, normal and hard"
+  text: "Free play now has three difficulties, picked on the start screen and remembered on your device. Easy has smaller Gemfiles (3, 4 and 5 gems), fewer rules and four installs a round. Hard has bigger ones (5, 6 and 7 gems), only one freshest lock to find, and no hints lighting up the rules for the gem you're on. Normal is the puzzle as it was, and the only one on the leaderboards: the daily, the weekly tournament and challenges are always normal so everyone plays the same Gemfiles. Easy and hard bests stay on your device."
+  link: /games/deps/about/
+
+- date: 2026-11-15
   tag: feature
   title: Last week's tournament winners
   text: "Your week on the Today page now shows last week's tournament: who topped each game, and where you placed if you played. Won a game? The first time you drop by in the new week, a 🏆 note says so and points you to the standings. It shows once a week, only when you're signed in, and it holds still in calm mode."

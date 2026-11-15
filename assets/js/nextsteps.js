@@ -21,7 +21,7 @@
     if (d.name === "start") { run = { game: d.game, mode: d.mode || "free", unlocks: [], over: false }; return; }
     if (d.name === "closed") { run = null; return; }
     if (d.name === "over" && run && run.game === d.game) {
-      run.over = true; run.score = d.score | 0; run.seed = d.seed; run.kind = d.kind; run.length = d.length;
+      run.over = true; run.score = d.score | 0; run.seed = d.seed; run.kind = d.kind; run.length = d.length; run.practice = d.practice;
       if (run.mode !== "free") return;
       attach(run);
     }
