@@ -1,13 +1,15 @@
-/* Samuka · leaderboards + daily Gem Match
+/* Samuka · leaderboards + the dailies (Gem Match, Dependency Hell)
  * - every finished game of a signed-in visitor is saved to public.scores
  * - [data-leaderboard] panel: game tabs × all-time / this week / today's daily
  * - game-over screens show a mini top 5 ([data-lb-mini])
- * - daily Gem Match: one seeded board per UTC day, 20 moves, one attempt, emoji share grid
+ * - dailies: one seeded puzzle per game per UTC day, one attempt, emoji share grid
+ *   (Gem Match: 20 moves on one board; Dependency Hell: three Gemfiles)
  */
 (function () {
   "use strict";
-  var GAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match", schema: "Schema Stack", pitwall: "Pit Wall" };
-  var DAILY = { gems: true };
+  var GAMES = { sidekiq: "Sidekiq Rush", gems: "Gem Match", schema: "Schema Stack", pitwall: "Pit Wall", deps: "Dependency Hell" };
+  // the games with a daily: the command on their cards and what one day's puzzle is called
+  var DAILY = { gems: { cmd: "rails gems:daily", what: "board" }, deps: { cmd: "bundle install --daily", what: "set of Gemfiles" } };
   var PERIODS = { all: "all-time", week: "this week", daily: "daily" };
   var EPOCH = Date.UTC(2026, 10, 8); // daily #1
   var panels = [], cache = {};
@@ -29,7 +31,7 @@
     if (d.name !== "over" || !GAMES[d.game]) return;
     if (d.mode === "challenge" || d.mode === "tournament") return;   // a known board: head-to-head (challenge.js) or the weekly standings (tournament.js), never the boards
     if (!user()) { keepGuestScore(d); return; }
-    if (d.mode === "daily") store.set(dailyKey(d.game), JSON.stringify({ score: d.score, grid: d.game === "gems" ? grid(d.log || []) : "" }));
+    if (d.mode === "daily") store.set(dailyKey(d.game), JSON.stringify({ score: d.score, grid: d.game === "gems" ? grid(d.log || []) : typeof d.grid === "string" ? d.grid.slice(0, 200) : "" }));
     var c = db();
     if (!c) { // local test session: keep a fake board in sessionStorage so the UI can be tried
       mockSave(d); afterSave(d.game); return;
@@ -198,8 +200,8 @@
     var rows = []; for (var i = 0; i < cells.length; i += 5) rows.push(cells.slice(i, i + 5).join(""));
     return rows.join("\n");
   }
-  function shareText(score, g) {
-    return "Gem Match daily #" + dailyNo() + " · " + Number(score).toLocaleString("en-US") + " pts\n" + g + "\nhttps://georgesamo.github.io/#arcade";
+  function shareText(score, g, game) {
+    return GAMES[game || "gems"] + " daily #" + dailyNo() + " · " + Number(score).toLocaleString("en-US") + " pts\n" + g + "\nhttps://georgesamo.github.io/#arcade";
   }
   function dailyIntro(moves) {
     return '<p class="arcade__kicker">$ rails gems:daily[' + today() + "]</p><h3>Daily #" + dailyNo() + "</h3>" +
@@ -214,6 +216,16 @@
       '<button class="btn btn--primary" type="button" data-daily-share data-text="' + esc(shareText(score, g)) + '">⧉ copy result</button>' +
       '<p class="muted daily__next">New board in ' + untilTomorrow() + ".</p>" +
       '<div class="lb-mini" data-lb-mini="gems"></div>';
+  }
+  // the end card of any other game's daily: its own share grid (one line per round, say)
+  function dailyResult(game, score, g) {
+    var D = DAILY[game] || DAILY.gems;
+    setTimeout(function () { fillMinis(game, "daily"); }, 50);
+    return '<p class="arcade__kicker">$ ' + esc(D.cmd) + ' · done</p><h3>Daily #' + dailyNo() + " · " + Number(score).toLocaleString("en-US") + " pts</h3>" +
+      (g ? '<pre class="daily__grid" aria-label="your rounds">' + esc(g) + "</pre>" +
+        '<button class="btn btn--primary" type="button" data-daily-share data-text="' + esc(shareText(score, g, game)) + '">⧉ copy result</button>' : "") +
+      '<p class="muted daily__next">New ' + D.what + " in " + untilTomorrow() + ".</p>" +
+      '<div class="lb-mini" data-lb-mini="' + esc(game) + '"></div>';
   }
   function untilTomorrow() {
     var now = new Date(), next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
@@ -239,10 +251,10 @@
       setTimeout(function () {
         var stage = document.querySelector(".arcade [data-stage]");
         var o = stage && stage.querySelector(".arcade__overlay .arcade__card");
-        if (o) o.innerHTML = '<p class="arcade__kicker">$ rails ' + (game === "regex" ? "regex" : "gems") + ':daily</p><h3>You already played ' + (game === "regex" ? "today's hole" : "daily #" + dailyNo()) + "</h3>" +
+        if (o) o.innerHTML = '<p class="arcade__kicker">$ ' + esc(DAILY[game].cmd) + '</p><h3>You already played ' + esc(GAMES[game]) + " daily #" + dailyNo() + "</h3>" +
           "<p>Your score: <b>" + Number(done.score).toLocaleString("en-US") + "</b></p>" +
-          (done.grid ? '<pre class="daily__grid">' + esc(done.grid) + '</pre><button class="btn btn--primary" type="button" data-daily-share data-text="' + esc(shareText(done.score, done.grid)) + '">⧉ copy result</button>' : "") +
-          '<p class="muted">New ' + (game === "regex" ? "hole" : "board") + " in " + untilTomorrow() + '.</p><div class="lb-mini" data-lb-mini="' + game + '"></div>';
+          (done.grid ? '<pre class="daily__grid">' + esc(done.grid) + '</pre><button class="btn btn--primary" type="button" data-daily-share data-text="' + esc(shareText(done.score, done.grid, game)) + '">⧉ copy result</button>' : "") +
+          '<p class="muted">New ' + DAILY[game].what + " in " + untilTomorrow() + '.</p><div class="lb-mini" data-lb-mini="' + game + '"></div>';
         fillMinis(game, "daily");
       }, 60);
       return;
@@ -286,8 +298,13 @@
       return null;
     }, function () { return null; });
   }
-  function dailyDone(game) { return !!store.get(dailyKey(game || "gems")); }
-  window.SamukaScores = { fillMini: fillMinis, games: GAMES, dailyIntro: dailyIntro, dailyCard: dailyCard, openDaily: openDaily, board: fetchBoard, reload: function () { cache = {}; loadAll(); },
+  // played today's daily of that game; with no game, any daily (the streak counts any of them)
+  function dailyDone(game) {
+    if (game) return !!store.get(dailyKey(game));
+    return Object.keys(DAILY).some(function (g) { return !!store.get(dailyKey(g)); });
+  }
+  window.SamukaScores = { fillMini: fillMinis, games: GAMES, dailyIntro: dailyIntro, dailyCard: dailyCard, dailyResult: dailyResult, dailyNo: dailyNo, dailies: Object.keys(DAILY),
+    openDaily: openDaily, board: fetchBoard, reload: function () { cache = {}; loadAll(); },
     rankOf: rankOf, dailyDone: dailyDone,
     guestScores: guestScores, keepGuestScore: keepGuestScore, flushPending: flushPending };
 })();

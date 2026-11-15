@@ -22,11 +22,14 @@ env:
   NODE_VERSION: "20"
   NPM_TOOLS: esbuild@0.24.0 playwright@1.49.1
   NPM_CACHE: npm-esbuild-0.24.0-playwright-1.49.1   # bump together with NPM_TOOLS
+  LIGHTHOUSE: lighthouse@12.8.2
 
 # test ─┐
-#       ├─ deep (smoke + deep test of the built site) ─ deploy (main only)
-# build ┘
-# Unit tests and the build run side by side; the deep test needs both, the deploy needs it.
+#       ├─ deep (smoke + deep test of the built site) ─┬─ deploy (main only)
+# build ┤                                               │
+#       └─ lighthouse (mobile + desktop budgets) ───────┘
+# Unit tests and the build run side by side; the deep test needs both, Lighthouse needs the build,
+# and the deploy needs all of them.
 jobs:
   # browser unit tests (tests/index.html) in headless Chrome
   test:
@@ -168,8 +171,51 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+  # Lighthouse on the same built artifact: median of 5 runs per page, budgets in tests/lighthouse-budgets.json.
+  # A small dip only warns; a clear regression (past the "fail" line, set outside CI's measured noise)
+  # fails the job and blocks the deploy. Scores land in the job summary, HTML reports in an artifact.
+  lighthouse:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [mobile, desktop]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: tests
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Cache npm downloads
+        uses: actions/cache@v6
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ env.LIGHTHOUSE }}
+      - name: Install Lighthouse (uses the runner's Chrome)
+        run: npm install --no-save --no-package-lock --no-audit --no-fund ${{ env.LIGHTHOUSE }}
+      - name: Download the built site
+        uses: actions/download-artifact@v8
+        with:
+          name: github-pages
+          path: /tmp/pages
+      - name: Unpack it
+        run: mkdir -p _site && tar -xf /tmp/pages/artifact.tar -C _site
+      - name: Lighthouse (${{ matrix.preset }})
+        run: node tests/lighthouse.mjs _site ${{ matrix.preset }}
+      - name: Keep the Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse-${{ matrix.preset }}
+          path: lighthouse-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
   deploy:
-    needs: [test, deep]
+    needs: [test, deep, lighthouse]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:

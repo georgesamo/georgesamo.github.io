@@ -14,7 +14,7 @@
 create table if not exists public.challenges (
   id         text primary key check (id ~ '^[A-Za-z0-9_-]{8,24}$'),
   sender     uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  game       text not null check (game in ('sidekiq', 'gems', 'schema', 'pitwall')),
+  game       text not null check (game ~ '^[a-z][a-z0-9_]{1,23}$'),   -- any game id (deps.sql switches an existing table over)
   seed       text not null check (seed ~ '^[A-Za-z0-9_.:-]{1,64}$'),
   score      int  not null check (score between 1 and 200000),
   length     text check (length in ('sprint', 'full')),

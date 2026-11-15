@@ -171,12 +171,12 @@
       ["resume", "download the PDF"],
       ["github", "open GitHub profile"],
       ["goto &lt;section&gt;", "scroll the page (experience, skills, ...)"],
-      ["play [sidekiq|gems|schema|pitwall]", "minigames (sign-in)"],
+      ["play [sidekiq|gems|schema|pitwall|deps]", "minigames"],
       ["login / logout / id", "optional account, unlocks the arcade"],
       ["me / settings [tab]", "your account at a glance · open a settings tab"],
       ["theme [light|dark]", "switch colors"],
       ["leaderboard [game] [week|daily]", "top scores"],
-      ["daily / race", "daily Gem Match · live 1v1 Sidekiq Rush"],
+      ["daily [gems|deps] / race", "daily Gem Match or Dependency Hell · live 1v1"],
       ["achievements", "what you've unlocked"],
       ["wall / blog / projects", "visitor commits · pull requests · repos"],
       ["news [tech|gaming|dev]", "latest headlines · /news/"],
@@ -248,7 +248,7 @@
     play: function (a) {
       var A = window.SamukaArcade;
       if (!A) return "arcade not loaded";
-      var alias = { sidekiq: "sidekiq", "sidekiq-rush": "sidekiq", rush: "sidekiq", gems: "gems", gem: "gems", "gem-match": "gems", match: "gems", schema: "schema", "schema-stack": "schema", stack: "schema", migrate: "schema", pitwall: "pitwall", "pit-wall": "pitwall", pit: "pitwall", race: "pitwall", f1: "pitwall", gp: "pitwall" };
+      var alias = { sidekiq: "sidekiq", "sidekiq-rush": "sidekiq", rush: "sidekiq", gems: "gems", gem: "gems", "gem-match": "gems", match: "gems", schema: "schema", "schema-stack": "schema", stack: "schema", migrate: "schema", pitwall: "pitwall", "pit-wall": "pitwall", pit: "pitwall", race: "pitwall", f1: "pitwall", gp: "pitwall", deps: "deps", "dependency-hell": "deps", dependency: "deps", bundle: "deps", bundler: "deps", lock: "deps" };
       var id = alias[(a[0] || "").toLowerCase()];
       if (!id) return A.list().map(function (g) { return '  <span class="b">play ' + g.id + "</span>  " + '<span class="dim">' + esc(g.blurb) + "</span>"; }).join("\n");
       close(); setTimeout(function () { A.open(id); }, 60);
@@ -348,20 +348,21 @@
       return t || 'sign in to collect achievements: <span class="b">login</span>';
     },
     leaderboard: function (a) {
-      var game = /^(sidekiq|rush)/.test(a[0] || "") ? "sidekiq" : /^(schema|stack)/.test(a[0] || "") ? "schema" : /^(pit|gp)/.test(a[0] || "") ? "pitwall" : "gems";
+      var game = /^(sidekiq|rush)/.test(a[0] || "") ? "sidekiq" : /^(schema|stack)/.test(a[0] || "") ? "schema" : /^(pit|gp)/.test(a[0] || "") ? "pitwall" : /^(dep|bundle|lock)/.test(a[0] || "") ? "deps" : "gems";
       var period = (a.indexOf("week") > -1 || a.indexOf("--week") > -1) ? "week" : (a.indexOf("daily") > -1 || a.indexOf("today") > -1) ? "daily" : "all";
       if (!window.SamukaScores) return "leaderboards are not loaded";
       var el = print('<span class="dim">SELECT * FROM leaderboard(\'' + game + "', '" + period + "') …</span>");
       window.SamukaScores.board(game, period, 10).then(function (rows) {
         el.innerHTML = (rows.length ? rows.map(function (r) {
           return String(r.rank).padStart(3) + "  " + (r.me ? '<span class="hl">' : "") + esc(r.name).padEnd(24) + (r.me ? "</span>" : "") + "  " + '<span class="ok">' + String(r.score).padStart(7) + "</span>" + (r.role === "samuka" || r.role === "nino" ? ' <span class="dim">' + r.role + "</span>" : "");
-        }).join("\n") : '<span class="dim">no scores yet</span>') + '\n<span class="dim">usage: leaderboard [sidekiq|gems] [week|daily]</span>';
+        }).join("\n") : '<span class="dim">no scores yet</span>') + '\n<span class="dim">usage: leaderboard [sidekiq|gems|schema|pitwall|deps] [week|daily]</span>';
       }, function () { el.innerHTML = '<span class="warn">leaderboard offline</span>'; });
       return null;
     },
-    daily: function () {
+    daily: function (a) {
       if (!window.SamukaScores) return "not loaded";
-      close(); setTimeout(function () { window.SamukaScores.openDaily(); }, 60); return "rails gems:daily …";
+      var deps = /^(dep|bundle|lock)/.test((a && a[0]) || "");
+      close(); setTimeout(function () { window.SamukaScores.openDaily(deps ? "deps" : "gems"); }, 60); return deps ? "bundle install --daily …" : "rails gems:daily …";
     },
     race: function () {
       if (!window.SamukaRace) return "not loaded";

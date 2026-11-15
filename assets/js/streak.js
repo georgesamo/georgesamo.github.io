@@ -34,7 +34,7 @@
   function enabled() { return get(OFF_KEY) !== "off"; }
   function current() {
     var S = window.SamukaScores;
-    return state({ signedIn: signedIn(), streak: card && card.streak, done: !!(S && S.dailyDone && S.dailyDone("gems")),
+    return state({ signedIn: signedIn(), streak: card && card.streak, done: !!(S && S.dailyDone && S.dailyDone()),
       on: enabled(), hiddenDay: get(HIDE_KEY), now: Date.now() });
   }
   function paint() {

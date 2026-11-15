@@ -1,5 +1,5 @@
 /* =========================================================
-   Schema Stack + Regex Golf
+   Schema Stack, Pit Wall, Dependency Hell
    table colours are fixed per mode (like the Sidekiq lanes) so they stay distinct on every skin
    ========================================================= */
 :root { --ms-users: #3ad08f; --ms-orders: #f2c14e; --ms-invoices: #b98cff; --ms-rollback: #ff4d5e; }
@@ -262,3 +262,91 @@
 :root[data-calm] .pv-pw__cars .pv-pw__rv { transform: translate(15.74%, 33.76%); }
 @keyframes pvLap { 0% { transform: translate(13.16%, 76.80%); } 2.08% { transform: translate(7.68%, 74.08%); } 4.17% { transform: translate(5.70%, 66.04%); } 6.25% { transform: translate(7.84%, 57.77%); } 8.33% { transform: translate(10.47%, 49.77%); } 10.42% { transform: translate(13.10%, 41.76%); } 12.5% { transform: translate(15.74%, 33.76%); } 14.58% { transform: translate(18.49%, 25.87%); } 16.67% { transform: translate(23.12%, 20.55%); } 18.75% { transform: translate(28.91%, 20.01%); } 20.83% { transform: translate(34.14%, 23.98%); } 22.92% { transform: translate(38.98%, 29.08%); } 25% { transform: translate(43.82%, 34.17%); } 27.08% { transform: translate(48.85%, 38.73%); } 29.17% { transform: translate(54.61%, 38.54%); } 31.25% { transform: translate(58.83%, 32.57%); } 33.33% { transform: translate(61.90%, 24.92%); } 35.42% { transform: translate(64.96%, 17.28%); } 37.5% { transform: translate(68.76%, 10.58%); } 39.58% { transform: translate(74.33%, 8.06%); } 41.67% { transform: translate(79.96%, 10.22%); } 43.75% { transform: translate(84.40%, 16.05%); } 45.83% { transform: translate(88.68%, 22.20%); } 47.92% { transform: translate(92.63%, 28.77%); } 50% { transform: translate(93.43%, 37.42%); } 52.08% { transform: translate(90.10%, 44.57%); } 54.17% { transform: translate(84.83%, 48.52%); } 56.25% { transform: translate(79.50%, 52.30%); } 58.33% { transform: translate(74.16%, 56.09%); } 60.42% { transform: translate(68.83%, 59.87%); } 62.5% { transform: translate(63.66%, 64.09%); } 64.58% { transform: translate(61.84%, 72.06%); } 66.67% { transform: translate(66.19%, 77.44%); } 68.75% { transform: translate(71.84%, 79.95%); } 70.83% { transform: translate(77.49%, 82.46%); } 72.92% { transform: translate(80.57%, 88.77%); } 75% { transform: translate(75.40%, 92.00%); } 77.08% { transform: translate(69.51%, 92.00%); } 79.17% { transform: translate(63.63%, 92.00%); } 81.25% { transform: translate(57.74%, 92.00%); } 83.33% { transform: translate(51.85%, 92.00%); } 85.42% { transform: translate(45.97%, 92.00%); } 87.5% { transform: translate(40.08%, 92.00%); } 89.58% { transform: translate(34.20%, 92.00%); } 91.67% { transform: translate(28.31%, 92.00%); } 93.75% { transform: translate(22.42%, 92.00%); } 95.83% { transform: translate(16.57%, 91.46%); } 97.92% { transform: translate(12.51%, 85.47%); } 100% { transform: translate(13.16%, 76.80%); } }
 .pcard__stats--games { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }
+
+/* =========================================================
+   Dependency Hell
+   Everything comes from the skin's own tokens (accent, highlight, ruby red), so it follows all four
+   skins in dark and light. A pinned version is bold with a solid border, not only a colour; a broken
+   rule gets a ✗ as well as red.
+   ========================================================= */
+.dh { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "lock rules" "act rules";
+  gap: 12px 22px; height: 100%; max-width: 900px; margin: 0 auto; font: 13px var(--mono); }
+.dh__lock { grid-area: lock; border-radius: 12px; }
+.dh__rules { grid-area: rules; min-height: 0; overflow: auto; overscroll-behavior: contain; padding-right: 4px; }
+.dh__act { grid-area: act; display: grid; gap: 8px; align-content: start; }
+.dh__label { margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10.5px; }
+.dh__label:not(:first-child) { margin-top: 12px; }
+.dh__round { text-transform: none; letter-spacing: 0; }
+.dh__rows { display: grid; gap: 4px; }
+.dh__row { display: grid; grid-template-columns: 7.6em minmax(0, 1fr); align-items: center; gap: 8px; padding: 3px 6px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; }
+.dh__row.is-cur { background: var(--bg-soft); border-color: var(--line-strong); }
+.dh__gem { color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dh__row.is-cur .dh__gem { color: var(--text); font-weight: 700; }
+.dh__row.is-cur .dh__gem::before { content: "› "; color: var(--accent); }
+.dh__row.is-bad .dh__gem { color: var(--ruby-red); }
+.dh__vers { display: grid; grid-template-columns: repeat(4, minmax(46px, 1fr)); gap: 4px; }
+.dh__v { min-height: 34px; padding: 0 4px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-elev); color: var(--muted); font: 12.5px var(--mono); cursor: pointer; touch-action: manipulation; }
+.dh__v:hover { border-color: var(--line-strong); color: var(--text); }
+.dh__v.is-on { border: 2px solid var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 700; }
+.dh__v:focus-visible { outline: 2px solid var(--hl); outline-offset: 2px; }
+.dh__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.dh__list li { padding: 4px 8px; border-left: 3px solid var(--line); border-radius: 0 6px 6px 0; color: var(--text-2); line-height: 1.35; }
+.dh__list code { font: inherit; background: none; padding: 0; color: inherit; }
+.dh__list--gemfile li { color: var(--text); }
+.dh__arrow { color: var(--muted); }
+.dh__list li.is-focus { border-left-color: var(--blue); background: var(--blue-soft); color: var(--text); }   /* not --hl: on Dark Knight that is the same red as a broken rule */
+.dh__list li.is-broken { border-left-color: var(--ruby-red); color: var(--ruby-red); background: color-mix(in srgb, var(--ruby-red) 10%, transparent); }
+.dh__list li.is-broken::before { content: "✗ "; font-weight: 700; }
+.dh__install { justify-self: start; }
+.dh__out { margin: 0; min-height: 2.7em; color: var(--muted); font-size: 12px; line-height: 1.35; }
+.dh__out.is-err { color: var(--ruby-red); }
+.dh__out.is-ok { color: var(--green); }
+.dh__lock.is-shake { animation: pwShake 0.35s; }
+.dh__lock.is-glow { animation: dhGlow 0.9s ease-out; }
+@keyframes dhGlow { 0% { box-shadow: 0 0 0 0 var(--accent); } 100% { box-shadow: 0 0 0 14px transparent; } }
+@media (prefers-reduced-motion: reduce) { .dh__lock.is-shake, .dh__lock.is-glow { animation: none; } }
+:root[data-calm] .dh__lock.is-shake, :root[data-calm] .dh__lock.is-glow { animation: none; }
+.dh__result { list-style: none; margin: 10px 0; padding: 0; display: grid; gap: 2px; font: 12.5px var(--mono); text-align: left; }
+.dh__result li.is-diff code { color: var(--hl); }
+.dh__could { color: var(--muted); }
+.dh__legend li { line-height: 1.45; }
+.dh__legend b { margin-right: 0; }
+.dh__legend code { font-size: 12px; }
+/* a narrow stage (phone held upright): the lock, then the rules (they scroll), then the button */
+@container stage (max-width: 620px) {
+  .dh { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr) auto; grid-template-areas: "lock" "rules" "act"; gap: 8px; }
+  .dh__row { grid-template-columns: 6.6em minmax(0, 1fr); gap: 6px; padding: 2px 4px; }
+  .dh__vers { grid-template-columns: repeat(4, minmax(40px, 1fr)); }
+  .dh__v { min-height: 36px; font-size: 12px; }
+  .dh__list li { padding: 3px 6px; font-size: 12px; }
+  .dh__label:not(:first-child) { margin-top: 8px; }
+  .dh__act { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; }
+  .dh__out { min-height: 0; font-size: 11.5px; }
+}
+/* a short stage (phone on its side): the lock takes the whole left side with smaller rows, and the
+   button moves under the rules on the right, which scroll in what is left */
+@container stage (max-height: 420px) and (min-width: 560px) {
+  .dh { grid-template-rows: minmax(0, 1fr) auto; grid-template-areas: "lock rules" "lock act"; gap: 6px 14px; }
+  .dh__install { min-height: 34px; padding-block: 4px; }
+  .dh__rows { gap: 2px; }
+  .dh__row { padding: 0 4px; }
+  .dh__v { min-height: 25px; font-size: 11.5px; }
+  .dh__lock .dh__label { margin-bottom: 2px; }
+  .dh__label { margin-bottom: 3px; }
+  .dh__list li { padding: 2px 6px; font-size: 11.5px; }
+  /* the status line would squeeze the rules to a few lines: screen readers still get it, the rest
+     see the red rules, the installs in the HUD and a toast */
+  .dh__out { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+/* card preview: a lockfile whose pins shuffle until the conflict line clears */
+.pv-dh { position: absolute; inset: 14px; display: grid; align-content: center; gap: 5px; width: 210px; margin: auto; font: 10px var(--mono); }
+.pv-dh__row { display: grid; grid-template-columns: 52px repeat(4, 1fr); gap: 4px; align-items: center; color: var(--muted); }
+.pv-dh__row i { height: 14px; border-radius: 4px; border: 1px solid var(--line-strong); background: var(--bg-soft); }
+.pv-dh__row i.is-on { border: 2px solid var(--accent); background: var(--accent-soft); }
+.pv-dh__row i.is-mv { animation: pvDhPin 4s steps(1) infinite; }
+.pv-dh__row i.is-mv2 { animation: pvDhPin 4s steps(1) infinite reverse; }
+.pv-dh__rule { margin-top: 4px; padding: 2px 6px; border-left: 3px solid var(--ruby-red); color: var(--ruby-red); animation: pvDhRule 4s steps(1) infinite; }
+@keyframes pvDhPin { 0%, 49% { border: 2px solid var(--accent); background: var(--accent-soft); } 50%, 100% { border: 1px solid var(--line-strong); background: var(--bg-soft); } }
+@keyframes pvDhRule { 0%, 49% { border-left-color: var(--ruby-red); color: var(--ruby-red); } 50%, 100% { border-left-color: var(--accent); color: var(--accent); } }
+@media (prefers-reduced-motion: reduce) { .pv-dh__row i.is-mv, .pv-dh__row i.is-mv2, .pv-dh__rule { animation: none; } }
+:root[data-calm] .pv-dh__row i.is-mv, :root[data-calm] .pv-dh__row i.is-mv2, :root[data-calm] .pv-dh__rule { animation: none; }

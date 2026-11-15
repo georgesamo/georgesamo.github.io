@@ -1,7 +1,7 @@
 ---
 layout: shell
 title: Leaderboards
-description: Top players of Samuka's arcade, all-time, this week and today's daily Gem Match.
+description: "Top players of Samuka's arcade, all-time, this week and today's dailies (Gem Match and Dependency Hell)."
 permalink: /leaderboards/
 tab: leaderboards
 file: arcade/leaderboards.yml
@@ -20,9 +20,11 @@ lang_label: YAML
           <div class="lb" data-leaderboard data-fixed data-game="sidekiq" data-limit="25" aria-live="polite"></div>
           <div class="lb" data-leaderboard data-fixed data-game="schema" data-limit="25" aria-live="polite"></div>
           <div class="lb" data-leaderboard data-fixed data-game="pitwall" data-limit="25" aria-live="polite"></div>
+          <div class="lb" data-leaderboard data-fixed data-game="deps" data-limit="25" aria-live="polite"></div>
         </div>
         <div class="lobby__actions" style="margin-top:20px">
           <button class="btn btn--primary" type="button" data-daily>📅 daily Gem Match</button>
+          <button class="btn btn--primary" type="button" data-daily="deps">📅 daily Dependency Hell</button>
           <a class="btn" href="{{ '/leaderboards/tournament/' | relative_url }}">🏆 weekly tournament</a>
           <button class="btn" type="button" data-lb-jump hidden>📍 jump to me</button>
           <a class="btn" href="{{ '/u/' | relative_url }}">🪪 your player card</a>

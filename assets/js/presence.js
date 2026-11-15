@@ -88,7 +88,11 @@
     var p = msg.payload; if (!p || !p.id || p.id === tabId() || !cursorsOn() || !peers[p.id]) return;
     var pos = decode(p); if (!pos) return;
     var g = ghost(p.id);
-    g.el.style.transform = "translate(" + pos.x.toFixed(0) + "px," + pos.y.toFixed(0) + "px)";
+    // keep the whole ghost (arrow + name pill) inside the page width: one near the right edge of a
+    // wider screen used to stick out and give the page a horizontal scrollbar
+    var maxX = scrollX + document.documentElement.clientWidth - (g.el.offsetWidth || 90) - 4;
+    var x = Math.max(scrollX, Math.min(pos.x, maxX));
+    g.el.style.transform = "translate(" + x.toFixed(0) + "px," + pos.y.toFixed(0) + "px)";
     g.el.classList.add("is-on");
     clearTimeout(g.idle);
     g.idle = setTimeout(function () { g.el.classList.remove("is-on"); }, 5000);

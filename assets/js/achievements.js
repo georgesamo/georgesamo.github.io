@@ -14,7 +14,7 @@
     { key: "bundle", icon: "✦", title: "bundle install", how: "Create a Bundle (match 5)" },
     { key: "db_reset", icon: "💣", title: "rails db:reset", how: "Swap two Bundles together" },
     { key: "gems_4000", icon: "💎", title: "Gemfile.lock: perfection", how: "Score 4000+ in Gem Match" },
-    { key: "daily", icon: "📅", title: "Daily standup", how: "Finish the daily Gem Match" },
+    { key: "daily", icon: "📅", title: "Daily standup", how: "Finish a daily puzzle" },
     { key: "podium", icon: "🏆", title: "Podium", how: "Reach the top 3 of a leaderboard" },
     { key: "race_win", icon: "🏁", title: "Race condition", how: "Win a live 1v1 Sidekiq Rush" },
     { key: "gems_duel", icon: "⚔", title: "Merge conflict resolved", how: "Win a live Gem Match versus" },
@@ -24,6 +24,7 @@
     { key: "pit_win", icon: "🏆", title: "Strategy masterclass", how: "Win a Pit Wall grand prix" },
     { key: "pit_rain", icon: "🌧", title: "Rain master", how: "Podium in a wet Pit Wall race" },
     { key: "pit_champ", icon: "🥇", title: "World champion", how: "Win the Pit Wall World Championship" },
+    { key: "deps_fresh", icon: "📦", title: "bundle outdated: 0", how: "Lock all three Dependency Hell Gemfiles at their freshest" },
     { key: "weekly", icon: "🗓", title: "Sprint goal met", how: "Finish a weekly challenge" },
     { key: "chatty", icon: "💬", title: "Standup attended", how: "Say something in the live chat" },
     { key: "wall", icon: "📝", title: "First commit", how: "Leave a commit on the wall" },
@@ -121,6 +122,10 @@
     if (d.game === "pitwall" && d.name === "win") unlock("pit_win");
     if (d.game === "pitwall" && d.name === "rain_podium") unlock("pit_rain");
     if (d.game === "pitwall" && d.name === "champion") unlock("pit_champ");
+    if (d.game === "deps") {
+      if (d.name === "all_fresh") unlock("deps_fresh");
+      if (d.name === "over" && d.mode === "daily") unlock("daily");
+    }
     if (d.game === "sidekiq") {
       if (d.name === "retry" && uid) {
         var k = "samuka-retries-" + uid, n = (parseInt(store.get(k) || "0", 10) || 0) + 1;
