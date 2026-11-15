@@ -95,6 +95,8 @@ const all = {};
 const rows = [];
 let fails = 0, warns = 0;
 try {
+  // one discarded warm-up: the first Lighthouse run after Chrome starts scored 73 vs 87 on mobile /
+  await lighthouse(BASE + PAGES[0], flags, config);
   for (const page of PAGES) {
     const runs = [];
     for (let i = 0; i < RUNS; i++) {
