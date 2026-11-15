@@ -37,6 +37,7 @@ icon: rb
           <div class="hub-card today__recap recap reveal" data-recap aria-live="polite">
             <p class="hub-card__title">your week · since Monday</p>
             <div data-recap-body><p class="muted">loading your week…</p></div>
+            <script type="application/json" data-tourney-games>{{ site.data.games | jsonify }}</script>
           </div>
         </div>
       </section>
