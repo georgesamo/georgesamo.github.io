@@ -12,7 +12,7 @@
   "use strict";
   var SRC = window.SamukaMusicSrc, promise = null, stub = null, waiting = [];
   var AC = window.AudioContext || window.webkitAudioContext;
-  var BONUS_GAMES = { gems: 1, sidekiq: 1, schema: 1, pitwall: 1 };
+  var BONUS_GAMES = { gems: 1, sidekiq: 1, schema: 1, pitwall: 1, deps: 1 };
 
   function loaded() { return !!window.SamukaLofi; }
   function load() {

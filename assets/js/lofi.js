@@ -2663,13 +2663,116 @@
     if (k >= 1 && k < 3 && (st === 0 || st === 8)) taiko(o, t, 0.5 * fade, st ? 0.5 : -0.5, st ? 110 : 85);
   };
 
+  // 12 · Dependency Hell · "Dependency Heaven" (155 bpm, about 1:45), a trance track after the form and the mix of
+  // Marlon Hoffstadt's remix of "High Forever" (soundtrack-lab/reports/ref-high-forever.md), played without its voice.
+  // Taken from it: four-on-the-floor with the sub on every offbeat, never under a kick; the pads stepping back
+  // whenever the drop plays; a kick with no bass before the first drop; a half-strength middle on a lighter bass
+  // line; a breath before each drop; a drumless close on the pads. The melody (a slow line in the singer's register,
+  // on a twin lead that brings back the width the voice carried) and both chord loops are written for this track.
+  function offSub(o, t, m, v, len) {   // one offbeat sub note: a sine on the "and", gone before the next kick
+    var s = osc("sine", F(o, m), t, t + len + 0.05), g = gain(0), pk = 0.22 * v * BAL.bass;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(pk, t + 0.006);
+    g.gain.setValueAtTime(pk, t + len * 0.45); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    s.connect(g); g.connect(o.duck);
+  }
+  var DH = {
+    loop: [[40, [52, 55, 59]], [36, [48, 52, 55]], [43, [50, 55, 59]], [38, [50, 54, 57]]],   // Em C G D, two bars each
+    mid: [[45, [52, 57, 60]], [40, [52, 55, 59]], [36, [48, 52, 55]], [35, [50, 54, 59]]],    // Am Em C Bm, a bar each
+    tune: [[0, 79, 8], [8, 78, 4], [12, 76, 4], [16, 71, 12], [28, 74, 4],
+      [32, 76, 8], [40, 79, 8], [48, 76, 4], [52, 74, 4], [56, 72, 8],
+      [64, 74, 8], [72, 79, 8], [80, 83, 12], [92, 81, 4],
+      [96, 78, 8], [104, 76, 4], [108, 74, 4], [112, 78, 16]]
+  };
+  function dhSub(root, lo) { return lo + ((root - lo) % 12 + 12) % 12; }   // the sub's note, within the octave above lo: G1 to F♯2 (49-92 Hz) once the palette transposes
+  // the motif only: the violins over the pads alone, the choir as the kick arrives, the twin lead in the drop, the
+  // cello at half speed in the middle, the violins into the lift, the lead with the violins an octave up in the
+  // last drop, the violins as it all closes
+  DH.sec = form([
+    ["unresolved", 8, function (k) { return { voice: ["violins"], bed: 1, sky: 1200 + k * 40 }; }],
+    ["resolving", 8, function (k) { return { voice: ["choir"], bed: 1, kick: 0.4, hats: k >= 2 ? 0.5 : 0, sky: 1500 + k * 600, riser: k === 4, breath: k === 7 }; }],
+    ["drop", 16, function (k) { return { lead: 1, bed: 0.7, kick: 1, hats: 1, clap: 1, bass: 1, sky: 9000, hit: k === 0, crash: k === 8 }; }],
+    ["breathe", 8, function (k) { return { voice: ["cello"], half: 1, mid: 1, bed: 1, kick: 0.5, hats: 0.5, bass: 0.35, sky: 2600 + k * 270 }; }],
+    ["lift", 4, function (k) { return { voice: ["violins"], bed: 1, kick: k < 2 ? 0.5 : 0, hats: 0.6, roll: 1, sky: 4500 + k * 1000, riser: k === 0, breath: k === 3 }; }],
+    ["drop", 16, function (k) { return { lead: 1, hi: 1, choir: k % 4 === 0, bed: 0.7, kick: 1, hats: 1, clap: 1, bass: 1, sky: 9500, hit: k === 0, crash: k === 8 }; }],
+    ["home", 4, function (k) { return { voice: ["violins"], bed: 1.15, sky: 2400 - k * 300 }; }]
+  ]);
+  var SONG_DH = {
+    flat_golden: [5.4, 3.7, 2.5, 2.6, 2.8, 3.9, 2.3, 3.8, 4.2, 4.3, 3.4, 3.8, 3.2, 4.2, 3.1, 3.1, -0.4, 0.7, 0.2, 0.3, 0.2, 0.7, -0.1, 0.6, 0.1, 0.8, 0.4, 0.4, 0.6, 0.8, -0.2, 0.9, -1.5, -1.7, -2.3, -2.3, -1.7, -1.9, -2.3, -2.3, -1.1, -0.3, -1.9, -3.4, -2.8, -2.5, -2.7, -2.9, -3.2, -2.4, -3.7, -3.1, -3.1, -2.5, -2.5, -2.8, -2.8, -2.2, -3.6, -2.8, -0.3, 1.2, 0.4, 1.0],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_knight: [5.2, 3.8, 3.2, 3.1, 3.2, 4.5, 2.9, 3.9, 3.1, 4.3, 2.9, 3.9, 3.2, 4.3, 2.9, 3.6, -1.0, 0.1, 0.0, -0.2, -0.4, 0.2, -0.5, 0.3, -0.5, 0.1, -0.2, 0.1, -0.4, -0.0, -0.3, 0.4, 0.7, -0.6, -0.3, 0.2, -0.4, -0.3, -0.7, -0.1, 0.3, 0.9, 0.0, -1.7, -2.3, -2.3, -2.3, -2.7, -2.2, -2.2, -2.4, -1.6, -2.5, -2.6, -2.3, -2.6, -2.2, -1.8, -2.6, -1.8, 1.6, 1.6, 1.5, 2.2],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    flat_phthalo: [6.1, 4.9, 3.4, 3.4, 2.9, 4.5, 2.7, 3.7, 3.9, 5.2, 3.0, 4.0, 2.8, 4.1, 2.1, 3.3, -0.7, 0.3, -0.1, 0.1, 0.1, 0.5, -0.4, 0.4, -0.2, 0.2, 0.1, 0.2, 0.2, 0.5, -0.3, 0.2, -0.8, -0.8, -1.0, -1.2, -1.3, -0.7, -1.3, -1.4, -0.9, 0.4, -1.2, -2.3, -2.9, -2.3, -2.7, -3.1, -2.6, -2.0, -3.1, -2.7, -2.9, -2.8, -2.7, -2.8, -2.8, -2.3, -3.2, -3.0, 0.7, 2.3, 1.1, 2.2],   // per-bar level (dB), written by soundtrack-lab/flatten.py
+    mood: "Dependency Hell · one slow melody over a four-on-the-floor, two drops", bpm: 155, bars: DH.sec.bars,
+    part: function (bar) { return DH.sec(bar).id; },
+    level: { phthalo: 2, knight: 5, golden: 5 },
+    kitLift: { mrrobot: -7.5, kpop: -2 },   // the kit adds ~2-3 dB where it plays (soundtrack-lab, measured against a render without it)
+    init: function (o, t) {
+      o.sky = makeSky(o, t, 1200);
+      o.la = makeLead(o, t, o.P.lead, -0.7); o.lb = makeLead(o, t, o.P.lead === "glass" ? "saw" : "glass", 0.7);   // the twin lead: two timbres, two sides
+    },
+    play: function (o, t, st, bar) {
+      var sec = DH.sec(bar), six = o.six, ch = sec.mid ? DH.mid[sec.k % 4] : DH.loop[Math.floor(motifBar(sec, 128) / 2) % 4];
+      var root = ch[0], up = ch[1].map(function (m) { return m + 12; }), sub = dhSub(root, 31 - o.P.tr), held = sec.breath && st >= 12, style = o.P.style;
+      o.cut = 260;
+      if (st === 0) {
+        o.sky(t, sec.sky, six * 6);
+        o.bassLp.frequency.setTargetAtTime(420, t, 0.3);
+        if (sec.bed && (sec.mid || bar % 2 === 0)) {   // the bed: a wide string machine and a warm pad behind it
+          var len = six * (sec.mid ? 16 : 32);
+          sm(o, t, up, len, 0.055 * sec.bed, { a: six * 3, r: 1.6, w: 0.95 });
+          pad(o, t, up, len, 0.012 * sec.bed, "saw", true);
+        }
+        if (sec.hit) { crash(o, t, 0.7); boom(o, t, 0.3); }
+        else if (sec.crash) crash(o, t, 0.45);
+        if (sec.riser) riser(o, t, six * 64, 0.06);
+        if (sec.choir) choir(o, t, up.map(function (m) { return m + 12; }), six * 60, 0.03, { a: six * 4, r: 2, pan: bar % 8 < 4 ? -0.3 : 0.3 });
+      }
+      if (sec.breath && st === 12) subDrop(o, t, six * 4, 0.4);   // the floor falls away into the drop
+      if (held) {   // the breath, one beat long: the bed, a light hat (Golden's in 32nds, rushing in)
+        if (style === "kpop") { hat(o, t, 0.4 + 0.1 * (st - 12), false); hat(o, t + six * 0.5, 0.45 + 0.1 * (st - 12), false); }
+        else hat(o, t, 0.3 + 0.1 * (st - 12), false);
+        return;
+      }
+      if (sec.kick && st % 4 === 0) {
+        if (style === "industrial" && sec.kick >= 1) bigKick(o, t, 0.8); else kick(o, t, sec.kick);
+      }
+      if (sec.hats) {
+        if (st % 4 === 2) hat(o, t, 2 * sec.hats, true);                 // the open hat on every offbeat
+        else if (st % 4 === 0) hat(o, t, 0.8 * sec.hats, false);
+        else if (sec.hats >= 1 || style === "mrrobot") hat(o, t, (style === "mrrobot" ? 0.65 : 0.5) * sec.hats, false);   // 16ths in the drops (Phthalo always)
+        if (sec.hats >= 1 && st % 2 === 1) shk(o, t, st % 4 === 1 ? 0.5 : 0.35, st % 4 === 1 ? -0.3 : 0.3);
+      }
+      if (sec.clap && (st === 4 || st === 12)) clap(o, t, style === "kpop" ? 0.5 : 0.4);
+      if (sec.clap && style === "mrrobot" && st === 14 && bar % 2) snare(o, t, 0.12);
+      if (sec.roll) rollAt(o, t, st, bar, sec.from, sec.n);
+      if (sec.bass && st % 4 === 2) {   // the sub on the "and", never under a kick
+        offSub(o, t, sub, sec.bass, six * 1.7);
+        bassNote(o, t, sub + 12, 0.2 * sec.bass, six * 1.5);
+      }
+      if (sec.lead) motifAt(DH.tune, sec, st, 128).forEach(function (n) {
+        var l = n[2] * six;
+        o.la.play(t, n[1], l, 0.07); o.lb.play(t, n[1], l, 0.06);
+        if (sec.hi) orch(o, t, "violins", n[1] + 12, l, 71, 0.8);
+      });
+      orchAll(o, t, sec, DH.tune, st, 128, 71);   // the motif, in this section's voices
+    }
+  };
+  SONG_DH.outroBars = 4;
+  SONG_DH.outro = function (o, t, st, k, N) {   // the pads close over E, the last notes of the melody on the violins
+    var six = o.six;
+    if (st === 0) {
+      o.sky(t, 1800 - k * 250, six * 8);
+      if (k === 0) { sm(o, t, [64, 67, 71], six * 40, 0.045, { a: six * 2, r: 2.5, w: 0.7 }); pad(o, t, [64, 67, 71], six * 40, 0.02, "saw", true); }
+      if (k < 3) orch(o, t, "violins", [78, 74, 71][k], six * 14, 71, 0.7 - 0.15 * k);
+    }
+  };
+
   var BONUS = [
     { si: 6, game: "sidekiq", name: "Sidekiq Rush", song: SONG_QUEUE, titles: { phthalo: "Dead Letter Queue", knight: "Bunker 0x1F", golden: "Gilded Backpressure" } },
     { si: 7, game: "gems", name: "Gem Match", song: SONG_GEMS, titles: { phthalo: "Facets of Light", knight: "Embers Rising", golden: "Prism Anthem" } },
     { si: 8, game: "schema", name: "Schema Stack", song: SONG_STACK, titles: { phthalo: "Stairway to Production", knight: "The Long Migration", golden: "Golden Stairs" } },
     { si: 9, game: "pitwall", name: "Pit Wall", song: SONG_PIT, titles: { phthalo: "Lights Out", knight: "Red Flag Fever", golden: "Chequered Mirage" } },
     // not a game: a hidden gem, unlocked by running bundle install on Samuka's page (the button, or the terminal)
-    { si: 10, game: "bundle", name: "bundle install", song: SONG_MONO, hint: "run bundle install on Samuka's page to unlock it in every theme", titles: { phthalo: "The Monologue", knight: "Monologue in the Dark", golden: "Golden Monologue" } }
+    { si: 10, game: "bundle", name: "bundle install", song: SONG_MONO, hint: "run bundle install on Samuka's page to unlock it in every theme", titles: { phthalo: "The Monologue", knight: "Monologue in the Dark", golden: "Golden Monologue" } },
+    { si: 11, game: "deps", name: "Dependency Hell", song: SONG_DH, titles: { phthalo: "Dependency Heaven", knight: "Pinned in the Dark", golden: "Golden Lockfile" } }
   ];
   BONUS.forEach(function (b) { b.song.game = b.game; Object.keys(THEMES).forEach(function (k) { THEMES[k].titles[b.si] = b.titles[k]; }); });
   var TRACKS = SONGS.concat([SONG_CUT], BONUS.map(function (b) { return b.song; }));
@@ -2759,7 +2862,7 @@
   // how the tracks are listed: the five songs, the bonus tracks, and the suite last. They're numbered by what's
   // open in that theme, so the numbers run 1, 2, 3... with no gaps or repeats whatever has been unlocked
   // (a locked track gets the number it would take if it opened now)
-  var LIST = [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 5];
+  var LIST = [0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 5];
   function posOf(si, th) { var n = 1, at = LIST.indexOf(si); for (var i = 0; i < at; i++) if (siOpen(th, LIST[i])) n++; return n; }
   function lastPos(th) { return LIST.filter(function (si) { return siOpen(th, si); }).length; }
 
@@ -2773,7 +2876,7 @@
    * The step clock keeps running exactly as it does for the synth - position, seeking, theme switches,
    * "heard", outros and handoffs all work the same way - it just doesn't make the sound; the files do.
    * If a file can't be loaded, the track falls back to the synth where it is. */
-  var FILE_TRACKS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  var FILE_TRACKS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
   var AUDIO_BASE = (function () { try { return new URL("../audio/", document.currentScript.src).href; } catch (e) { return null; } })();
   var manifest = null, manifestP = null;
   function loadManifest() {

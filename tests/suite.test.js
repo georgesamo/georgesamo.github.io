@@ -20,7 +20,7 @@
   describe("suite · catalog", function () {
     it("lists a locked sixth track in every theme", function () {
       L().catalog().forEach(function (th) {
-        expect(th.songs).toHaveLength(11);
+        expect(th.songs).toHaveLength(12);
         var s = th.songs[5];
         expect(s.suite).toBe(true); expect(s.locked).toBe(true); expect(s.heard).toBe(0); expect(s.bars).toBe(270);
       });
@@ -70,17 +70,17 @@
 
   describe("bonus tracks", function () {
     function secs(si) { return L().catalog()[0].songs[si].secs; }
-    it("adds five locked bonus tracks, one per arcade game and the monologue, in every theme", function () {
+    it("adds six locked bonus tracks, one per arcade game and the monologue, in every theme", function () {
       L().catalog().forEach(function (th) {
         var b = th.songs.slice(6);
-        expect(b.map(function (s) { return s.game; })).toEqual(["sidekiq", "gems", "schema", "pitwall", "bundle"]);
+        expect(b.map(function (s) { return s.game; })).toEqual(["sidekiq", "gems", "schema", "pitwall", "bundle", "deps"]);
         expect(b[4].hint).toContain("bundle install");
         b.forEach(function (s, i) { expect(s.bonus).toBe(true); expect(s.locked).toBe(true); expect(s.no).toBe(6); expect(s.si).toBe(6 + i); expect(s.outro >= 2).toBe(true); });
       });
     });
     it("knows where every file-backed track hands over, for the phone player's files", function () {
       var h = L().handoffs();
-      expect(Object.keys(h).length).toBe(33);
+      expect(Object.keys(h).length).toBe(36);
       // an outro keeps its song's tempo: Ring Zero hands over after 88 + 4 bars at 110 bpm (the file starts at 0.05 s)
       expect(Math.abs(h["phthalo-1"] - (0.05 + 92 * 4 * 60 / 110)) < 0.01).toBe(true);
       expect(Math.abs(h["golden-4"] - (0.05 + 144 * 4 * 60 / (172 * 0.99))) < 0.01).toBe(true);
@@ -95,7 +95,7 @@
     it("lists the suite last, after the bonus tracks", function () {
       L().catalog().forEach(function (th) {
         var order = th.songs.slice().sort(function (a, b) { return a.ord - b.ord; }).map(function (s) { return s.si; });
-        expect(order).toEqual([0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 5]);
+        expect(order).toEqual([0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 5]);
       });
       expect(L().order.prev("phthalo", 5)).toBe(4);   // nothing unlocked: back to the last song
     });
