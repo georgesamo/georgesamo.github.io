@@ -163,6 +163,7 @@
     - "`bundle update` has pinned every gem to its newest version and nothing resolves. The Gemfile asks for some minimums, and gemspec rules tie gems together: `sidekiq >= 7.3 → redis >= 5.2`, `rails >= 8.0 → rack < 3.2`."
     - "Pin one version per gem and run `bundle install`. A broken lock shows the rules it broke and costs one of three installs; a lock that resolves scores by freshness against the best lock possible, plus a speed bonus."
     - Three Gemfiles of 4, 5 and 6 gems make a run of two to four minutes. The version rules are made up for the puzzle; they aren't the real gems' requirements.
+    - "Free play has three difficulties. Easy is 3, 4 and 5 gems with four installs; hard is 5, 6 and 7 gems with a single freshest lock and no rule hints. Only normal goes on the leaderboards: the daily, the tournament and challenges are always normal."
   code:
     file: assets/js/games/dependency-hell.js
     text: |-

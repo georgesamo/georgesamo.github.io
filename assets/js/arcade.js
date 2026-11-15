@@ -103,12 +103,15 @@
         emit(id, "over", payload, opts);
         // a challenge or the weekly tournament is a known board: it doesn't count as a best or go on the boards
         if (opts.mode === "daily" || opts.mode === "race" || opts.mode === "challenge" || opts.mode === "tournament") return { best: score, isNew: false };
-        guestNudge(stage, score);
-        var prev = getBest(id);
-        if (score > prev) { setBest(id, score); return { best: score, isNew: true }; }
+        // practice (a free-play difficulty other than the default, extra.practice = "easy"): its own
+        // best on this device, never the shared boards (scores.js) or a challenge (challenge.js)
+        var key = extra && extra.practice ? id + "-" + extra.practice : id;
+        if (key === id) guestNudge(stage, score);
+        var prev = getBest(key);
+        if (score > prev) { setBest(key, score); return { best: score, isNew: true }; }
         return { best: prev, isNew: false };
       },
-      peekBest: function () { return getBest(id); },
+      peekBest: function (practice) { return getBest(practice ? id + "-" + practice : id); },
       overlay: function (html) {
         var o = stage.querySelector(".arcade__overlay");
         if (!o) { o = document.createElement("div"); o.className = "arcade__overlay"; stage.appendChild(o); }

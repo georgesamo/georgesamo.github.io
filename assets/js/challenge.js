@@ -117,7 +117,8 @@
   function backend() { var A = window.SamukaAuth; return backendOverride || (A && A.mock && A.mock() ? mock : server); }
 
   // a run that can be replayed: scored, seeded, and for Pit Wall a quick race (GP and championship need your picks)
-  function canChallenge(r) { return !!(r && r.seed && r.score > 0 && GAMES[r.game] && (r.game !== "pitwall" || r.kind === "quick")); }
+  // a practice difficulty is a different board for the same seed: only the default one can be sent
+  function canChallenge(r) { return !!(r && r.seed && r.score > 0 && !r.practice && GAMES[r.game] && (r.game !== "pitwall" || r.kind === "quick")); }
 
   function share(c, btn) {
     var url = link(c);

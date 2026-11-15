@@ -29,9 +29,32 @@
     ["faraday", ["1.10", "2.7", "2.9", "2.12"]],
     ["bootsnap", ["1.16", "1.17", "1.18", "1.19"]]
   ];
-  var ROUNDS = [{ n: 4, rules: 4 }, { n: 5, rules: 6 }, { n: 6, rules: 7 }];
+  /* Difficulty. The daily, the weekly tournament, races and challenges are always "normal", so every
+   * board compares the same puzzles; easy and hard are free-play practice (scores stay on this device).
+   * What changes per level is the puzzle itself:
+   *   rounds   gems per Gemfile and how many gemspec rules connect them
+   *   mins     Gemfile minimums per round
+   *   installs installs per round
+   *   focus    rules for the gem you're on light up (the hint); hard leaves you to read them
+   *   gap      how far below newest-everything the freshest lock sits, at least [strict, loose]
+   *   low      ... and at most this far below
+   *   best     how many different freshest locks there may be [strict, loose]
+   *   span     points between the stalest and the freshest lock that resolve, at least
+   *   ratio    share of all locks that resolve, at most [strict, loose]: lower bites harder
+   * "normal" is exactly the puzzle from before difficulty existed, so old seeds give the same boards. */
+  var LEVELS = {
+    easy: { rounds: [{ n: 3, rules: 2 }, { n: 4, rules: 3 }, { n: 5, rules: 4 }], mins: [1, 1, 1], installs: 4, focus: true,
+      gap: [2, 1], low: 6, best: [3, 5], span: 2, ratio: [0.5, 0.6] },
+    normal: { rounds: [{ n: 4, rules: 4 }, { n: 5, rules: 6 }, { n: 6, rules: 7 }], mins: [1, 2, 2], installs: 3, focus: true,
+      gap: [3, 2], low: 7, best: [2, 4], span: 3, ratio: [0.3, 0.45] },
+    hard: { rounds: [{ n: 5, rules: 5 }, { n: 6, rules: 6 }, { n: 7, rules: 7 }], mins: [2, 2, 2], installs: 3, focus: false,
+      gap: [3, 3], low: 9, best: [1, 2], span: 4, ratio: [0.15, 0.25] }
+  };
+  var LEVEL_NAMES = ["easy", "normal", "hard"];
+  function level(l) { return LEVELS.hasOwnProperty(l) ? l : "normal"; }
+  var ROUNDS = LEVELS.normal.rounds;
   var MULT = [1, 1.5, 2];
-  var MAX_INSTALLS = 3;
+  var MAX_INSTALLS = LEVELS.normal.installs;
 
   /* ---------- the puzzle (pure) ---------- */
   // a rule holds for a lock (array of version indexes)?
@@ -64,18 +87,19 @@
     return { feasible: feasible, total: total, opt: opt, minF: minF === Infinity ? -1 : minF, best: best, matters: matters };
   }
 
-  function generate(rng, round) {
-    var cfg = ROUNDS[round] || ROUNDS[ROUNDS.length - 1], n = cfg.n, maxSum = n * (V - 1);
+  function generate(rng, round, lvl) {
+    lvl = level(lvl);
+    var L = LEVELS[lvl], cfg = L.rounds[round] || L.rounds[L.rounds.length - 1], n = cfg.n, maxSum = n * (V - 1);
     var int = function (a, b) { return a + Math.floor(rng() * (b - a + 1)); };
     var p, s, tries = 0, spare = null;
     for (; tries < 400; tries++) {
-      var loose = tries >= 200;   // the strict bar finds a puzzle within a few dozen tries almost always
+      var loose = tries >= 200 ? 1 : 0;   // the strict bar finds a puzzle within a few dozen tries almost always
       var idx = POOL.map(function (_, i) { return i; });
       for (var i = idx.length - 1; i > 0; i--) { var j = Math.floor(rng() * (i + 1)), t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
       var gems = idx.slice(0, n).map(function (q) { return { name: POOL[q][0], vers: POOL[q][1] }; });
       var rules = [], pairs = {};
-      // the Gemfile: one or two minimums, sometimes a cap
-      var mins = round === 0 ? 1 : 2;
+      // the Gemfile: one or more minimums, sometimes a cap
+      var mins = L.mins[Math.min(round, L.mins.length - 1)];
       for (var m = 0; m < mins; m++) rules.push({ k: "min", a: m, i: int(1, 2) });
       if (rng() < 0.5) rules.push({ k: "max", a: int(mins, n - 1), j: int(2, 3) });
       // the gemspecs: rules between two different gems, at most one per pair
@@ -88,20 +112,20 @@
       }
       specs.sort(function (x, y) { return x.a - y.a || x.b - y.b; });   // read top to bottom, gem by gem
       rules = rules.concat(specs);
-      p = { gems: gems, rules: rules, round: round };
+      p = { gems: gems, rules: rules, round: round, level: lvl };
       s = solve(p);
       if (s.feasible === 0 || s.opt >= maxSum) continue;
       if (!spare) spare = { p: p, s: s };                             // the last resort: solvable, newest-everything fails
-      if (s.opt > maxSum - (loose ? 2 : 3) || s.opt < maxSum - 7) continue;   // newest-everything is off, but not hopelessly
-      if (s.best.length > (loose ? 4 : 2)) continue;                  // one or two freshest locks
-      if (s.opt - s.minF < 3) continue;                               // a safe old lock scores clearly less
+      if (s.opt > maxSum - L.gap[loose] || s.opt < maxSum - L.low) continue;   // newest-everything is off, but not hopelessly
+      if (s.best.length > L.best[loose]) continue;                    // only a few freshest locks
+      if (s.opt - s.minF < L.span) continue;                          // a safe old lock scores clearly less
       if (s.matters.some(function (x) { return !x; })) continue;      // no rule that never matters
-      if (s.feasible / s.total > (loose ? 0.45 : 0.3)) continue;      // the rules have to bite
+      if (s.feasible / s.total > L.ratio[loose]) continue;            // the rules have to bite
       break;
     }
     if (tries >= 400 && spare) { p = spare.p; s = spare.s; }
     else if (tries >= 400) {   // never seen in practice; still a fair puzzle rather than a broken one
-      p = { gems: p.gems, rules: [{ k: "min", a: 0, i: 1 }, { k: "cap", a: 0, i: 1, b: 1, j: 2 }], round: round };
+      p = { gems: p.gems, rules: [{ k: "min", a: 0, i: 1 }, { k: "cap", a: 0, i: 1, b: 1, j: 2 }], round: round, level: lvl };
       s = solve(p);
     }
     p.solution = s;
@@ -132,7 +156,7 @@
     return new Array((o.fails || 0) + 1).join("⬛") + (o.sum >= o.opt ? "🟩" : "🟨");
   }
 
-  var Logic = { POOL: POOL, ROUNDS: ROUNDS, V: V, MAX_INSTALLS: MAX_INSTALLS, holds: holds, broken: broken, solve: solve, generate: generate,
+  var Logic = { POOL: POOL, ROUNDS: ROUNDS, LEVELS: LEVELS, LEVEL_NAMES: LEVEL_NAMES, level: level, V: V, MAX_INSTALLS: MAX_INSTALLS, holds: holds, broken: broken, solve: solve, generate: generate,
     ruleText: ruleText, roundScore: roundScore, gridLine: gridLine, sum: sum };
   window.SamukaDepsLogic = Logic;
 
@@ -147,7 +171,14 @@
     logic: Logic,
     mount: function (stage, api) {
       var daily = api.mode === "daily";
-      var best = api.peekBest();
+      // difficulty is a free-play choice: daily, tournament, race and challenge boards are always normal
+      var free = api.mode === "free", LKEY = "samuka-deps-level";
+      var lvl = "normal";
+      if (free) { try { lvl = level(localStorage.getItem(LKEY)); } catch (e) {} }
+      function LV() { return LEVELS[lvl]; }
+      function practice() { return lvl !== "normal" ? lvl : undefined; }
+      function installsMax() { return LV().installs; }
+      var best = api.peekBest(practice());
       var puzzles = [], round = 0, pins = [], cur = 0, fails = 0, lastBroken = [], lastFailed = "", results = [], score = 0;
       var playing = false, roundStart = 0, pausedMs = 0, hiddenAt = 0, tick = null, gone = false;
 
@@ -166,7 +197,11 @@
             '<p class="dh__out" data-out role="status" aria-live="polite"></p>' +
           "</div>" +
         "</div>";
-      api.foot('<span><kbd>↑</kbd><kbd>↓</kbd> gem · <kbd>←</kbd><kbd>→</kbd> or <kbd>1</kbd>–<kbd>4</kbd> version · <kbd>Enter</kbd> bundle install. Tap a version to pin it. Rules light up for the gem you\'re on.</span>');
+      function foot() {
+        api.foot('<span><kbd>↑</kbd><kbd>↓</kbd> gem · <kbd>←</kbd><kbd>→</kbd> or <kbd>1</kbd>–<kbd>4</kbd> version · <kbd>Enter</kbd> bundle install. Tap a version to pin it.' +
+          (LV().focus ? " Rules light up for the gem you\'re on." : " Hard: no rule hints, read the gemspecs.") + "</span>");
+      }
+      foot();
       var rowsEl = stage.querySelector("[data-rows]"), gemfileEl = stage.querySelector("[data-gemfile]"), specsEl = stage.querySelector("[data-specs]");
       var outEl = stage.querySelector("[data-out]"), roundEl = stage.querySelector("[data-round]"), installBtn = stage.querySelector("[data-dh-install]");
 
@@ -191,7 +226,7 @@
         });
         gemfileEl.innerHTML = gf.join("");
         specsEl.innerHTML = sp.join("");
-        roundEl.textContent = "· round " + (round + 1) + "/" + ROUNDS.length + " · " + p.gems.length + " gems";
+        roundEl.textContent = "· round " + (round + 1) + "/" + ROUNDS.length + " · " + p.gems.length + " gems" + (practice() ? " · " + lvl : "");
         paint();
       }
       function paint() {
@@ -211,16 +246,17 @@
         });
         stage.querySelectorAll("[data-rule]").forEach(function (li) {
           var k = +li.getAttribute("data-rule"), r = p.rules[k];
-          li.classList.toggle("is-focus", playing && mentions(r, cur));
+          li.classList.toggle("is-focus", playing && LV().focus && mentions(r, cur));
           li.classList.toggle("is-broken", !!bad[k]);
         });
         installBtn.disabled = !playing;
       }
       function hud() {
-        var dots = ""; for (var i = 0; i < MAX_INSTALLS; i++) dots += i < MAX_INSTALLS - fails ? "●" : "○";
+        var max = installsMax(), dots = ""; for (var i = 0; i < max; i++) dots += i < max - fails ? "●" : "○";
         api.hud("<span>round <b>" + Math.min(round + 1, ROUNDS.length) + "/" + ROUNDS.length + "</b></span><span>score <b>" + fmt(score) + "</b></span>" +
           '<span title="installs left this round">installs <b>' + dots + "</b></span>" +
           (playing ? '<span class="hide-sm">speed bonus <b>' + bonusLeft() + "</b></span>" : "") +
+          (practice() ? '<span class="dh__lvl">' + lvl + "</span>" : "") +
           (daily ? "" : '<span class="hide-sm">best <b>' + fmt(Math.max(best, score)) + "</b></span>"));
       }
       function flash(cls) {
@@ -245,7 +281,7 @@
       }
       function install() {
         if (!playing) return;
-        var p = P(), brk = broken(p, pins), t = secs();
+        var p = P(), brk = broken(p, pins), t = secs(), MAX_INSTALLS = installsMax();
         // the same lock that just failed: say so instead of spending an install (a double Enter, a stray tap)
         if (brk.length && lastFailed === pins.join()) { api.toast("same lock as last time: change a pin first", "warn"); return; }
         if (brk.length) {
@@ -279,7 +315,7 @@
           return "<li" + (same ? "" : ' class="is-diff"') + "><code>" + esc(g.name) + " (" + esc(g.vers[ok ? pins[i] : near[i]]) + ")</code>" +
             (ok && !same ? ' <span class="dh__could">' + esc(g.vers[near[i]]) + " was possible</span>" : "") + "</li>";
         }).join("");
-        var last = round >= ROUNDS.length - 1;
+        var last = round >= ROUNDS.length - 1, next = LV().rounds[round + 1];
         var fresh = ok && mine >= sol.opt;
         setTimeout(function () {
           if (gone) return;
@@ -289,13 +325,13 @@
             '<ul class="dh__result">' + lines + "</ul>" +
             (ok ? '<dl class="arcade__stats"><dt>freshness</dt><dd>' + (fresh ? "newest possible" : Math.round(100 * (sol.opt - sol.minF > 0 ? (mine - sol.minF) / (sol.opt - sol.minF) : 1)) + "%") + "</dd>" +
               "<dt>failed installs</dt><dd>" + fails + "</dd><dt>time</dt><dd>" + Math.round(t) + " s</dd><dt>round points</dt><dd>+" + fmt(res.pts) + "</dd></dl>" : "") +
-            '<button class="btn btn--primary" type="button" data-dh-next>' + (last ? "▶ see the result" : "▶ next Gemfile (" + ROUNDS[round + 1].n + " gems)") + "</button>"
+            '<button class="btn btn--primary" type="button" data-dh-next>' + (last ? "▶ see the result" : "▶ next Gemfile (" + next.n + " gems)") + "</button>"
           );
         }, ok && !api.reduced ? 450 : 0);
       }
       function startRound(i) {
         round = i; fails = 0; lastBroken = []; lastFailed = ""; cur = 0; pausedMs = 0; hiddenAt = 0;
-        if (!puzzles[round]) puzzles[round] = generate(api.rng, round);
+        if (!puzzles[round]) puzzles[round] = generate(api.rng, round, lvl);
         var p = P();
         pins = p.gems.map(function () { return V - 1; });   // `bundle update` pinned everything to the newest: it won't resolve
         playing = true; roundStart = Date.now();
@@ -308,19 +344,20 @@
       function start() {
         api.newRun();   // a fresh seed each run; daily and challenge runs get the same Gemfiles every time
         puzzles = []; results = []; score = 0;
+        if (free && window.SamukaTrack) window.SamukaTrack("deps:difficulty:" + lvl);
         // all three Gemfiles come from the seed, in order, before anything else draws from it
-        for (var i = 0; i < ROUNDS.length; i++) puzzles[i] = generate(api.rng, i);
+        for (var i = 0; i < ROUNDS.length; i++) puzzles[i] = generate(api.rng, i, lvl);
         startRound(0);
       }
       function finish() {
         playing = false;
         var grid = results.map(gridLine).join("\n");
         var freshAll = results.every(function (r) { return r.resolved && r.sum >= r.opt; });
-        if (freshAll) api.emit("all_fresh");
+        if (freshAll && lvl !== "easy") api.emit("all_fresh");   // the achievement is for the real puzzle, not easy practice
         // the round card goes first: the end-of-run extras (next steps, keep your score, challenge
         // results) attach to whichever card is up when "over" fires, and must find the final one
         api.clearOverlay();
-        var b = api.best(score, { grid: grid, rounds: results.map(function (r) { return { ok: r.resolved, fresh: r.resolved && r.sum >= r.opt, fails: r.fails, pts: r.pts }; }) });
+        var b = api.best(score, { grid: grid, level: lvl, practice: practice(), rounds: results.map(function (r) { return { ok: r.resolved, fresh: r.resolved && r.sum >= r.opt, fails: r.fails, pts: r.pts }; }) });
         best = b.best; hud();
         if (daily) {
           var S = window.SamukaScores;
@@ -328,25 +365,45 @@
           return;
         }
         api.overlay(
-          '<p class="arcade__kicker">$ bundle exec rake · 3 Gemfiles done</p>' +
+          '<p class="arcade__kicker">$ bundle exec rake · 3 Gemfiles done' + (practice() ? " · " + lvl : "") + "</p>" +
           "<h3>" + (freshAll ? "bundle outdated: nothing to update" : score >= 3000 ? "Lockfile committed" : "Shipped, mostly") + "</h3>" +
           '<pre class="daily__grid" aria-label="your rounds">' + esc(grid) + "</pre>" +
-          '<dl class="arcade__stats"><dt>score</dt><dd>' + fmt(score) + (b.isNew ? ' <span class="arcade__new">new best!</span>' : "") + "</dd><dt>best</dt><dd>" + fmt(b.best) + "</dd>" +
+          '<dl class="arcade__stats"><dt>score</dt><dd>' + fmt(score) + (b.isNew ? ' <span class="arcade__new">new best!</span>' : "") + "</dd><dt>" + (practice() ? lvl + " best" : "best") + "</dt><dd>" + fmt(b.best) + "</dd>" +
           results.map(function (r, i) { return "<dt>Gemfile " + (i + 1) + "</dt><dd>" + (r.resolved ? "+" + fmt(r.pts) : "conflict") + "</dd>"; }).join("") + "</dl>" +
-          '<div class="lb-mini" data-lb-mini="deps"></div>' +
-          '<button class="btn btn--primary" type="button" data-dh-start>↻ new Gemfiles</button>'
+          (practice() ? '<p class="muted dh__practice">' + lvl + " is practice: its best stays on this device. Normal goes on the leaderboards.</p>" : '<div class="lb-mini" data-lb-mini="deps"></div>') +
+          '<div class="dh__again"><button class="btn btn--primary" type="button" data-dh-start>↻ new Gemfiles</button>' +
+          '<button class="btn" type="button" data-dh-menu>difficulty: ' + lvl + "</button></div>"
         );
       }
-      function intro() {
+      function demo() {
         // a demo board behind the card, from its own fixed seed: showing the run's first Gemfile here
         // would let a daily player study it before the clock starts
-        puzzles = [generate(window.SamukaArcade.seeded("deps-demo"), 0)]; round = 0; pins = puzzles[0].gems.map(function () { return V - 1; }); drawBoard(); hud();
+        puzzles = [generate(window.SamukaArcade.seeded("deps-demo"), 0, lvl)]; round = 0; pins = puzzles[0].gems.map(function () { return V - 1; }); drawBoard(); hud();
+      }
+      function sizes() { var r = LV().rounds; return r[0].n + ", " + r[1].n + " and " + r[2].n + " gems"; }
+      function picker() {
+        var what = { easy: "smaller Gemfiles, 4 installs", normal: "the daily puzzle, ranked", hard: "bigger Gemfiles, no hints" };
+        return '<fieldset class="dh__level"><legend>difficulty</legend><div class="dh__level-opts">' + LEVEL_NAMES.map(function (l) {
+          return '<label class="dh__level-opt"><input type="radio" name="dh-level" value="' + l + '"' + (l === lvl ? " checked" : "") + ">" +
+            "<b>" + l + "</b><span>" + what[l] + "</span></label>";
+        }).join("") + "</div></fieldset>";
+      }
+      function setLevel(l) {
+        lvl = level(l);
+        try { localStorage.setItem(LKEY, lvl); } catch (e) {}
+        best = api.peekBest(practice());
+        foot(); demo();
+        var sz = stage.querySelector("[data-dh-sizes]"); if (sz) sz.textContent = sizes();
+        var inst = stage.querySelector("[data-dh-installs]"); if (inst) inst.textContent = LV().installs + " installs";
+      }
+      function intro() {
+        demo();
         var S = window.SamukaScores;
         var rules = '<ul class="sr__legend dh__legend">' +
           "<li>Pin <b>one version per gem</b>, then run <code>bundle install</code>.</li>" +
           "<li>The <b>Gemfile</b> lines must hold, and so must every <b>gemspec rule</b>: <code>sidekiq &gt;= 7.3 → redis &gt;= 5.2</code> means if you pin sidekiq 7.3 or newer, redis has to be 5.2 or newer.</li>" +
           "<li>Newer is better: a lock scores by how close it is to the <b>freshest lock that resolves</b>.</li>" +
-          "<li>A failed install shows the broken rules in red and costs one of your <b>3 installs</b>. Faster rounds earn a speed bonus.</li></ul>";
+          "<li>A failed install shows the broken rules in red and costs one of your <b data-dh-installs>" + LV().installs + " installs</b>. Faster rounds earn a speed bonus.</li></ul>";
         if (daily) {
           api.overlay('<p class="arcade__kicker">$ bundle install --daily[' + new Date().toISOString().slice(0, 10) + "]</p><h3>Daily #" + (S && S.dailyNo ? S.dailyNo() : "") + " · Dependency Hell</h3>" +
             "<p>Same three Gemfiles for everyone today, one attempt. Your score goes on today's board, and you get a grid to share.</p>" + rules +
@@ -354,14 +411,16 @@
           return;
         }
         api.overlay('<p class="arcade__kicker">$ bundle update && bundle install</p><h3>Dependency Hell</h3>' +
-          "<p><code>bundle update</code> pinned every gem to its newest version, and now nothing resolves. Three Gemfiles, 4, 5 and 6 gems: find the freshest lock that installs.</p>" + rules +
-          '<p class="muted">The version rules are made up for the puzzle, not the real gems\' requirements.</p>' +
-          '<button class="btn btn--primary" type="button" data-dh-start>▶ bundle exec play</button>');
+          "<p><code>bundle update</code> pinned every gem to its newest version, and now nothing resolves. Three Gemfiles, <span data-dh-sizes>" + sizes() + "</span>: find the freshest lock that installs.</p>" + rules +
+          '<button class="btn btn--primary" type="button" data-dh-start>▶ bundle exec play</button>' +
+          (free ? picker() + '<p class="muted">Easy and hard are practice: their bests stay on this device. The daily, the tournament and challenges are always normal.</p>' : "") +
+          '<p class="muted">The version rules are made up for the puzzle, not the real gems\' requirements.</p>');
       }
 
       /* ---------- input ---------- */
       function onClick(e) {
         if (e.target.closest("[data-dh-start]")) { start(); return; }
+        if (e.target.closest("[data-dh-menu]")) { intro(); return; }
         if (e.target.closest("[data-dh-next]")) { if (round >= ROUNDS.length - 1) finish(); else startRound(round + 1); return; }
         if (e.target.closest("[data-dh-install]")) { install(); return; }
         var b = e.target.closest(".dh__v");
@@ -373,7 +432,9 @@
         if (document.hidden) { if (playing && !hiddenAt) hiddenAt = Date.now(); }
         else if (hiddenAt) { pausedMs += Date.now() - hiddenAt; hiddenAt = 0; hud(); }
       }
+      function onChange(e) { if (e.target.name === "dh-level") setLevel(e.target.value); }
       stage.addEventListener("click", onClick);
+      stage.addEventListener("change", onChange);
       document.addEventListener("visibilitychange", onVis);
       intro();
 
@@ -392,12 +453,13 @@
         _debug: {
           puzzle: function () { return P(); },
           pins: function () { return pins.slice(); },
-          state: function () { return { round: round, playing: playing, fails: fails, score: score, results: results.slice() }; },
+          state: function () { return { round: round, playing: playing, fails: fails, score: score, results: results.slice(), level: lvl }; },
           solve: function () { if (playing) { pins = P().solution.best[0].slice(); paint(); } }
         },
         destroy: function () {
           gone = true; playing = false; clearInterval(tick);
           stage.removeEventListener("click", onClick);
+          stage.removeEventListener("change", onChange);
           document.removeEventListener("visibilitychange", onVis);
         }
       };
