@@ -3,6 +3,12 @@
 #   link  optional, a page on this site
 - date: 2026-11-15
   tag: feature
+  title: Last week's tournament winners
+  text: "Your week on the Today page now shows last week's tournament: who topped each game, and where you placed if you played. Won a game? The first time you drop by in the new week, a 🏆 note says so and points you to the standings. It shows once a week, only when you're signed in, and it holds still in calm mode."
+  link: /events/
+
+- date: 2026-11-15
+  tag: feature
   title: Weekly tournament
   text: Every week each game gets one board that's the same for everyone. Play it as often as you like until Sunday night (UTC); your best run counts. The tournament page shows this week's standings in every game, the time left and last week's winners. Top a game for the week and you get a 🏆 on your player card. Signed-in players only, so every score has a name on it.
   link: /leaderboards/tournament/

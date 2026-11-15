@@ -7,6 +7,8 @@
  *  - tracks: the director's cut, whose unlock is the suite_<theme> badge (dated). Bonus tracks
  *    are stored without a date, so they're left out rather than guessed.
  *  - streak: the player card's streak through SamukaStreak.state (the reminder's own rules)
+ *  - last week's tournament: each game's winner and your placing, from SamukaTournament.lastWeek()
+ *    (tournament_standings() for the last ISO week, UTC). Left out when the tournament can't be reached.
  * The model and the markup are pure (SamukaRecap.build / .html) and tested in tests/recap.test.js.
  */
 (function () {
@@ -25,8 +27,8 @@
   function prevWeekStart(now) { var d = new Date(weekStart(now)); d.setDate(d.getDate() - 7); return d.getTime(); }
 
   /* in: { now, scores: [{game, score, t}], badges: [{key, title, icon, t}], tracks: [{title, t}],
-   *       streak: {current, kind}|null, names: {game: label} }
-   * out: { empty, from, games: [{game, name, best, last, up}], played, badges, tracks, streak } */
+   *       streak: {current, kind}|null, names: {game: label}, tourney: SamukaTournament.lastWeekFrom()|null, signedIn }
+   * out: { empty, from, games: [{game, name, best, last, up}], played, badges, tracks, streak, tourney } */
   function build(c) {
     var from = weekStart(c.now), prev = prevWeekStart(c.now), names = c.names || {};
     var cur = {}, last = {}, played = 0;
@@ -43,13 +45,33 @@
     var thisWeek = function (x) { return +x.t >= from && +x.t <= c.now; };
     var badges = (c.badges || []).filter(thisWeek), tracks = (c.tracks || []).filter(thisWeek);
     var streak = c.streak && c.streak.current > 0 ? c.streak : null;
-    return { empty: !played, from: from, games: games, played: played, badges: badges, tracks: tracks, streak: streak };
+    // a guest has no place and no wins, whatever the data says
+    var tg = c.tourney && c.tourney.games ? (c.signedIn ? c.tourney.games : c.tourney.games.map(function (g) { return Object.assign({}, g, { me: false, place: null }); })) : null;
+    var t = tg ? { week: c.tourney.week, games: tg, played: !!c.signedIn && !!c.tourney.played, signedIn: !!c.signedIn } : null;
+    return { empty: !played, from: from, games: games, played: played, badges: badges, tracks: tracks, streak: streak, tourney: t };
+  }
+
+  function weekName(key) { var m = /^(\d{4})-W(\d{2})$/.exec(key || ""); return m ? "Week " + (+m[2]) : ""; }
+  // "Last week's tournament": the winner of each game, and where you placed
+  function tourneyHtml(t) {
+    if (!t) return "";
+    var head = '<p class="recap__sub recap__sub--tourney"><span aria-hidden="true">🏆</span> Last week\'s tournament' + (weekName(t.week) ? " · " + esc(weekName(t.week)) : "") + "</p>";
+    var more = '<a class="recap__more" href="/leaderboards/tournament/">This week\'s boards →</a>';
+    if (!t.games.length) return '<div class="recap__tourney" data-recap-tourney>' + head + '<p class="recap__nudge">Nobody played last week\'s tournament, so there\'s no winner yet. ' + more + "</p></div>";
+    var rows = t.games.map(function (g) {
+      var you = g.me ? '<span class="recap__up"><span aria-hidden="true">🏆</span> you won it</span>'
+        : g.place ? '<span class="recap__vs">you: #' + g.place.rank + " of " + g.place.of + " · " + num(g.place.score) + "</span>" : "";
+      return '<li class="recap__row' + (g.me ? " is-me" : "") + '"><span class="recap__game">' + (g.icon ? '<span aria-hidden="true">' + esc(g.icon) + "</span> " : "") + esc(g.name) + '</span><b class="recap__best">' + num(g.score) + "</b>" +
+        '<span class="recap__vs recap__champ">won by <a href="/u/?n=' + encodeURIComponent(g.winner) + '">' + esc(g.winner) + "</a></span>" + you + "</li>";
+    }).join("");
+    var note = '<p class="recap__fine">' + (t.signedIn && !t.played ? "You didn't play last week. " : "") + more + "</p>";
+    return '<div class="recap__tourney" data-recap-tourney>' + head + '<ul class="recap__games">' + rows + "</ul>" + note + "</div>";
   }
 
   function html(m) {
     if (m.empty) {
       return '<p class="recap__nudge"><span aria-hidden="true">🕹</span> Nothing played yet this week. ' +
-        '<button class="recap__link" type="button" data-daily>Today\'s daily Gem Match</button> is a good place to start.</p>';
+        '<button class="recap__link" type="button" data-daily>Today\'s daily Gem Match</button> is a good place to start.</p>' + tourneyHtml(m.tourney);
     }
     var rows = m.games.map(function (g) {
       var vs = g.up ? '<span class="recap__up"><span aria-hidden="true">▲</span> beat last week\'s ' + num(g.last) + "</span>"
@@ -63,7 +85,7 @@
       m.badges.map(function (b) { return '<span class="recap__chip">' + (b.icon ? '<span aria-hidden="true">' + esc(b.icon) + "</span> " : "") + esc(b.title || b.key) + "</span>"; }).join(" ") + "</li>");
     if (m.tracks.length) stats.push('<li><span aria-hidden="true">♪</span> <b>' + m.tracks.length + "</b> " + (m.tracks.length === 1 ? "track" : "tracks") + " unlocked: " +
       m.tracks.map(function (t) { return '<span class="recap__chip">' + esc(t.title) + "</span>"; }).join(" ") + "</li>");
-    return '<p class="recap__sub">Best score this week, per game</p><ul class="recap__games">' + rows + '</ul><ul class="recap__stats">' + stats.join("") + "</ul>";
+    return '<p class="recap__sub">Best score this week, per game</p><ul class="recap__games">' + rows + '</ul><ul class="recap__stats">' + stats.join("") + "</ul>" + tourneyHtml(m.tourney);
   }
 
   /* ---------- data ---------- */
@@ -125,12 +147,15 @@
     var scoresP = !u ? Promise.resolve({ scores: pending("guest"), achs: [] })
       : c ? fetchServer(c, u, now).then(function (s) { return s ? { scores: s.scores.concat(pending(u.id)), achs: s.achs } : { scores: pending(u.id), achs: [] }; })
       : Promise.resolve({ scores: mockScores(), achs: [] });   // local test login
-    Promise.all([scoresP, streakOf()]).then(function (r) {
+    var TT = window.SamukaTournament;
+    var tourneyP = TT && TT.lastWeek ? TT.lastWeek(now).catch(function () { return null; }) : Promise.resolve(null);
+    Promise.all([scoresP, streakOf(), tourneyP]).then(function (r) {
       if (my !== gen || !el.isConnected) return;
-      var m = build({ now: now, scores: r[0].scores, badges: badgeInfo(r[0].achs), tracks: trackInfo(r[0].achs), streak: r[1], names: names });
+      var m = build({ now: now, scores: r[0].scores, badges: badgeInfo(r[0].achs), tracks: trackInfo(r[0].achs), streak: r[1], names: names, tourney: r[2], signedIn: !!u });
       el.classList.toggle("is-empty", m.empty);
       body.innerHTML = html(m);
       window.SamukaTrack && window.SamukaTrack("recap:" + (m.empty ? "empty" : "shown"), true);
+      if (m.tourney) window.SamukaTrack && window.SamukaTrack("tournament:recap-seen", true);
     });
   }
   function fresh() { server = null; render(); }
@@ -143,5 +168,5 @@
   // deferred scripts run before DOMContentLoaded, while me.js (the streak) may still be on its way
   if (document.readyState === "complete") render(); else document.addEventListener("DOMContentLoaded", render);
 
-  window.SamukaRecap = { build: build, html: html, weekStart: weekStart, prevWeekStart: prevWeekStart, render: render };
+  window.SamukaRecap = { build: build, html: html, tourneyHtml: tourneyHtml, weekStart: weekStart, prevWeekStart: prevWeekStart, render: render };
 })();
