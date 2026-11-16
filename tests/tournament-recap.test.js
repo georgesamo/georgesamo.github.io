@@ -136,7 +136,8 @@
       clean("t-win");
       return withTrack(function (got) {
         return withAuth({ id: "t-win" }, function () {
-          return withBackend(S, function (calls) {
+          // last week's results, whatever today is (a fixed week here failed every test run from the week after next)
+          return withBackend(Object.assign({}, S, { week: TT.prevWeek().key }), function (calls) {
             return TT.checkWin().then(function (shown) {
               expect(shown).toBe(true);
               expect(toasts().length).toBe(1);
