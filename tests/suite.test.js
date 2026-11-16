@@ -100,13 +100,14 @@
       expect(L().order.prev("phthalo", 5)).toBe(4);   // nothing unlocked: back to the last song
     });
     it("runs every bonus track three to four minutes, the monologue short", function () {
-      L().catalog().forEach(function (th) { th.songs.slice(6, 10).forEach(function (x) { expect(x.secs >= 180 && x.secs <= 240).toBe(true); }); });
-      expect([6, 7, 8, 9].map(function (si) { return L().catalog()[0].songs[si].bpm; })).toEqual([132, 81, 123, 100]);
+      // Sidekiq Rush (si 6) is written to about four minutes at its own tempo, so the slower knight palette runs it longer
+      L().catalog().forEach(function (th) { th.songs.slice(6, 10).forEach(function (x) { expect(x.secs >= 180 && x.secs <= (x.si === 6 ? 270 : 240)).toBe(true); }); });
+      expect([6, 7, 8, 9].map(function (si) { return L().catalog()[0].songs[si].bpm; })).toEqual([138, 81, 123, 100]);
       expect(secs(10) >= 90 && secs(10) <= 110).toBe(true);
     });
-    it("tells each bonus track's motif through its sections: drops, the open sea, the drop-out, the race", function () {
+    it("tells each bonus track's motif through its sections: the night, the open sea, the drop-out, the race", function () {
       var ids = function (si) { return L().layout("phthalo", si).bars.map(function (b) { return b.id; }); };
-      ["boot", "groove", "build", "drop", "breakdown", "tunnel"].forEach(function (id) { expect(ids(6).indexOf(id) >= 0).toBe(true); });
+      ["midnight", "memory", "the pull", "the hole", "release", "night", "becoming", "moonset"].forEach(function (id) { expect(ids(6).indexOf(id) >= 0).toBe(true); });
       ["the call", "the hull", "full sail", "open sea", "the hole", "the ends of the earth", "landfall"].forEach(function (id) { expect(ids(7).indexOf(id) >= 0).toBe(true); });
       ["the stack", "lock-in", "the riff", "the drop-out", "back in", "the pickup", "madness"].forEach(function (id) { expect(ids(8).indexOf(id) >= 0).toBe(true); });
     });
