@@ -62,5 +62,6 @@ exclude:
   - node_modules     # CI installs build tools; a custom exclude list replaces Jekyll's defaults
   - package.json
   - package-lock.json
+  - assets/audio/README.md   # the audio repo's own readme (that folder is a checkout of georgesamo/soundtrack-audio)
 
 markdown: kramdown

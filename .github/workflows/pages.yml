@@ -104,6 +104,13 @@ jobs:
         with:
           path: _data/markets.json
           key: markets-${{ github.run_id }}
+      # the soundtrack's MP3s live in their own repo, kept to one commit that every publish replaces (so the old renders
+      # aren't kept), and land in assets/audio/ here: the site serves them at the same URLs as when they were committed
+      - name: Check out the soundtrack audio
+        uses: actions/checkout@v7
+        with:
+          repository: georgesamo/soundtrack-audio
+          path: assets/audio
       - name: Build with Jekyll
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         env:

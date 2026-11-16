@@ -6,3 +6,5 @@ _site/
 vendor/
 .claude/*
 !.claude/skills/
+# the soundtrack MP3s: a checkout of georgesamo/soundtrack-audio (see .github/workflows/pages.yml)
+assets/audio/
